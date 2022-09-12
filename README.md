@@ -3,33 +3,55 @@ Circle
 
 > If you read this file in an editor you should switch line wrapping on.
 
-Overview
+概要
 --------
 
-Circle is a C++ bare metal programming environment for the Raspberry Pi. It should be usable on all existing models (tested on model A+, B, B+, on Raspberry Pi 2, 3, 4, 400 and on Raspberry Pi Zero), except on the Raspberry Pi Pico, which is not supported. Circle provides several ready-tested [C++ classes](doc/classes.txt) and [add-on libraries](addon/README), which can be used to control different hardware features of the Raspberry Pi. Together with Circle there are delivered several [sample programs](sample/README), which demonstrate the use of its classes. Circle can be used to create 32-bit or 64-bit bare metal applications.
+Circleは、Raspberry PiのためのC++ベアメタルプログラミング環境です。すべての既存モデル
+（モデルA+、B、B+、Raspberry Pi 2、3、4、400、Raspberry Pi Zeroでテスト済み）で使用
+できるはずです。ただし、Raspberry Pi Picoはサポートしていません。Circleは、テスト
+可能な[C++クラス](doc/classes.md)と[アドオンライブラリ](addon/README)を提供しており、
+Raspberry Piの様々なハードウェア機能の制御に使用できます。また、Circleと共にクラスの
+使い方を説明する[サンプルプログラム](sample/README)も配布しています。Circleは
+32ビットまたは64ビットのベアメタルアプリケーションの作成に使用することができます。
 
-Circle includes bigger (optional) third-party C-libraries for specific purposes in addon/ now. This is the reason why GitHub rates the project as a C-language-project. The main Circle libraries are written in C++ using classes instead. That's why it is called a C++ programming environment.
+Circleは特定の目的のために大きな（オプションの）サードパーティCライブラリをaddon/に
+収めています。これがGitHubがこのプロジェクトをC言語プロジェクトと評価している理由です。
+メインのCircleライブラリはクラスを使ったC++で書かれています。そのためC++プログラミング
+環境と呼ばれています。
 
-Release 44.5
-------------
+リリース 44.5
+-------------------
 
-This intermediate release offers a **revised DWHCI USB low-level driver for the Raspberry Pi 1-3 and Zero**. With the system option `USE_USB_FIQ` one can use the FIQ (Fast Interrupt Request) for this driver, which results in a more accurate timing on the USB. This may improve the compatibility with some USB devices and may help to prevent data loss, especially when receiving MIDI data from some USB MIDI controllers, which do have only small data buffers. Because there is only one FIQ source supported in the system, the FIQ cannot be used for other purpose than the USB with this system option. The xHCI USB driver for the Raspberry Pi 4 does not support this system option and remains unchanged.
+この中間リリースは**Raspberry Pi 1-3とZero用のDWHCI USB低レベルドライバの改訂版**を
+提供します。システムオプション `USE_USB_FIQ` を使用するとこのドライバでFIQ（Fast
+Interrupt Request）を使用できるようになり、USB上でより正確なタイミングが得られる
+ようになります。これによりUSBデバイスとの互換性が向上し、特に小さなデータバッファ
+しか持たないUSB MIDIコントローラからMIDIデータを受信する際にデータの損失を防ぐことが
+できます。このシステムでサポートされるFIQソースは1つだけなので、このシステム
+オプションではFIQをUSB以外の用途に使用することはできません。Raspberry Pi 4の
+xHCI USBドライバはこのシステムオプションに対応していないため変更はありません。
 
-To **prevent data loss from USB MIDI controllers on the Raspberry Pi 1-3 and Zero**, there is also the new option `usbboost=true` for the file *cmdline.txt* now. It speeds up the USB MIDI handling, but may generate more system load on the other hand.
+**Raspberry Pi 1-3とZeroのUSB MIDIコントローラからのデータ損失を防ぐ**ために
+ファイル *cmdline.txt* に `usbboost=true` という新しいオプションも用意されました。
+これはUSB MIDIの処理を高速化しますが、その反面、システム負荷が増える可能性があります。
 
-The system option `USE_EMBEDDED_MMC_CM4` has been renamed to `USE_EMBEDDED_MMC_CM` and is tested to support **embedded MMC memory** on the Compute Module 3+ and 4.
+システムオプションの `USE_EMBEDDED_MMC_CM4` は `USE_EMBEDDED_MMC_CM` に名前を変え、Compute Module 3+と4の **組み込みMMCメモリ** のサポートがテストされています。
 
-The `CI2SSoundBaseDevice` class driver for I2S sound devices **supports the WM8960 DAC**.
+I2Sサウンドデバイスの `CI2SSoundBaseDevice` クラスドライバが **WM8960 DACをサポート**
+しました。
 
-There is **I2C support in the HD44780 LCD display driver** now.
+**HD44780 LCDディスプレイドライバがI2Cをサポート**しました。
 
-Bug fixes:
+バグフィックス:
 
-* The Stereo channels were swapped in the `CHDMISoundBaseDevice` class before.
-* There seem to be USB devices, which send more data than it is expected. This fix should prevent a system crash by faking a frame overrun error, which should be handled by the upper layers.
-* Building the WLAN support with the `NDEBUG` option was not possible.
+* `CHDMISoundBaseDevice`クラスでStereoのチャンネルが入れ替わっていた。
+* 想定以上のデータを送信するUSBデバイスがあるようです。この修正により、上位レイヤで
+  処理されるべき、フレームオーバーランエラーの偽装によるシステムクラッシュを防ぐことが
+  できるようになりました。
+* `NDEBUG`オプションでWLANサポートをビルドできなかった。
 
-Don't forget to update the used firmware to the one downloadable in [boot/](boot/)!
+使用中のファームウェアを[boot/](boot/)でダウンロードできるものに更新するのを
+忘れないでください。
 
 The 44th Step
 -------------
@@ -69,30 +91,30 @@ Bug fixes:
 
 Don't forget to update the used firmware to the one downloadable in [boot/](boot/)!
 
-Features
+機能
 --------
 
-Circle supports the following features:
+Circleは次の機能をサポートしています。
 
-| Group                 | Features                                            |
+| グループ              | 機能                                                |
 |-----------------------|-----------------------------------------------------|
-| C++ build environment | AArch32 and AArch64 support                         |
-|                       | Basic library functions (e.g. new and delete)       |
-|                       | Enables all CPU caches using the MMU                |
-|                       | Interrupt support (IRQ and FIQ)                     |
-|                       | Multi-core support (Raspberry Pi 2, 3 and 4)        |
-|                       | Cooperative non-preemtive scheduler                 |
-|                       | CPU clock rate management                           |
+| C++ビルド環境         | AArch32とAArch64のサポート                          |
+|                       | 基本的なライブラリ関数（new, deleteなど）           |
+|                       | MMUを使用するすべてのCPUキャッシュを有効化          |
+|                       | 割り込みのサポート (IRQとFIQ)                         |
+|                       | マルチコアのサポート (Raspberry Pi 2, 3, 4)           |
+|                       | 協調型非プリエンプティブスケジューラ                |
+|                       | CPUクロックレート管理                               |
 |                       |                                                     |
-| Debug support         | Kernel logging to screen, UART and/or syslog server |
-|                       | C-assertions with stack trace                       |
-|                       | Hardware exception handler with stack trace         |
-|                       | GDB support using rpi_stub (Raspberry Pi 2 and 3)   |
-|                       | Serial bootloader (by David Welch) included         |
-|                       | Software profiling support (single-core)            |
-|                       | QEMU support                                        |
+| デバッグサポート      | 画面、UART,シスログサーバへのカーネルログ出力       |
+|                       | スタックトレース付きのC-assertions                  |
+|                       | スタックトレース付きのハードウェア例外ハンドラ      |
+|                       | rpi_stubを使ったGDBのサポート (Raspberry Pi 2, 3)     |
+|                       | シリアルブートローダを同梱 (David Welch作)          |
+|                       | ソフトウェアポロファイリングのサポート (シングルコア) |
+|                       | QEMUのサポート                                        |
 |                       |                                                     |
-| SoC devices           | GPIO pins (with interrupt, Act LED) and clocks      |
+| SoCデバイス           | GPIO pins (with interrupt, Act LED) and clocks      |
 |                       | Frame buffer (screen driver with escape sequences)  |
 |                       | UART(s) (Polling and interrupt driver)              |
 |                       | System timer (with kernel timers)                   |
@@ -115,86 +137,120 @@ Circle supports the following features:
 |                       | BCM54213PE Gigabit Ethernet NIC of Raspberry Pi 4   |
 |                       | Wireless LAN access                                 |
 |                       |                                                     |
-| USB                   | Host controller interface (HCI) drivers             |
-|                       | Standard hub driver (USB 2.0 only)                  |
-|                       | HID class device drivers (keyboard, mouse, gamepad) |
-|                       | Driver for on-board Ethernet device (SMSC951x)      |
-|                       | Driver for on-board Ethernet device (LAN7800)       |
-|                       | Driver for USB mass storage devices (bulk only)     |
-|                       | Drivers for different USB serial devices            |
-|                       | Audio class MIDI input support                      |
-|                       | Touchscreen driver (digitizer mode)                 |
-|                       | Printer driver                                      |
+| USB                   | ホストコントローラインタフェース (HCI) ドライバ     |
+|                       | 標準ハブドライバ (USB 2.0 のみ)                     |
+|                       | HIDクラスデバイスドライバ (keyboard, mouse, gamepad) |
+|                       | オンボードEthernetデバイスドライバ (SMSC951x)       |
+|                       | オンボードEthernetデバイスドライバ (LAN7800)        |
+|                       | USBマスストレージデバイスドライバ (バルクのみ)      |
+|                       | 様々なUSBシリアルデバイスドライバ                   |
+|                       | オーディクラスMIDI入力のサポート                    |
+|                       | タッチスクリーンドライバ (デジタイザモード)         |
+|                       | プリンタドライバ                                    |
 |                       |                                                     |
-| File systems          | Internal FAT driver (limited function)              |
-|                       | FatFs driver (full function, by ChaN)               |
+| ファイルシステム      | 内部FATドライバ (限定された機能)                    |
+|                       | FatFsドライバ（ (全機能, by ChaN)                   |
 |                       |                                                     |
-| TCP/IP networking     | Protocols: ARP, IP, ICMP, UDP, TCP                  |
-|                       | Clients: DHCP, DNS, NTP, HTTP, Syslog, MQTT         |
-|                       | Servers: HTTP, TFTP                                 |
-|                       | BSD-like C++ socket API                             |
+| TCP/IPネットワーク    | プロトコル: ARP, IP, ICMP, UDP, TCP                 |
+|                       | クライアント: DHCP, DNS, NTP, HTTP, Syslog, MQTT    |
+|                       | サーバ: HTTP, TFTP                                  |
+|                       | BSDライクのC++ソケットAPI                           |
 |                       |                                                     |
-| Graphics              | OpenGL ES 1.1 and 2.0, OpenVG 1.1, EGL 1.4          |
+| グラフィックス        | OpenGL ES 1.1 and 2.0, OpenVG 1.1, EGL 1.4          |
 |                       | (not on Raspberry Pi 4)                             |
 |                       | uGUI (by Achim Doebler)                             |
 |                       | LVGL (by LVGL Kft)                                  |
 |                       | 2D graphics class in base library                   |
 |                       |                                                     |
-| Not supported         | Bluetooth                                           |
+| 未サポート            | Bluetooth                                           |
 |                       | Camera                                              |
-|                       | USB device (gadget) mode                            |
-|                       | USB isochronous transfers and audio                 |
+|                       | USBデバイス (gadget) モード                         |
+|                       | USBアイソクロナス転送とオーディオ                   |
 
-Building
+ビルド
 --------
 
-> For building 64-bit applications (AArch64) see the next section.
+> 64ビットアプリケーションのビルドは次節を参照
 
-This describes building on PC Linux. See the file [doc/windows-build.txt](doc/windows-build.txt) for information about building on Windows. If building for the Raspberry Pi 1 you need a [toolchain](http://elinux.org/Rpi_Software#ARM) for the ARM1176JZF core (with EABI support). For Raspberry Pi 2/3/4 you need a toolchain with Cortex-A7/-A53/-A72 support. A toolchain, which works for all of these, can be downloaded [here](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-a/downloads). Circle has been tested with the version *10.3-2021.07* (gcc-arm-10.3-2021.07-x86_64-arm-none-eabi.tar.xz) from this website.
+ここではPC Linuxでのビルドについて説明します。Windowsでのビルドについては
+[doc/windows-build.txt](doc/windows-build.txt) を参照してください。Raspberry Pi 1
+用にビルドする場合は、ARM1176JZFコア（EABI対応）用の[ツールチェイン](http://elinux.org/Rpi_Software#ARM)が
+必要です。Raspberry Pi 2/3/4の場合は、Cortex-A7/-A53/-A72をサポートするツール
+チェインが必要です。これら全てに対応するツールチェーンは[ここ](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-a/downloads)から
+ダウンロードできます。Circleは、このサイトにあるバージョン*10.3-2021.07* (gcc-arm-10.3-2021.07-x86_64-arm-none-eabi.tar.xz) でテストされています。
 
-First edit the file *Rules.mk* and set the Raspberry Pi version (*RASPPI*, 1, 2, 3 or 4) and the *PREFIX* of your toolchain commands. Alternatively you can create a *Config.mk* file (which is ignored by git) and set the Raspberry Pi version and the *PREFIX* variable to the prefix of your compiler like this (don't forget the dash at the end):
+まず、*Rules.mk* ファイルを編集し、Raspberry Piのバージョン（*RASPPI*、1、2、3、4）と
+ツールチェーンコマンドの*PREFIX*を設定します。または、*Config.mk*ファイルを作成し
+（gitでは無視されます）、以下のように、Raspberry Piのバージョンとコンパイラの
+プレフィックスを *PREFIX* 変数に設定します（最後のダッシュを忘れないでください）。
 
 ```
 RASPPI = 1
 PREFIX = arm-none-eabi-
 ```
 
-The following table gives support for selecting the right *RASPPI* value:
+次の表はは適切な*RASPPI*値の選択に役立てることができます。
 
-| RASPPI | Target         | Models                   | Optimized for |
+| RASPPI | ターゲット     | モデル                   | 最適化の対象  |
 | ------ | -------------- | ------------------------ | ------------- |
 |      1 | kernel.img     | A, B, A+, B+, Zero, (CM) | ARM1176JZF-S  |
 |      2 | kernel7.img    | 2, 3, Zero 2, (CM3)      | Cortex-A7     |
 |      3 | kernel8-32.img | 3, Zero 2, (CM3)         | Cortex-A53    |
 |      4 | kernel7l.img   | 4B, 400, CM4             | Cortex-A72    |
 
-For a binary distribution you should do one build with *RASPPI = 1*, one with *RASPPI = 2* and one build with *RASPPI = 4* and include the created files *kernel.img*, *kernel7.img* and *kernel7l.img*. Optionally you can do a build with *RASPPI = 3* and add the created file *kernel8-32.img* to provide an optimized version for the Raspberry Pi 3.
+バイナリ配布する場合じゃ、*RASPPI = 1*で1回、*RASPPI = 2*で1回、*RASPPI = 4*で1回の
+ビルドを行い、作成された*kernel.img*, *kernel7.img*, *kernel7l.img*を含めます。
+オプションとして、*RASPPI = 3*でビルドし、作成されたファイル *kernel8-32.img* を
+追加することでRaspberry Pi 3に最適化されたバージョンを提供することができます。
 
-The configuration file *Config.mk* can be created using the `configure` tool too. Please enter `./configure -h` for help on using it!
+構成ファイル*Config.mk*は`configure`ツールで作成することもできます。使い方は
+`./configure -h`と入力すると表示されます。
 
-> There are a number of configurable system options in the file [include/circle/sysconfig.h](include/circle/sysconfig.h). Please have a look into this file to learn, how you can configure Circle for your purposes. Some hardware configurations may require modifications to these options (e.g. using USB on the CM4).
+> [include/circle/sysconfig.h](include/circle/sysconfig.h) ファイルには設定可能な
+> システムオプションが多数あります。このファイルを見て、あなたの目的に合わせて
+> サークルを設定する方法を学んでください。ハードウェア構成によってはこれらの
+> オプションを変更する必要があります（たとえば、CM4でUSBを使用する場合など）。
 
-Then go to the build root of Circle and do:
+次いでCircleのビルドルートに移動し、以下を実行します。
 
 ```
 ./makeall clean
 ./makeall
 ```
 
-By default only the latest sample (with the highest number) is build. The ready build *kernel.img* file should be in its subdirectory of sample/. If you want to build another sample after `makeall` go to its subdirectory and do `make`.
+デフォルトでは最新のサンプル(番号が最大のもの)だけがビルドされます。ビルドが完了した
+kernel.img*はsample/のサブディレクトリにあるはずです。makeallの後に別のサンプルを
+ビルドしたい場合はそのサブディレクトリに移動して`make`を実行してください。
 
-You can also build Circle on the Raspberry Pi itself (set `PREFIX =` (empty)) on Raspbian but you need some method to put the *kernel.img* file onto the SD(HC) card. With an external USB card reader on model B+ or Raspberry Pi 2/3/4 model B (4 USB ports) this should be no problem.
+RaspbianではRaspberry Pi本体でCircleをビルドすることもできます（`PREFIX =` (空)と
+設定）が、*kernel.img*ファイルをSD（HC）カードに格納する何らかの方法が必要です。
+外付けのUSBカードリーダーを持つモデルB+や（4つのUSBポートを持つ）Raspberry Pi 2/3/4
+モデルBであれば問題ないでしょう。
 
 AArch64
 -------
 
-Circle supports building 64-bit applications, which can be run on the Raspberry Pi 3 or 4. There are also Raspberry Pi 2 versions and the Raspberry Pi Zero 2, which are based on the BCM2837 SoC. These Raspberry Pi versions can be used too (with `RASPPI = 3`).
+Circleは64ビットアプリケーションの構築をサポートしており、Raspberry Pi 3と4で
+動作させることができます。また、BCM2837 SoCをベースとするRaspberry Pi 2バージョンと
+Raspberry Pi Zero 2もありますが、これらのRaspberry Piバージョンも使用できます
+（RASPPI = 3とする）。
 
-The recommended toolchain to build 64-bit applications with Circle can be downloaded [here](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-a/downloads). Circle has been tested with the version *10.3-2021.07* (gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf.tar.xz) from this website.
+Circleで64ビットアプリケーションをビルドするための推奨ツールチェーンは
+[ここ](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-a/downloads)からダウンロードできます。Circleは
+このウェブサイトのバージョン *10.3-2021.07* (gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf.tar.xz) でテストされています。
 
-There are distro-provided toolchains on certain Linux platforms (e.g. *g++-aarch64-linux-gnu* on Ubuntu or *gcc-c++-aarch64-linux-gnu* on Fedora), which may work with Circle and can be a quick way to use it, but you have to test this by yourself. If you encounter problems (e.g. no reaction at all, link failure with external library) using a distro-provided toolchain, please try the recommended toolchain (see above) first, before reporting an issue.
+一部のLinuxプラットフォームではディストロが提供するツールチェイン(例: Ubuntuの
+*g++-aarch64-linux-gnu* やFedoraの*gcc-c++-aarch64-linux-gnu*があり、これらを
+使ってCircleを手早く動作させる可能性がありますが、これは自分でテストする必要が
+あります。ディストロが提供するツールチェインで問題（全く反応しない、外部ライブラリ
+とのリンクに失敗するなど）が発生した場合は、問題を報告する前にまず推奨の
+ツールチェイン（上記参照）で試してみてください。
 
-First edit the file *Rules.mk* and set the Raspberry Pi architecture (*AARCH*, 32 or 64) and the *PREFIX64* of your toolchain commands. The *RASPPI* variable has to be set to 3 or 4 for `AARCH = 64`. Alternatively you can create a *Config.mk* file (which is ignored by git) and set the Raspberry Pi architecture and the *PREFIX64* variable to the prefix of your compiler like this (don't forget the dash at the end):
+まず、*Rules.mk* を編集し、Raspberry Piのアーキテクチャ(*AARCH*、32または64)と
+ツールチェーンコマンドの *PREFIX64* を設定します。`AARCH = 64` の場合は *RASPPI*
+変数を3または4に設定する必要があります。または、*Config.mk* ファイルを作成して
+（gitでは無視されます）、以下のように、Raspberry Piのアーキテクチャとコンパイラの
+プレフィックスを *PREFIX64* 変数に設定します（最後のダッシュを忘れないでください）。
 
 ```
 AARCH = 64
@@ -202,96 +258,115 @@ RASPPI = 3
 PREFIX64 = aarch64-none-elf-
 ```
 
-The configuration file *Config.mk* can be created using the `configure` tool too. Please enter `./configure -h` for help on using it!
+構成ファイル *Config.mk* は `configure` ツールを使っても作成できます。使用法については
+`./configure -h` と入力してください。
 
-Then go to the build root of Circle and do:
+次いで、Circleのbuildディレクトリに移動して以下のコマンドを実行します。
 
 ```
 ./makeall clean
 ./makeall
 ```
 
-By default only the latest sample (with the highest number) is build. The ready build *kernel8.img* or *kernel8-rpi4.img* file should be in its subdirectory of sample/. If you want to build another sample after `makeall` go to its subdirectory and do `make`.
+デフォルトでは最新のサンプル(番号が最大のもの)だけがビルドされます。ビルドが完了した
+*kernel8.img*や*kernel8-rpi4.img*はsample/のサブディレクトリにあるはずです。makeallの
+後に別のサンプルをビルドしたい場合はそのサブディレクトリに移動して`make`を実行してください。
 
-Installation
-------------
+インストール
+-----------------
 
-Copy the Raspberry Pi firmware (from boot/ directory, do *make* there to get them) files along with the *kernel.img* (from sample/ subdirectory) to a SD(HC) card with FAT file system. Put the SD(HC) card into the Raspberry Pi.
+Raspberry Piのファームウェア（boot/ディレクトリに移動して*make`を実行すると
+取得できます）と*kernel.img*（sample/のサブディレクトリ）をSD(HC)カードの
+FATファイルシステムにコピーします。SD(HC)カードをRaspberry Piにセットします。
 
-The *config32.txt* file, provided in the boot/ directory, is needed to enable FIQ use in 32-bit mode on the Raspberry Pi 4 and has to be copied to the SD card in this case (rename it to config.txt). Furthermore the additional file *armstub7-rpi4.bin* is required on the SD card then. Please see [boot/README](boot/README) for information on how to build this file.
+boot/ディレクトリにある*config32.txt*は、Raspberry Pi 4で32bitモードのFIQを
+使うために必要なので、該当する場合はSDカードにコピーして（config.txtにリネームして）
+ください。さらに、SDカードには*armstub7-rpi4.bin*ファイルも必要です。このファイルの
+ビルド方法については [boot/README](boot/README)を参照してください。
 
-The *config64.txt* file, provided in the boot/ directory, is needed to enable 64-bit mode and has to be copied to the SD card in this case (rename it to config.txt). FIQ support for AArch64 on the Raspberry Pi 4 requires an additional file *armstub8-rpi4.bin* on the SD card. Please see [boot/README](boot/README) for information on how to build this file.
+boot/ディレクトリにある*config64.txt*ファイルは64 ビットモードを有効にする
+ために必要なので該当する場合はSDカードにコピーする必要があります（config.txtに
+リネームしてください）。Raspberry Pi 4でAArch64のFIQサポートにはSDカードにファイル*armstub8-rpi4.bin*を追加する必要があります。このファイルのビルド方法については
+[boot/README](boot/README)を参照してください。
 
-Directories
------------
+ディレクトリ構成
+----------------------
 
-* include: The common header files, most class headers are in the include/circle/ subdirectory.
-* lib: The Circle class implementation and support files (other libraries are in subdirectories of lib/).
-* sample: Several sample applications using Circle in different subdirectories. The main function is implemented in the CKernel class.
-* addon: Contains contributed libraries and samples (has to be build manually).
-* app: Place your own applications here. If you have own libraries put them into app/lib/.
-* boot: Do *make* in this directory to get the Raspberry Pi firmware files required to boot.
-* doc: Additional documentation files.
-* test: Several test programs, which test different features of Circle.
-* tools: Tools for building Circle and for using Circle more comfortable (e.g. a serial bootloader).
+* include: 共通のヘッダファイル。ほとんどのクラスヘッダはinclude/circle/
+サブディレクトリにあります。
+* lib: Circleのクラス実装とサポートファイル（その他のライブラリはlib/のサブ
+ディレクトリにあります）。
+* sample: サブディレクトリにCircleを使ったサンプルアプリケーションがあります。
+main関数はCkernelクラスに実装されています。
+* addon: 提供されたライブラリとサンプルがあります（個別にビルドする必要があります）。
+* app: 作成するアプリケーションはここに置いてください。独自のライブラリがある場合は
+app/libに置いてください）。
+* boot: ブートに必要なRaspberry Piのファームウェアを取得するためにこのディレクトリで
+*make*を実行してください。
+* doc: その他の文書ファイルがあります。
+* test: Circleの様々な機能をテストするテストプログラムがあります。
+* tools: CircleのビルドやCircleをより快適に使用するためのツール（シリアル
+ブートローダなど）があります。
 
 Classes
 -------
 
-The following C++ classes were added to Circle:
+次のC++クラスがCircleに追加されました。
 
-Base library
+基本ライブラリ
 
-* C2DGraphics: Software graphics library with VSync and hardware-accelerated double buffering
-* CBcmWatchdog: Driver for the BCM2835 watchdog device
-* CDMASoundBuffers: Concatenated DMA buffers to be used by sound device drivers
-* CGenericLock: Locks a resource with or without scheduler
-* CHDMISoundBaseDevice: Low level access to the HDMI sound device (without VCHIQ)
-* CMPHIDevice: A driver, which uses the MPHI device to generate an IRQ
-* CPtrListFIQ: Container class. List of pointers, usable from FIQ_LEVEL
-* CSMIMaster: Driver for the Second Memory Interface
+* C2DGraphics: VSyncとハードウェアアクセレートのダブルバッファリングを持つソフトウェアグラフィックスライブラリ
+* CBcmWatchdog: BCM2835ウォッチドッグデバイスドライバ
+* CDMASoundBuffers: サウンドデバイスドライバで使用される連結DMAバッファ
+* CGenericLock: スケジューラを持つ/持たないリソースをロックする
+* CHDMISoundBaseDevice: （VCHIQを持たない）HDMIサウンドデバイスへの低レベルアクセス
+* CMPHIDevice: MPHIデバイスがIRQを生成するために使用するドライバ
+* CPtrListFIQ: FIQレベルで使用可能なコンテナクラスとポインタリスト
+* CSMIMaster: 二次メモリインタフェースドライバ
 
-USB library
+USBライブラリ
 
-* CDWHCICompletionQueue: Queues USB requests ready for completion (with USE_USB_FIQ enabled)
-* CUSBTouchScreenDevice: Driver for USB HID-class touchscreens
+* CDWHCICompletionQueue: 準備完了USBリクエストをキューイングする（USE_USB_FIQで有効になる）
+* CUSBTouchScreenDevice: USB HIDクラスタッチスクリーンドライバ
 
-Input library
+入力ライブラリ
 
-* CRPiTouchScreen: Driver for the official Raspberry Pi touch screen
-* CTouchScreenDevice: Generic touch screen interface device
+* CRPiTouchScreen: Raspberry Pi公式タッチスクリーンドライバ
+* CTouchScreenDevice: 汎用タッチスクリーンインタフェースデバイス
 
-Scheduler library
+スケジューラライブラリ
 
-* CMutex: Provides a method to provide mutual exclusion (critical sections) across tasks
-* CSemaphore: Implements a semaphore synchronization class
+* CMutex: タスク間の（クリティカルセクションの）排他制御メソッドを提供
+* CSemaphore: セマフォ同期クラスを実装
 
-The available Circle classes are listed in the file [doc/classes.txt](doc/classes.txt). If you have Doxygen installed on your computer you can build a [class documentation](doc/html/index.html) in doc/html/ using:
+Circleで利用可能なクラスのリストは[doc/classes.txt](doc/classes.txt)ファイルにあります。
+手元のコンピュータにDoxygenheがインストールされていたら以下を実行することでdoc/htmlに
+[classドキュメント](doc/html/index.html)が作成されます。
 
 `./makedoc`
 
-At the moment there are only a few classes described in detail for Doxygen.
+現時点ではDoxygennde詳細な説明が得られるのは少数のクラスだけです。
 
-Additional Topics
------------------
+その他のトピックス
+--------------------------
 
-* [Standard library support](doc/stdlib-support.txt)
-* [Dynamic memory management and the "new" operator](doc/new-operator.txt)
-* [DMA buffer requirements](doc/dma-buffer-requirements.txt)
-* [Serial bootloader support](doc/bootloader.txt)
-* [Multi-core support](doc/multicore.txt)
-* [USB plug-and-play](doc/usb-plug-and-play.txt)
-* [Debugging support](doc/debug.txt)
-* [JTAG debugging](doc/debug-jtag.txt)
-* [QEMU support](doc/qemu.txt)
-* [Eclipse IDE support](doc/eclipse-support.txt)
-* [About real-time applications](doc/realtime.txt)
-* [cmdline.txt options](doc/cmdline.txt)
-* [Screen escape sequences](doc/screen.txt)
-* [Keyboard escape sequences](doc/keyboard.txt)
-* [Memory layout](doc/memorymap.txt)
-* [Naming conventions](doc/naming-conventions.txt)
-* [Known issues](doc/issues.txt)
+* [標準ライブラリのサポート](doc/stdlib-support.txt)
+* [動的メモリ管理と"new"オペレータ](doc/new-operator.txt)
+* [DMAバッファの要件](doc/dma-buffer-requirements.txt)
+* [シリアルブートローダのサポート](doc/bootloader.txt)
+* [マルチコアのサポート](doc/multicore.txt)
+* [USBプラグアンドプレイ](doc/usb-plug-and-play.txt)
+* [デバッグのサポート](doc/debug.txt)
+* [JTAGデバッグ](doc/debug-jtag.txt)
+* [QEMUのサポート](doc/qemu.txt)
+* [Eclipse IDEのサポート](doc/eclipse-support.txt)
+* [リアルタイムアプリケーションについて](doc/realtime.txt)
+* [cmdline.txtのオプション](doc/cmdline.txt)
+* [スクリーンエスケープシーケンス](doc/screen.txt)
+* [キーボードエスケープシーケンス](doc/keyboard.txt)
+* [メモリレイアウト](doc/memorymap.txt)
+* [命名規則](doc/naming-conventions.txt)
+* [既知の問題](doc/issues.txt)
 
 Trademarks
 ----------
