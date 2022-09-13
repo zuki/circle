@@ -22,7 +22,7 @@ Circleは特定の目的のために大きな（オプションの）サード�
 リリース 44.5
 -------------------
 
-この中間リリースは**Raspberry Pi 1-3とZero用のDWHCI USB低レベルドライバの改訂版**を
+この中間リリースは **Raspberry Pi 1-3とZero用のDWHCI USB低レベルドライバの改訂版** を
 提供します。システムオプション `USE_USB_FIQ` を使用するとこのドライバでFIQ（Fast
 Interrupt Request）を使用できるようになり、USB上でより正確なタイミングが得られる
 ようになります。これによりUSBデバイスとの互換性が向上し、特に小さなデータバッファ
@@ -31,7 +31,7 @@ Interrupt Request）を使用できるようになり、USB上でより正確な
 オプションではFIQをUSB以外の用途に使用することはできません。Raspberry Pi 4の
 xHCI USBドライバはこのシステムオプションに対応していないため変更はありません。
 
-**Raspberry Pi 1-3とZeroのUSB MIDIコントローラからのデータ損失を防ぐ**ために
+**Raspberry Pi 1-3とZeroのUSB MIDIコントローラからのデータ損失を防ぐ** ために
 ファイル *cmdline.txt* に `usbboost=true` という新しいオプションも用意されました。
 これはUSB MIDIの処理を高速化しますが、その反面、システム負荷が増える可能性があります。
 
@@ -40,7 +40,7 @@ xHCI USBドライバはこのシステムオプションに対応していない
 I2Sサウンドデバイスの `CI2SSoundBaseDevice` クラスドライバが **WM8960 DACをサポート**
 しました。
 
-**HD44780 LCDディスプレイドライバがI2Cをサポート**しました。
+**HD44780 LCDディスプレイドライバがI2Cをサポート** しました。
 
 バグフィックス:
 
@@ -53,43 +53,70 @@ I2Sサウンドデバイスの `CI2SSoundBaseDevice` クラスドライバが **
 使用中のファームウェアを[boot/](boot/)でダウンロードできるものに更新するのを
 忘れないでください。
 
-The 44th Step
+ステップ44
 -------------
 
-This release comes with new features, improvements and bug fixes. There is a new HDMI sound driver class `CHDMISoundBaseDevice`, which allows to generate **HDMI sound without VCHIQ** driver, which can be easier to integrate in an application. This is shown by the [sample/29-miniorgan](sample/29-miniorgan) and [sample/34-sounddevices](sample/34-sounddevices). On the Raspberry Pi 4 only the connector HDMI0 is supported. The class `CI2SSoundBaseDevice` now supports the **PCM5122 DAC**.
+このリリースには新機能、改善、バグフィックスが含まれています。新しいHDMIサウンド
+ドライバクラス`CHDMISoundBaseDevice`は **VCHIQドライバなしでHDMIサウンド** を生成
+できるようになり、アプリケーションへの統合が容易になりました。これは[sample/29-miniorgan](sample/29-miniorgan)と
+[sample/34-sounddevices](sample/34-sounddevices)で示されています。Raspberry Pi 4では
+HDMI0コネクタだけがサポートされています。`CI2SSoundBaseDevice`クラスが **PCM5122 DAC** を
+サポートしました。
 
-A new class ``C2DGraphics`` has been added to the base library, which provides **2D drawing routines**, which work without flickering or screen tearing. This is demonstrated in the [sample/41-screenanimations](sample/41-screenanimations).
+新しいクラス ``C2DGraphics`` が基本ライブラリに追加されました。これは画面のちらつきや
+ティアリングなしに動作する **2D描画ルーチン** を提供します。これは[sample/41-screenanimations](sample/41-screenanimations)で
+示されています。
 
-The **scheduler library** has been improved and provides the new classes `CMutex` and `CSemaphore`. Multiple tasks can wait for a `CSynchronzationEvent` to be set now.
+**スケジューラライブラリ** が改良され、新しいクラス `CMutex` と `CSemaphore` が
+提供されました。複数のタスクが `CSynchronzationEvent` の設定を待つことが
+できるようになりました。
 
-There is a **new serial bootloader and flash tool** (Flashy), which improves the download speed and reliability. Please see the second part of the file [doc/bootloader.txt](doc/bootloader.txt) for more information! You can interrupt the download process with Ctrl-C now and start again, without resetting your Raspberry Pi. You should update your bootloader kernel image(s) on the SD card in any case. The old flash tool is still available.
+ダウンロード速度と信頼性が向上した **新しいシリアルブートローダとフラッシュツール**
+（Flashy）が提供されました。詳細はファイル[doc/bootloader.txt](doc/bootloader.txt)の
+後半部分を参照してください。Ctrl-Cでダウンロードを中断し、Raspberry Piをリセットする
+ことなく、再度ダウンロードを開始することができるようになりました。いずれにせよ、
+SDカードのブートローダカーネルイメージを更新する必要があります。古いフラッシュツールも
+利用可能です。
 
-Circle comes with a **configure script** now, which can be used to create the configuration file `Config.mk` easier. Please enter `configure -h` for a description of its options.
+Circleに **configure** スクリプトが付属しました。これを使うと構成ファイル`Config.mk`を
+簡単に作成することができます。オプションの説明については`configure -h`と入力して
+ください。
 
-The C++ support has been improved. Now **placement new operators** and **static objects inside of a function** can be used. Furthermore the **C++17 standard** is optionally supported and can be enabled with the option `--c++17` of `configure`, if you have a toolchain version, which supports it.
+C++のサポートが改善されました。**配置new演算子** や **関数内の静的オブジェクト** が使える
+ようになりました。さらに **C++17標準** がオプションでサポートされ（ツールチェーンが
+サポートしていれば）`configure`の`--c++17`オプションで有効にできます。
 
-Further improvements:
+さらなる改良:
 
-* There is a new system option `NO_BUSY_WAIT`. With this option enabled, the EMMC, SDHOST and USB drivers will **not busy wait for the completion of synchronous transfers** any more. This should improve system throughput and network latency, but requires the scheduler in the system.
-* The **embedded MMC memory of the Compute Module 4** can be accessed, when the system option `USE_EMBEDDED_MMC_CM4` has been defined.
-* The class `CTFTPFatFsFileServer` was added to [addon/tftpfileserver](addon/tftpfileserver) to support **TFTP access with the FatFs filesystem module**.
-* The class `CDS18x20` in [addon/OneWire](addon/OneWire) has been improved and is now part of the library, not of the sample as before. It determines the used power mode of the sensor automatically.
-* Functions for **atomic memory access** have been added to `<circle/atomic.h>`.
+- 新しいシステムオプション`NO_BUSY_WAIT`が追加されました。このオプションを有効に
+すると、EMMC、SDHOST、USBの各ドライバが **同期転送の完了をビジーウェイトしなく**
+なります。これによりシステムのスループットとネットワークレイテンシーが向上する
+はずですが、これにはシステムにスケジューラが必要です。
+- システムオプション`USE_EMBEDDED_MMC_CM4`が定義されるとCompute Module 4の
+ **組み込みMMCメモリ** にアクセスできるようになりました。
+- **FatFsファイルシステムモジュールでのTFTPアクセス** をサポートするためにクラス
+`CTFTPFatFsFileServer`が[addon/tftpfileserver](addon/tftpfileserver)に追加されました。
+- [addon/OneWire](addon/OneWire)の`CDS18x20`クラスが改良され、サンプルではなく
+ライブラリに含まれるようになりました。センサの使用電力モードを自動的に決定します。
+- **アトミックメモリアクセス** のための関数が*<circle/atomic.h>*に追加されました。
 
-Bug fixes:
+バグフィックス:
 
-* System timer IRQ handling may have stopped working after a while on the Raspberry Pi 1 and Zero before.
-* xHCI USB controller did not work on some Raspberry Pi 4 models.
-* Starting secondary cores 1-3 was not reliable.
-* Access to USB mass-storage devices was not reliable on Raspberry Pi Model A+, 3A+ and Zero before.
-* Add workaround for non-compliant low-speed USB devices with bulk endpoints.
-* Suppress concurrent split IN/OUT requests on Raspberry Pi 1-3 and Zero in USB serial drivers.
-* Enable serial FIFO in polling mode too.
-* The screen size select-able in *cmdline.txt* was limited to 1920x1080 before.
-* Semaphore implementation in *addon/linux* was not IRQ safe, but used from IRQ handler in VCHIQ driver.
-* Allow received text segment in TCP state SYN-RECEIVED.
+* Raspberry Pi 1とZeroでシステムタイマーのIRQ処理がしばらくすると
+動作しなくなることがありました。
+* xHCI USBコントローラがRaspberry Pi 4の一部のモデルで動作しないことがありました。
+* セカンダリコア1-3の起動が不安定でした。
+* Raspberry Pi Model A+, 3A+, Zeroで、USB大容量記憶装置へのアクセスが不安定でした。
+* バルクエンドポイントに非準拠の低速USBデバイスに対するワークアラウンドを追加しました。
+* USBシリアルドライバでRaspberry Pi 1-3とZeroの並列スプリットIN/OUTリクエストを抑制するようにしました。
+* シリアルFIFOでポーリングモードも有効にしました。
+* *cmdline.txt*で選択可能な画面サイズが1920x1080に制限されていました。
+* *addon/linux*のセマフォの実装がIRQセーフでないのにVCHIQドライバのIRQハンドラから
+使用されていました。
+* TCPステートSYN-RECEIVEDでテキストセグメントを受信可能にしました。
 
-Don't forget to update the used firmware to the one downloadable in [boot/](boot/)!
+使用中のファームウェアを[boot/](boot/)にダウンロード可能なものに更新するのを
+忘れないでください。
 
 機能
 --------
@@ -101,41 +128,41 @@ Circleは次の機能をサポートしています。
 | C++ビルド環境         | AArch32とAArch64のサポート                          |
 |                       | 基本的なライブラリ関数（new, deleteなど）           |
 |                       | MMUを使用するすべてのCPUキャッシュを有効化          |
-|                       | 割り込みのサポート (IRQとFIQ)                         |
-|                       | マルチコアのサポート (Raspberry Pi 2, 3, 4)           |
+|                       | 割り込みのサポート (IRQとFIQ)                       |
+|                       | マルチコアのサポート (Raspberry Pi 2, 3, 4)         |
 |                       | 協調型非プリエンプティブスケジューラ                |
 |                       | CPUクロックレート管理                               |
 |                       |                                                     |
 | デバッグサポート      | 画面、UART,シスログサーバへのカーネルログ出力       |
 |                       | スタックトレース付きのC-assertions                  |
 |                       | スタックトレース付きのハードウェア例外ハンドラ      |
-|                       | rpi_stubを使ったGDBのサポート (Raspberry Pi 2, 3)     |
+|                       | rpi_stubを使ったGDBのサポート (Raspberry Pi 2, 3)   |
 |                       | シリアルブートローダを同梱 (David Welch作)          |
 |                       | ソフトウェアポロファイリングのサポート (シングルコア) |
-|                       | QEMUのサポート                                        |
+|                       | QEMUのサポート                                      |
 |                       |                                                     |
-| SoCデバイス           | GPIO pins (with interrupt, Act LED) and clocks      |
-|                       | Frame buffer (screen driver with escape sequences)  |
-|                       | UART(s) (Polling and interrupt driver)              |
-|                       | System timer (with kernel timers)                   |
-|                       | Platform DMA controller                             |
-|                       | EMMC SD card interface driver                       |
-|                       | SDHOST SD card interface driver (Raspberry Pi 1-3)  |
-|                       | PWM output (2 channels)                             |
-|                       | PWM sound output (on headphone jack)                |
-|                       | I2C master(s) and slave                             |
-|                       | SPI0 master (Polling and DMA driver)                |
-|                       | SPI1 auxiliary master (Polling)                     |
-|                       | SPI3-6 masters of Raspberry Pi 4 (Polling)          |
-|                       | SMI master (experimental)                           |
-|                       | I2S sound output and input                          |
-|                       | HDMI sound output (without VCHIQ)                   |
-|                       | Hardware random number generator                    |
-|                       | Watchdog device                                     |
-|                       | Official Raspberry Pi touch screen                  |
-|                       | VCHIQ interface and audio service drivers           |
-|                       | BCM54213PE Gigabit Ethernet NIC of Raspberry Pi 4   |
-|                       | Wireless LAN access                                 |
+| SoCデバイス           | GPIOピン（割り込みあり, Act LED）とクロック         |
+|                       | フレームバッファ（エスケープシーケンス付きスクリーンドライバ |
+|                       | UART（ポーリング／割り込みドライバ）                |
+|                       | システムタイマー（カーネルタイマー付き）            |
+|                       | プラットフォームDMAコントローラ                     |
+|                       | EMMC SDカードインタフェースドライバ                 |
+|                       | SDHOST SDカードインタフェースドライバ (Raspberry Pi 1-3)  |
+|                       | PWM出力（2チャンネル）                              |
+|                       | PWMサウンド出力（ヘッドフォンジャック）             |
+|                       | I2Cマスターとスレーブ                               |
+|                       | SPI0マスターaster（ポーリング／DMAドライバ）        |
+|                       | SPI1補助マスター（ポーリング）                      |
+|                       | SPI3-6マスター（Raspberry Pi 4）（ポーリング）      |
+|                       | SMIマスター（実験的）                               |
+|                       | I2Sサウンド入出力                                   |
+|                       | HDMIサウンド出力（VCHIQなし）                       |
+|                       | ハードウェア乱数ジェネレータ                        |
+|                       | ウォッチドッグデバイス                              |
+|                       | Raspberry Pi公式タッチスクリーン                    |
+|                       | VCHIQインタフェースとオーディオサービスドライバ     |
+|                       | Raspberry Pi 4のBCM54213PE Gigabit Ethernet NIC     |
+|                       | ワイアレスLANアクセス                               |
 |                       |                                                     |
 | USB                   | ホストコントローラインタフェース (HCI) ドライバ     |
 |                       | 標準ハブドライバ (USB 2.0 のみ)                     |
