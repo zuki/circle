@@ -1,20 +1,21 @@
 README
 
-This directory contains some kind of Linux kernel device driver emulation code.
-It is not perfect, far from complete and basically intended to make is easier to
-port the Linux VCHIQ driver to Circle. This code implements the Linux kernel
-interfaces used by the VCHIQ driver using Circle services.
+このディレクトリにはある種のLinuxカーネルデバイスドライバのエミュレーション
+コードを含んでいます。これらは完璧なものではなく、完成には程遠いものです。
+基本的にLinuxのVCHIQ（VideoCore Host Interface）ドライバをCircleに移植
+しやすくすることを目的としています。このコードはCircleサービスを使用する
+VCHIQドライバによって使用されるLinuxカーネルインタフェースを実装しています。
 
-The code in this directory has also been used for porting the accelerated
-graphics userland libraries. This concerns especially a rudimentary pthreads
-emulation, which has been added here, although the pthreads support is normally
-not part of the Linux kernel.
+ このディレクトリのコードはアクセレーテッドグラフィックスユーザランド
+ ライブラリの移植にも使用されます。これは特に初歩的なpthreadsエミュレーションに
+ 関連しています。通常、pthreadsのサポートはLinuxカーネルの一部ではありませんが
+ ここに追加されています。
 
-Information to implement this, has been taken from the Linux kernel 4.9.59. Some
-source code has been copied from Linux, other has been implemented to meet the
-requirements of Circle.
+ これを実装するための情報はLinuxカーネル4.9.59から取得しました。 ソースコードの
+ 一部はLinuxからコピーしたものですが、その他はCircleの要求を満たすように実装
+ しています。
 
-Linux is licensed under the GNU General Public License Version 2. See the file
+ Linux is licensed under the GNU General Public License Version 2. See the file
 COPYING in this directory for details.
 
 Linux is a trademark of Linus Torvalds.
