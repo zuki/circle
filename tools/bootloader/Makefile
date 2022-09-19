@@ -10,7 +10,8 @@ ARMGNU64 ?= $(PREFIX64)
 
 COPS = -Wall -O2 -nostdlib -nostartfiles -ffreestanding -DDEFAULTBAUD=$(FLASHBAUD)
 
-all: kernel.img kernel7.img kernel7l.img
+all: kernel8.img
+#all: kernel.img kernel7.img kernel7l.img
 
 clean :
 	rm -f *.o
