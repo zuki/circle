@@ -2,12 +2,13 @@
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
-// 2  outer corner
-// 4
-// 6
-// 8  TX out
-// 10 RX in
+// 2  outer corner  (5V)
+// 4            (5V)
+// 6            (GND)
+// 8  TX out    (GP14)
+// 10 RX in     (GP15)
 
+// in vectors64.s
 extern void PUT32 ( unsigned int, unsigned int );
 extern void PUT16 ( unsigned int, unsigned int );
 extern void PUT8 ( unsigned int, unsigned int );
@@ -16,6 +17,7 @@ extern unsigned int GETPC ( void );
 extern void BRANCHTO ( unsigned int );
 extern void dummy ( unsigned int );
 
+// in periph.c
 extern void uart_init ( void );
 extern unsigned int uart_lcr ( void );
 extern void uart_flush ( void );
@@ -27,27 +29,33 @@ extern void hexstrings ( unsigned int );
 extern void timer_init ( void );
 extern unsigned int timer_tick ( void );
 
+// '0-9A-F'を数値に変換
 int nibble_from_hex(int ascii)
 {
+    // 0: '1' = 0x31 &= 0x0F => 0x1
     if (ascii>='0' && ascii<='9')
         return ascii & 0x0F;
+    // B: 66 - 7 = 59 = 0x3B &= 0x0f => 0xB
     if (ascii>='A' && ascii<='F')
         return (ascii - 7) & 0x0F;
     return -1;
 }
 
+// 数値を'0-9A-F'に変換して送信
 void uart_send_hex_nibble(int rc)
 {
     if(rc>9) rc+=0x37; else rc+=0x30;
     uart_send(rc);
 }
 
+// 数値をHEX文字列で送信
 void uart_send_hex_byte(int val)
 {
     uart_send_hex_nibble((val >> 4) & 0x0f);
     uart_send_hex_nibble(val & 0x0f);
 }
 
+// 文字列を送信
 void uart_send_str(const char* psz)
 {
     while (*psz)
@@ -64,8 +72,8 @@ void delay_micros(unsigned int period)
     }
 }
 
-// Main receive mode state
-typedef enum 
+// 受信モード状態
+typedef enum
 {
     recv_state_ready,
     recv_state_hex,
@@ -74,7 +82,7 @@ typedef enum
     recv_state_error,
 } recv_state;
 
-// State within the current ihex record
+// 現在のihexレコードの状態
 typedef enum
 {
     ihex_state_none,
@@ -89,16 +97,28 @@ typedef enum
 } ihex_state;
 
 //------------------------------------------------------------------------
+/**
+ * @brief bootroaderのmain関数
+ */
 int notmain ( void )
 {
+    /** 受信状態 */
     recv_state recvstate;
+    /** データ送信状態 */
     ihex_state datastate;
+    /** バイト数 */
     unsigned int byte_count;
+    /** アドレス */
     unsigned int address;
+    /** レコード種別 */
     unsigned int record_type;
+    /** */
     unsigned int segment;
+    /** CRC計算用 */
     unsigned int sum;
+    /** 受信コマンド */
     unsigned int ra;
+    /** 遅延時間 */
     unsigned int start_delay = 10000;       // 10ms default
 
     uart_init();
@@ -113,14 +133,14 @@ restart:
     segment=0;
     sum=0;
 
-    // Send ready signal ("-F" indicates fast mode supported)
+    // ready信号を送信 ("-F" はfastモードをサポートしていることを示す）
     uart_send_str("IHEX-F\r\n");
 
     while(1)
     {
         ra=uart_recv();
 
-        // Restart command accepted in all states except binary state
+        // リスタートコマンドはバイナリ状態以外のすべて状態で受けつける
         if (ra=='R' && recvstate != recv_state_binary)
         {
             goto restart;
@@ -131,7 +151,7 @@ restart:
             case recv_state_ready:
                 if(ra==':')
                 {
-                    // Start a hex record
+                    // hexレコードの開始
                     recvstate = recv_state_hex;
                     datastate = ihex_state_start;
                     sum = 0;
@@ -139,7 +159,7 @@ restart:
                 }
                 if (ra=='=')
                 {
-                    // Start a binary record
+                    // バイナリレコードの開始
                     recvstate = recv_state_binary;
                     datastate = ihex_state_start;
                     sum = 0;
@@ -147,28 +167,29 @@ restart:
                 }
                 if(ra==0x0D || ra==0x0A)
                 {
-                    // Ignore whitepsace
+                    // 空白は無視
                     continue;
                 }
                 if(ra==0x80)
                 {
-                    // The flush byte 0x80 is sent by the flasher tool on startup 
-                    // to flush the bootloader out of a previously cancelled unknown
-                    // state.  We can safely ignore it here.
+                    // フラッシュバイト0x80は起動時にフラッシャーツールが
+                    // 送信するものであり、ブートローダを以前にキャンセル
+                    // された未知の状態からフラッシュさせるためのもの。
+                    // ここでは安心して無視できる。
                     continue;
                 }
-                // Format error
+                // フォーマットエラー
                 uart_send_str("#ERR:format\r\n");
                 recvstate = recv_state_error;
                 continue;
 
             case recv_state_hex:
             {
-                // Read hex byte
+                // hexバイトを読み込む
                 int hi = nibble_from_hex(ra);
-                int lo = nibble_from_hex(uart_recv()); 
+                int lo = nibble_from_hex(uart_recv());
 
-                // Check valid
+                // 妥当性チェック
                 if (hi < 0 || lo < 0)
                 {
                     uart_send_str("#ERR:hex\r\n");
@@ -181,13 +202,13 @@ restart:
             }
 
             case recv_state_binary:
-                // In binary record, don't need special handling
+                // バイナリレコード場合は特別な処理は不要
                 break;
 
             case recv_state_eof:
                 if (ra=='s')
                 {
-                    // Set a start delay (n hex digits, in micros)
+                    // 開始遅延をセット（n hex digits, マイクロ秒単位）
                     start_delay = 0;
                     int nibble;
                     while ((nibble = nibble_from_hex(uart_recv())) >= 0)
@@ -197,10 +218,10 @@ restart:
                     continue;
                 }
 
-                // Eof record received, wait for go command
+                // レコードの受信が終了したら、goコマンドを待つ
                 if (ra=='g' || ra=='G')
                 {
-                    // Send ack
+                    // ackを送信
                     uart_send(0x0D);
                     uart_send('-');
                     uart_send('-');
@@ -208,11 +229,11 @@ restart:
                     uart_send(0x0A);
                     uart_send(0x0A);
 
-                    // Delay before start
+                    // 開始前の遅延
                     if (start_delay)
                         delay_micros(start_delay);
 
-                    // Jump to loaded program
+                    // ロードされたプログラムにジャンプ
                     #if AARCH == 32
                     BRANCHTO(0x8000);
                     #else
@@ -222,14 +243,14 @@ restart:
                 continue;
 
             case recv_state_error:
-                // Error state, ignore everything
+                // エラー状態の場合はすべてを無視する
                 continue;
         }
-    
-        // Update checksum
+
+        // チェックサムを更新する
         sum += ra;
 
-        // Process data byte
+        // データバイトを処理する
         switch (datastate)
         {
             case ihex_state_none:
@@ -298,7 +319,7 @@ restart:
             case ihex_state_end:
                 if (byte_count == 0)
                 {
-                    // Check checksum
+                    // チェックサムをチェック
                     if ((sum & 0xFF) != 0)
                     {
                         uart_send_str("#ERR:checksum\r\n");
@@ -306,13 +327,13 @@ restart:
                     }
                     else if (record_type == 0x01)
                     {
-                        // EOF record received, can now accept go command
+                        // EOFレコードを受信。goコマンドを受付可能
                         uart_send_str("#EOF:ok\r\n");
                         recvstate = recv_state_eof;
                     }
                     else
                     {
-                        // Next record
+                        // 次のレコード
                         recvstate = recv_state_ready;
                     }
                 }
