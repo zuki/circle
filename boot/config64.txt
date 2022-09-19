@@ -10,6 +10,7 @@
 #
 
 arm_64bit=1
+enable_uart=1
 
 [pi02]
 kernel=kernel8.img
