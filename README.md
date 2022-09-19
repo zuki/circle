@@ -82,7 +82,7 @@ Circleに **configure** スクリプトが付属しました。これを使う�
 簡単に作成することができます。オプションの説明については`configure -h`と入力して
 ください。
 
-C++のサポートが改善されました。**配置new演算子** や **関数内の静的オブジェクト** が使える
+C++のサポートが改善されました。 **配置new演算子** や **関数内の静的オブジェクト** が使える
 ようになりました。さらに **C++17標準** がオプションでサポートされ（ツールチェーンが
 サポートしていれば）`configure`の`--c++17`オプションで有効にできます。
 
@@ -98,7 +98,7 @@ C++のサポートが改善されました。**配置new演算子** や **関数
 `CTFTPFatFsFileServer`が[addon/tftpfileserver](addon/tftpfileserver)に追加されました。
 - [addon/OneWire](addon/OneWire)の`CDS18x20`クラスが改良され、サンプルではなく
 ライブラリに含まれるようになりました。センサの使用電力モードを自動的に決定します。
-- **アトミックメモリアクセス** のための関数が*<circle/atomic.h>*に追加されました。
+- **アトミックメモリアクセス** のための関数が *<circle/atomic.h>* に追加されました。
 
 バグフィックス:
 
@@ -204,19 +204,19 @@ Circleは次の機能をサポートしています。
 用にビルドする場合は、ARM1176JZFコア（EABI対応）用の[ツールチェイン](http://elinux.org/Rpi_Software#ARM)が
 必要です。Raspberry Pi 2/3/4の場合は、Cortex-A7/-A53/-A72をサポートするツール
 チェインが必要です。これら全てに対応するツールチェーンは[ここ](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-a/downloads)から
-ダウンロードできます。Circleは、このサイトにあるバージョン*10.3-2021.07* (gcc-arm-10.3-2021.07-x86_64-arm-none-eabi.tar.xz) でテストされています。
+ダウンロードできます。Circleは、このサイトにあるバージョン *10.3-2021.07* (gcc-arm-10.3-2021.07-x86_64-arm-none-eabi.tar.xz) でテストされています。
 
-まず、*Rules.mk* ファイルを編集し、Raspberry Piのバージョン（*RASPPI*、1、2、3、4）と
-ツールチェーンコマンドの*PREFIX*を設定します。または、*Config.mk*ファイルを作成し
+まず、 *Rules.mk* ファイルを編集し、Raspberry Piのバージョン（ *RASPPI* 、1、2、3、4）と
+ツールチェーンコマンドの *PREFIX* を設定します。または、 *Config.mk* ファイルを作成し
 （gitでは無視されます）、以下のように、Raspberry Piのバージョンとコンパイラの
-プレフィックスを *PREFIX* 変数に設定します（最後のダッシュを忘れないでください）。
+プリフィックスを *PREFIX* 変数に設定します（最後のダッシュを忘れないでください）。
 
 ```
 RASPPI = 1
 PREFIX = arm-none-eabi-
 ```
 
-次の表はは適切な*RASPPI*値の選択に役立てることができます。
+次の表は適切な *RASPPI* 値の選択に役立てることができます。
 
 | RASPPI | ターゲット     | モデル                   | 最適化の対象  |
 | ------ | -------------- | ------------------------ | ------------- |
@@ -267,17 +267,17 @@ Circleで64ビットアプリケーションをビルドするための推奨ツ
 このウェブサイトのバージョン *10.3-2021.07* (gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf.tar.xz) でテストされています。
 
 一部のLinuxプラットフォームではディストロが提供するツールチェイン(例: Ubuntuの
-*g++-aarch64-linux-gnu* やFedoraの*gcc-c++-aarch64-linux-gnu*があり、これらを
+*g++-aarch64-linux-gnu* やFedoraの *gcc-c++-aarch64-linux-gnu* があり、これらを
 使ってCircleを手早く動作させる可能性がありますが、これは自分でテストする必要が
 あります。ディストロが提供するツールチェインで問題（全く反応しない、外部ライブラリ
 とのリンクに失敗するなど）が発生した場合は、問題を報告する前にまず推奨の
 ツールチェイン（上記参照）で試してみてください。
 
-まず、*Rules.mk* を編集し、Raspberry Piのアーキテクチャ(*AARCH*、32または64)と
-ツールチェーンコマンドの *PREFIX64* を設定します。`AARCH = 64` の場合は *RASPPI*
-変数を3または4に設定する必要があります。または、*Config.mk* ファイルを作成して
+まず、 *Rules.mk* を編集し、Raspberry Piのアーキテクチャ( *AARCH* 、32または64)と
+ツールチェーンコマンドの *PREFIX64* を設定します。 `AARCH = 64` の場合は *RASPPI*
+変数を3または4に設定する必要があります。または、 *Config.mk* ファイルを作成して
 （gitでは無視されます）、以下のように、Raspberry Piのアーキテクチャとコンパイラの
-プレフィックスを *PREFIX64* 変数に設定します（最後のダッシュを忘れないでください）。
+プリフィックスを *PREFIX64* 変数に設定します（最後のダッシュを忘れないでください）。
 
 ```
 AARCH = 64
@@ -296,24 +296,25 @@ PREFIX64 = aarch64-none-elf-
 ```
 
 デフォルトでは最新のサンプル(番号が最大のもの)だけがビルドされます。ビルドが完了した
-*kernel8.img*や*kernel8-rpi4.img*はsample/のサブディレクトリにあるはずです。makeallの
-後に別のサンプルをビルドしたい場合はそのサブディレクトリに移動して`make`を実行してください。
+*kernel8.img* や *kernel8-rpi4.img* はsample/のサブディレクトリにあるはずです。makeallの
+後に別のサンプルをビルドしたい場合はそのサブディレクトリに移動して `make` を実行してください。
 
 インストール
 -----------------
 
-Raspberry Piのファームウェア（boot/ディレクトリに移動して*make`を実行すると
-取得できます）と*kernel.img*（sample/のサブディレクトリ）をSD(HC)カードの
+Raspberry Piのファームウェア（boot/ディレクトリに移動して `make` を実行すると
+取得できます）と *kernel.img* （sample/のサブディレクトリ）をSD(HC)カードの
 FATファイルシステムにコピーします。SD(HC)カードをRaspberry Piにセットします。
 
-boot/ディレクトリにある*config32.txt*は、Raspberry Pi 4で32bitモードのFIQを
+boot/ディレクトリにある *config32.txt* は、Raspberry Pi 4で32bitモードのFIQを
 使うために必要なので、該当する場合はSDカードにコピーして（config.txtにリネームして）
-ください。さらに、SDカードには*armstub7-rpi4.bin*ファイルも必要です。このファイルの
+ください。さらに、SDカードには *armstub7-rpi4.bin* ファイルも必要です。このファイルの
 ビルド方法については [boot/README](boot/README)を参照してください。
 
-boot/ディレクトリにある*config64.txt*ファイルは64 ビットモードを有効にする
+boot/ディレクトリにある *config64.txt* ファイルは64 ビットモードを有効にする
 ために必要なので該当する場合はSDカードにコピーする必要があります（config.txtに
-リネームしてください）。Raspberry Pi 4でAArch64のFIQサポートにはSDカードにファイル*armstub8-rpi4.bin*を追加する必要があります。このファイルのビルド方法については
+リネームしてください）。Raspberry Pi 4でAArch64のFIQサポートにはSDカードにファイル
+*armstub8-rpi4.bin* を追加する必要があります。このファイルのビルド方法については
 [boot/README](boot/README)を参照してください。
 
 ディレクトリ構成
@@ -329,7 +330,7 @@ main関数はCkernelクラスに実装されています。
 * app: 作成するアプリケーションはここに置いてください。独自のライブラリがある場合は
 app/libに置いてください）。
 * boot: ブートに必要なRaspberry Piのファームウェアを取得するためにこのディレクトリで
-*make*を実行してください。
+ *make* を実行してください。
 * doc: その他の文書ファイルがあります。
 * test: Circleの様々な機能をテストするテストプログラムがあります。
 * tools: CircleのビルドやCircleをより快適に使用するためのツール（シリアル
