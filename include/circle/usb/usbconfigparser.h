@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -23,28 +23,49 @@
 #include <circle/usb/usb.h>
 #include <circle/types.h>
 
+/// @brief コンフィグレーションパーサ
 class CUSBConfigurationParser
 {
 public:
-	CUSBConfigurationParser (const void *pBuffer, unsigned nBufLen);
-	CUSBConfigurationParser (CUSBConfigurationParser *pParser);		// copy constructor
-	~CUSBConfigurationParser (void);
+    /// @brief コンストラクタ
+    /// @param pBuffer データバッファ
+    /// @param nBufLen バッファ長
+    CUSBConfigurationParser (const void *pBuffer, unsigned nBufLen);
+    /// @brief コピーコンストラクタ
+    /// @param pParser コンフィグレーションパーサオブジェクトへのポインタ
+    CUSBConfigurationParser (CUSBConfigurationParser *pParser);
+    /// @brief デストラクタ
+    ~CUSBConfigurationParser (void);
+    /// @brief データはディスクリプタとして正しいか
+    /// @return 正しければTRUE
+    boolean IsValid (void) const;
 
-	boolean IsValid (void) const;
-
-	const TUSBDescriptor *GetDescriptor (u8 ucType);	// returns 0 if not found
-	const TUSBDescriptor *GetCurrentDescriptor (void);
-
-	void Error (const char *pSource) const;
+    /// @brief 指定のタイプのディスクリプタを取得する
+    /// @param ucType ディスクリプタタイプ
+    /// @return ディスクリプタへのポインタ。見つからなかった場合は0
+    const TUSBDescriptor *GetDescriptor (u8 ucType);
+    /// @brief 現在のディスクリプタ
+    /// @return ディスクリプタへのポインタ
+    const TUSBDescriptor *GetCurrentDescriptor (void);
+    /// @brief エラー出力
+    /// @param pSource エラー元
+    void Error (const char *pSource) const;
 
 private:
-	const TUSBDescriptor	*m_pBuffer;
-	unsigned		 m_nBufLen;
-	boolean			 m_bValid;
-	const TUSBDescriptor	*m_pEndPosition;
-	const TUSBDescriptor	*m_pNextPosition;
-	const TUSBDescriptor	*m_pCurrentDescriptor;
-	const TUSBDescriptor	*m_pErrorPosition;
+    /// @brief ディスクリプタの入ったバッファ
+    const TUSBDescriptor   *m_pBuffer;
+    /// @brief ディスクリプタの合計サイズ
+    unsigned                m_nBufLen;
+    /// @brief ディスクリプタデータとして正しいか
+    boolean                 m_bValid;
+    /// @brief 最後のディスクリプタのポインタ
+    const TUSBDescriptor   *m_pEndPosition;
+    /// @brief 次のディスクリプタのポインタ
+    const TUSBDescriptor   *m_pNextPosition;
+    /// @brief 現在のディスクリプタのポインタ
+    const TUSBDescriptor   *m_pCurrentDescriptor;
+    /// @brief エラーが発生したディスクリプタのポインタ
+    const TUSBDescriptor   *m_pErrorPosition;
 };
 
 #endif

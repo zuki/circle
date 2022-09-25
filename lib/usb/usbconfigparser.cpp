@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -22,199 +22,199 @@
 #include <circle/debug.h>
 #include <assert.h>
 
-#define SKIP_BYTES(pDesc, nBytes)	((TUSBDescriptor *) ((u8 *) (pDesc) + (nBytes)))
+#define SKIP_BYTES(pDesc, nBytes)    ((TUSBDescriptor *) ((u8 *) (pDesc) + (nBytes)))
 
 CUSBConfigurationParser::CUSBConfigurationParser (const void *pBuffer, unsigned nBufLen)
-:	m_pBuffer ((TUSBDescriptor *) pBuffer),
-	m_nBufLen (nBufLen),
-	m_bValid (FALSE),
-	m_pEndPosition (SKIP_BYTES (m_pBuffer, nBufLen)),
-	m_pNextPosition (m_pBuffer),
-	m_pCurrentDescriptor (0),
-	m_pErrorPosition (m_pBuffer)
+:   m_pBuffer ((TUSBDescriptor *) pBuffer),
+    m_nBufLen (nBufLen),
+    m_bValid (FALSE),
+    m_pEndPosition (SKIP_BYTES (m_pBuffer, nBufLen)),
+    m_pNextPosition (m_pBuffer),
+    m_pCurrentDescriptor (0),
+    m_pErrorPosition (m_pBuffer)
 {
-	assert (m_pBuffer != 0);
-	
-	if (   m_nBufLen < 4		// wTotalLength must exist
-	    || m_nBufLen > 512)		// best guess
-	{
-		return;
-	}
+    assert (m_pBuffer != 0);
 
-	if (   m_pBuffer->Configuration.bLength         != sizeof (TUSBConfigurationDescriptor)
-	    || m_pBuffer->Configuration.bDescriptorType != DESCRIPTOR_CONFIGURATION
-	    || m_pBuffer->Configuration.wTotalLength    >  nBufLen)
-	{
-		return;
-	}
+    if (   m_nBufLen < 4        // wTotalLengthがあること
+        || m_nBufLen > 512)     // best guess
+    {
+        return;
+    }
 
-	if (m_pBuffer->Configuration.wTotalLength < nBufLen)
-	{
-		m_pEndPosition = SKIP_BYTES (m_pBuffer, m_pBuffer->Configuration.wTotalLength);
-	}
+    if (   m_pBuffer->Configuration.bLength         != sizeof (TUSBConfigurationDescriptor)
+        || m_pBuffer->Configuration.bDescriptorType != DESCRIPTOR_CONFIGURATION
+        || m_pBuffer->Configuration.wTotalLength    >  nBufLen)
+    {
+        return;
+    }
 
-	const TUSBDescriptor *pCurrentPosition = m_pBuffer;
-	u8 ucLastDescType = 0;
-	boolean bInAudioInterface = FALSE;
-	while (SKIP_BYTES (pCurrentPosition, 2) < m_pEndPosition)
-	{
-		u8 ucDescLen  = pCurrentPosition->Header.bLength;
-		u8 ucDescType = pCurrentPosition->Header.bDescriptorType;
+    if (m_pBuffer->Configuration.wTotalLength < nBufLen)
+    {
+        m_pEndPosition = SKIP_BYTES (m_pBuffer, m_pBuffer->Configuration.wTotalLength);
+    }
 
-		TUSBDescriptor *pDescEnd = SKIP_BYTES (pCurrentPosition, ucDescLen);
-		if (pDescEnd > m_pEndPosition)
-		{
-			m_pErrorPosition = pCurrentPosition;
-			return;
-		}
+    const TUSBDescriptor *pCurrentPosition = m_pBuffer;
+    u8 ucLastDescType = 0;
+    boolean bInAudioInterface = FALSE;
+    while (SKIP_BYTES (pCurrentPosition, 2) < m_pEndPosition)
+    {
+        u8 ucDescLen  = pCurrentPosition->Header.bLength;
+        u8 ucDescType = pCurrentPosition->Header.bDescriptorType;
 
-		u8 ucExpectedLen = 0;
-		u8 ucAlternateLen = 0;
-		switch (ucDescType)
-		{
-		case DESCRIPTOR_CONFIGURATION:
-			if (ucLastDescType != 0)
-			{
-				m_pErrorPosition = pCurrentPosition;
-				return;
-			}
-			ucExpectedLen = sizeof (TUSBConfigurationDescriptor);
-			break;
+        TUSBDescriptor *pDescEnd = SKIP_BYTES (pCurrentPosition, ucDescLen);
+        if (pDescEnd > m_pEndPosition)
+        {
+            m_pErrorPosition = pCurrentPosition;
+            return;
+        }
 
-		case DESCRIPTOR_INTERFACE:
-			if (ucLastDescType == 0)
-			{
-				m_pErrorPosition = pCurrentPosition;
-				return;
-			}
-			ucExpectedLen = sizeof (TUSBInterfaceDescriptor);
-			bInAudioInterface = pCurrentPosition->Interface.bInterfaceClass == 0x01; // Audio class
-			break;
+        u8 ucExpectedLen = 0;
+        u8 ucAlternateLen = 0;
+        switch (ucDescType)
+        {
+        case DESCRIPTOR_CONFIGURATION:
+            if (ucLastDescType != 0)
+            {
+                m_pErrorPosition = pCurrentPosition;
+                return;
+            }
+            ucExpectedLen = sizeof (TUSBConfigurationDescriptor);
+            break;
 
-		case DESCRIPTOR_ENDPOINT:
-			if (   ucLastDescType == 0
-			    || ucLastDescType == DESCRIPTOR_CONFIGURATION)
-			{
-				m_pErrorPosition = pCurrentPosition;
-				return;
-			}
-			ucExpectedLen = sizeof (TUSBEndpointDescriptor);
-			if (bInAudioInterface)
-			{
-				ucAlternateLen = sizeof (TUSBAudioEndpointDescriptor);
-			}
-			break;
+        case DESCRIPTOR_INTERFACE:
+            if (ucLastDescType == 0)
+            {
+                m_pErrorPosition = pCurrentPosition;
+                return;
+            }
+            ucExpectedLen = sizeof (TUSBInterfaceDescriptor);
+            bInAudioInterface = pCurrentPosition->Interface.bInterfaceClass == 0x01; // Audio class
+            break;
 
-		default:
-			break;
-		}
+        case DESCRIPTOR_ENDPOINT:
+            if (   ucLastDescType == 0
+                || ucLastDescType == DESCRIPTOR_CONFIGURATION)
+            {
+                m_pErrorPosition = pCurrentPosition;
+                return;
+            }
+            ucExpectedLen = sizeof (TUSBEndpointDescriptor);
+            if (bInAudioInterface)
+            {
+                ucAlternateLen = sizeof (TUSBAudioEndpointDescriptor);
+            }
+            break;
 
-		if (   ucExpectedLen != 0
-		    && ucDescLen != ucExpectedLen
-		    && (   ucAlternateLen == 0
-			|| ucDescLen != ucAlternateLen))
-		{
-			m_pErrorPosition = pCurrentPosition;
-			return;
-		}
+        default:
+            break;
+        }
 
-		ucLastDescType = ucDescType;
-		pCurrentPosition = pDescEnd;
-	}
+        if (   ucExpectedLen != 0
+            && ucDescLen != ucExpectedLen
+            && (   ucAlternateLen == 0
+            || ucDescLen != ucAlternateLen))
+        {
+            m_pErrorPosition = pCurrentPosition;
+            return;
+        }
 
-	if (pCurrentPosition != m_pEndPosition)
-	{
-		m_pErrorPosition = pCurrentPosition;
-		return;
-	}
+        ucLastDescType = ucDescType;
+        pCurrentPosition = pDescEnd;
+    }
 
-	m_bValid = TRUE;
+    if (pCurrentPosition != m_pEndPosition)
+    {
+        m_pErrorPosition = pCurrentPosition;
+        return;
+    }
+
+    m_bValid = TRUE;
 }
 
 CUSBConfigurationParser::CUSBConfigurationParser (CUSBConfigurationParser *pParser)
 {
-	assert (pParser != 0);
+    assert (pParser != 0);
 
-	m_pBuffer	     = pParser->m_pBuffer;
-	m_nBufLen	     = pParser->m_nBufLen;
-	m_bValid	     = pParser->m_bValid;
-	m_pEndPosition	     = pParser->m_pEndPosition;
-	m_pNextPosition	     = pParser->m_pNextPosition;
-	m_pCurrentDescriptor = pParser->m_pCurrentDescriptor;
-	m_pErrorPosition     = pParser->m_pErrorPosition;
+    m_pBuffer               = pParser->m_pBuffer;
+    m_nBufLen               = pParser->m_nBufLen;
+    m_bValid                = pParser->m_bValid;
+    m_pEndPosition          = pParser->m_pEndPosition;
+    m_pNextPosition         = pParser->m_pNextPosition;
+    m_pCurrentDescriptor    = pParser->m_pCurrentDescriptor;
+    m_pErrorPosition        = pParser->m_pErrorPosition;
 }
 
 CUSBConfigurationParser::~CUSBConfigurationParser (void)
 {
-	m_pBuffer = 0;
-	m_nBufLen = 0;
-	m_bValid = FALSE;
-	m_pEndPosition = 0;
-	m_pNextPosition = 0;
-	m_pCurrentDescriptor = 0;
-	m_pErrorPosition = 0;
+    m_pBuffer = 0;
+    m_nBufLen = 0;
+    m_bValid = FALSE;
+    m_pEndPosition = 0;
+    m_pNextPosition = 0;
+    m_pCurrentDescriptor = 0;
+    m_pErrorPosition = 0;
 }
 
 boolean CUSBConfigurationParser::IsValid (void) const
 {
-	return m_bValid;
+    return m_bValid;
 }
 
 const TUSBDescriptor *CUSBConfigurationParser::GetDescriptor (u8 ucType)
 {
-	assert (m_bValid);
+    assert (m_bValid);
 
-	const TUSBDescriptor *pResult = 0;
-	
-	while (m_pNextPosition < m_pEndPosition)
-	{
-		u8 ucDescLen  = m_pNextPosition->Header.bLength;
-		u8 ucDescType = m_pNextPosition->Header.bDescriptorType;
+    const TUSBDescriptor *pResult = 0;
 
-		TUSBDescriptor *pDescEnd = SKIP_BYTES (m_pNextPosition, ucDescLen);
-		assert (pDescEnd <= m_pEndPosition);
+    while (m_pNextPosition < m_pEndPosition)
+    {
+        u8 ucDescLen  = m_pNextPosition->Header.bLength;
+        u8 ucDescType = m_pNextPosition->Header.bDescriptorType;
 
-		if (   ucType     == DESCRIPTOR_ENDPOINT
-		    && ucDescType == DESCRIPTOR_INTERFACE)
-		{
-			break;
-		}
+        TUSBDescriptor *pDescEnd = SKIP_BYTES (m_pNextPosition, ucDescLen);
+        assert (pDescEnd <= m_pEndPosition);
 
-		if (ucDescType == ucType)
-		{
-			pResult = m_pNextPosition;
-			m_pNextPosition = pDescEnd;
-			break;
-		}
+        if (   ucType     == DESCRIPTOR_ENDPOINT
+            && ucDescType == DESCRIPTOR_INTERFACE)
+        {
+            break;
+        }
 
-		m_pNextPosition = pDescEnd;
-	}
+        if (ucDescType == ucType)
+        {
+            pResult = m_pNextPosition;
+            m_pNextPosition = pDescEnd;
+            break;
+        }
 
-	if (pResult != 0)
-	{
-		m_pErrorPosition = pResult;
-	}
+        m_pNextPosition = pDescEnd;
+    }
 
-	m_pCurrentDescriptor = pResult;
-	
-	return pResult;
+    if (pResult != 0)
+    {
+        m_pErrorPosition = pResult;
+    }
+
+    m_pCurrentDescriptor = pResult;
+
+    return pResult;
 }
 
 const TUSBDescriptor *CUSBConfigurationParser::GetCurrentDescriptor (void)
 {
-	assert (m_bValid);
-	assert (m_pCurrentDescriptor != 0);
+    assert (m_bValid);
+    assert (m_pCurrentDescriptor != 0);
 
-	return m_pCurrentDescriptor;
+    return m_pCurrentDescriptor;
 }
 
 void CUSBConfigurationParser::Error (const char *pSource) const
 {
-	assert (pSource != 0);
-	CLogger::Get ()->Write (pSource, LogError,
-				"Invalid configuration descriptor (offset 0x%X)",
-				(unsigned) ((u8 *) m_pErrorPosition - (u8 *) m_pBuffer));
+    assert (pSource != 0);
+    CLogger::Get ()->Write (pSource, LogError,
+                "Invalid configuration descriptor (offset 0x%X)",
+                (unsigned) ((u8 *) m_pErrorPosition - (u8 *) m_pBuffer));
 #ifndef NDEBUG
-	debug_hexdump (m_pBuffer, m_nBufLen, pSource);
+    debug_hexdump (m_pBuffer, m_nBufLen, pSource);
 #endif
 }
