@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -23,22 +23,30 @@
 #include <circle/exception.h>
 #include <circle/exceptionstub.h>
 
+/// @brief 例外ハンドラクラス
 class CExceptionHandler
 {
 public:
-	CExceptionHandler (void);
-	~CExceptionHandler (void);
-	
-	void Throw (unsigned nException);
-
-	void Throw (unsigned nException, TAbortFrame *pFrame);
-	
-	static CExceptionHandler *Get (void);
+    /// @brief コンストラクタ
+    CExceptionHandler (void);
+    /// @brief ディスクリプタ
+    ~CExceptionHandler (void);
+    /// @brief 例外を投げる
+    /// @param nException 例外
+    void Throw (unsigned nException);
+    /// @brief エラーフレームを指定して例外を投げる
+    /// @param nException れ以外
+    /// @param pFrame エラーフレーム
+    void Throw (unsigned nException, TAbortFrame *pFrame);
+    /// @brief 例外ハンドラを取得
+    /// @return 例外ハンドラ
+    static CExceptionHandler *Get (void);
 
 private:
-	static const char *s_pExceptionName[];
-	
-	static CExceptionHandler *s_pThis;
+    /// @brief 例外を表す文字列配列
+    static const char *s_pExceptionName[];
+    /// @brief この唯一のオブジェクト
+    static CExceptionHandler *s_pThis;
 };
 
 #endif
