@@ -367,13 +367,13 @@ USBライブラリ
 * CMutex: タスク間の（クリティカルセクションの）排他制御メソッドを提供
 * CSemaphore: セマフォ同期クラスを実装
 
-Circleで利用可能なクラスのリストは[doc/classes.txt](doc/classes.txt)ファイルにあります。
+Circleで利用可能なクラスのリストは[doc/classes.txt](doc/classes.md)ファイルにあります。
 手元のコンピュータにDoxygenheがインストールされていたら以下を実行することでdoc/htmlに
 [classドキュメント](doc/html/index.html)が作成されます。
 
 `./makedoc`
 
-現時点ではDoxygennde詳細な説明が得られるのは少数のクラスだけです。
+現時点ではDoxygenで詳細な説明が得られるのは少数のクラスだけです。
 
 その他のトピックス
 --------------------------
@@ -381,20 +381,20 @@ Circleで利用可能なクラスのリストは[doc/classes.txt](doc/classes.tx
 * [標準ライブラリのサポート](doc/stdlib-support.txt)
 * [動的メモリ管理と"new"オペレータ](doc/new-operator.txt)
 * [DMAバッファの要件](doc/dma-buffer-requirements.txt)
-* [シリアルブートローダのサポート](doc/bootloader.txt)
+* [シリアルブートローダのサポート](doc/bootloader.md)
 * [マルチコアのサポート](doc/multicore.txt)
-* [USBプラグアンドプレイ](doc/usb-plug-and-play.txt)
-* [デバッグのサポート](doc/debug.txt)
+* [USBプラグアンドプレイ](doc/usb-plug-and-play.md)
+* [デバッグのサポート](doc/debug.md)
 * [JTAGデバッグ](doc/debug-jtag.txt)
-* [QEMUのサポート](doc/qemu.txt)
+* [QEMUのサポート](doc/qemu.md)
 * [Eclipse IDEのサポート](doc/eclipse-support.txt)
 * [リアルタイムアプリケーションについて](doc/realtime.txt)
-* [cmdline.txtのオプション](doc/cmdline.txt)
+* [cmdline.txtのオプション](doc/cmdline.md)
 * [スクリーンエスケープシーケンス](doc/screen.txt)
 * [キーボードエスケープシーケンス](doc/keyboard.txt)
-* [メモリレイアウト](doc/memorymap.txt)
+* [メモリレイアウト](doc/memorymap.md)
 * [命名規則](doc/naming-conventions.txt)
-* [既知の問題](doc/issues.txt)
+* [既知の問題](doc/issues.md)
 
 Trademarks
 ----------
