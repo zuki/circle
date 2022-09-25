@@ -28,6 +28,10 @@
 
 #ifdef USE_USB_FIQ
 
+/**
+ * @class CDWHCICompletionQueue
+ * @brief 完了を待機しているUSBリクエストのキューを表すクラス
+ */
 class CDWHCICompletionQueue		// Queues USB requests ready for completion (FIFO)
 {
 public:
@@ -41,9 +45,9 @@ public:
 	CUSBRequest *Dequeue (void);
 
 private:
-	CPtrListFIQ m_List;
+	CPtrListFIQ     m_List;         ///< キュー
 
-	CSpinLock m_SpinLock;
+	CSpinLock       m_SpinLock;     ///< スピンロック
 };
 
 #endif
