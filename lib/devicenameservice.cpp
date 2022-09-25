@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2018  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,182 +25,182 @@
 CDeviceNameService *CDeviceNameService::s_This = 0;
 
 CDeviceNameService::CDeviceNameService (void)
-:	m_pList (0),
-	m_SpinLock (TASK_LEVEL)
+:    m_pList (0),
+    m_SpinLock (TASK_LEVEL)
 {
-	assert (s_This == 0);
-	s_This = this;
+    assert (s_This == 0);
+    s_This = this;
 }
 
 CDeviceNameService::~CDeviceNameService (void)
 {
-	while (m_pList != 0)
-	{
-		TDeviceInfo *pNext = m_pList->pNext;
+    while (m_pList != 0)
+    {
+        TDeviceInfo *pNext = m_pList->pNext;
 
-		delete [] m_pList->pName;
-		m_pList->pName = 0;
-		m_pList->pDevice = 0;
-		delete m_pList;
+        delete [] m_pList->pName;
+        m_pList->pName = 0;
+        m_pList->pDevice = 0;
+        delete m_pList;
 
-		m_pList = pNext;
-	}
-	
-	s_This = 0;
+        m_pList = pNext;
+    }
+
+    s_This = 0;
 }
 
 void CDeviceNameService::AddDevice (const char *pName, CDevice *pDevice, boolean bBlockDevice)
 {
-	m_SpinLock.Acquire ();
+    m_SpinLock.Acquire ();
 
-	TDeviceInfo *pInfo = new TDeviceInfo;
-	assert (pInfo != 0);
+    TDeviceInfo *pInfo = new TDeviceInfo;
+    assert (pInfo != 0);
 
-	assert (pName != 0);
-	pInfo->pName = new char [strlen (pName)+1];
-	assert (pInfo->pName != 0);
-	strcpy (pInfo->pName, pName);
+    assert (pName != 0);
+    pInfo->pName = new char [strlen (pName)+1];
+    assert (pInfo->pName != 0);
+    strcpy (pInfo->pName, pName);
 
-	assert (pDevice != 0);
-	pInfo->pDevice = pDevice;
-	
-	pInfo->bBlockDevice = bBlockDevice;
+    assert (pDevice != 0);
+    pInfo->pDevice = pDevice;
 
-	pInfo->pNext = m_pList;
-	m_pList = pInfo;
+    pInfo->bBlockDevice = bBlockDevice;
 
-	m_SpinLock.Release ();
+    pInfo->pNext = m_pList;
+    m_pList = pInfo;
+
+    m_SpinLock.Release ();
 }
 
 void CDeviceNameService::AddDevice (const char *pPrefix, unsigned nIndex,
-				    CDevice *pDevice, boolean bBlockDevice)
+                    CDevice *pDevice, boolean bBlockDevice)
 {
-	CString Name;
-	Name.Format ("%s%u", pPrefix, nIndex);
+    CString Name;
+    Name.Format ("%s%u", pPrefix, nIndex);
 
-	AddDevice (Name, pDevice, bBlockDevice);
+    AddDevice (Name, pDevice, bBlockDevice);
 }
 
 void CDeviceNameService::RemoveDevice (const char *pName, boolean bBlockDevice)
 {
-	assert (pName != 0);
+    assert (pName != 0);
 
-	m_SpinLock.Acquire ();
+    m_SpinLock.Acquire ();
 
-	TDeviceInfo *pInfo = m_pList;
-	TDeviceInfo *pPrev = 0;
-	while (pInfo != 0)
-	{
-		assert (pInfo->pName != 0);
-		if (   strcmp (pName, pInfo->pName) == 0
-		    && pInfo->bBlockDevice == bBlockDevice)
-		{
-			break;
-		}
+    TDeviceInfo *pInfo = m_pList;
+    TDeviceInfo *pPrev = 0;
+    while (pInfo != 0)
+    {
+        assert (pInfo->pName != 0);
+        if (   strcmp (pName, pInfo->pName) == 0
+            && pInfo->bBlockDevice == bBlockDevice)
+        {
+            break;
+        }
 
-		pPrev = pInfo;
-		pInfo = pInfo->pNext;
-	}
+        pPrev = pInfo;
+        pInfo = pInfo->pNext;
+    }
 
-	if (pInfo == 0)
-	{
-		m_SpinLock.Release ();
+    if (pInfo == 0)
+    {
+        m_SpinLock.Release ();
 
-		return;
-	}
+        return;
+    }
 
-	if (pPrev == 0)
-	{
-		m_pList = pInfo->pNext;
-	}
-	else
-	{
-		pPrev->pNext = pInfo->pNext;
-	}
+    if (pPrev == 0)
+    {
+        m_pList = pInfo->pNext;
+    }
+    else
+    {
+        pPrev->pNext = pInfo->pNext;
+    }
 
-	m_SpinLock.Release ();
+    m_SpinLock.Release ();
 
-	delete [] pInfo->pName;
-	pInfo->pName = 0;
-	pInfo->pDevice = 0;
-	delete pInfo;
+    delete [] pInfo->pName;
+    pInfo->pName = 0;
+    pInfo->pDevice = 0;
+    delete pInfo;
 }
 
 void CDeviceNameService::RemoveDevice (const char *pPrefix, unsigned nIndex, boolean bBlockDevice)
 {
-	CString Name;
-	Name.Format ("%s%u", pPrefix, nIndex);
+    CString Name;
+    Name.Format ("%s%u", pPrefix, nIndex);
 
-	RemoveDevice (Name, bBlockDevice);
+    RemoveDevice (Name, bBlockDevice);
 }
 
 CDevice *CDeviceNameService::GetDevice (const char *pName, boolean bBlockDevice)
 {
-	assert (pName != 0);
+    assert (pName != 0);
 
-	m_SpinLock.Acquire ();
+    m_SpinLock.Acquire ();
 
-	TDeviceInfo *pInfo = m_pList;
-	while (pInfo != 0)
-	{
-		assert (pInfo->pName != 0);
-		if (   strcmp (pName, pInfo->pName) == 0
-		    && pInfo->bBlockDevice == bBlockDevice)
-		{
-			CDevice *pResult = pInfo->pDevice;
+    TDeviceInfo *pInfo = m_pList;
+    while (pInfo != 0)
+    {
+        assert (pInfo->pName != 0);
+        if (   strcmp (pName, pInfo->pName) == 0
+            && pInfo->bBlockDevice == bBlockDevice)
+        {
+            CDevice *pResult = pInfo->pDevice;
 
-			m_SpinLock.Release ();
+            m_SpinLock.Release ();
 
-			assert (pResult != 0);
-			return pResult;
-		}
+            assert (pResult != 0);
+            return pResult;
+        }
 
-		pInfo = pInfo->pNext;
-	}
+        pInfo = pInfo->pNext;
+    }
 
-	m_SpinLock.Release ();
+    m_SpinLock.Release ();
 
-	return 0;
+    return 0;
 }
 
 CDevice *CDeviceNameService::GetDevice (const char *pPrefix, unsigned nIndex, boolean bBlockDevice)
 {
-	CString Name;
-	Name.Format ("%s%u", pPrefix, nIndex);
+    CString Name;
+    Name.Format ("%s%u", pPrefix, nIndex);
 
-	return GetDevice (Name, bBlockDevice);
+    return GetDevice (Name, bBlockDevice);
 }
 
 void CDeviceNameService::ListDevices (CDevice *pTarget)
 {
-	assert (pTarget != 0);
+    assert (pTarget != 0);
 
-	unsigned i = 0;
+    unsigned i = 0;
 
-	TDeviceInfo *pInfo = m_pList;
-	while (pInfo != 0)
-	{
-		CString String;
+    TDeviceInfo *pInfo = m_pList;
+    while (pInfo != 0)
+    {
+        CString String;
 
-		assert (pInfo->pName != 0);
-		String.Format ("%c %-12s%c",
-			       pInfo->bBlockDevice ? 'b' : 'c',
-			       (const char *) pInfo->pName,
-			       ++i % 4 == 0 ? '\n' : ' ');
+        assert (pInfo->pName != 0);
+        String.Format ("%c %-12s%c",
+                   pInfo->bBlockDevice ? 'b' : 'c',
+                   (const char *) pInfo->pName,
+                   ++i % 4 == 0 ? '\n' : ' ');
 
-		pTarget->Write ((const char *) String, String.GetLength ());
+        pTarget->Write ((const char *) String, String.GetLength ());
 
-		pInfo = pInfo->pNext;
-	}
+        pInfo = pInfo->pNext;
+    }
 
-	if (i % 4 != 0)
-	{
-		pTarget->Write ("\n", 1);
-	}
+    if (i % 4 != 0)
+    {
+        pTarget->Write ("\n", 1);
+    }
 }
 
 CDeviceNameService *CDeviceNameService::Get (void)
 {
-	assert (s_This != 0);
-	return s_This;
+    assert (s_This != 0);
+    return s_This;
 }

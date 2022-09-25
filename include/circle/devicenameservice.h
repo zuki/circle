@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2018  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -26,59 +26,70 @@
 
 struct TDeviceInfo
 {
-	TDeviceInfo	*pNext;
-	char		*pName;
-	CDevice		*pDevice;
-	boolean		 bBlockDevice;
+    TDeviceInfo    *pNext;
+    char           *pName;
+    CDevice        *pDevice;
+    boolean         bBlockDevice;
 };
 
-class CDeviceNameService  /// Devices can be registered by name and retrieved later by this name
+/// @brief デバイス名前サービス. \n
+/// デバイスを名前で登録し、後でこの名前でデバイスを検索可能にする
+class CDeviceNameService
 {
 public:
-	CDeviceNameService (void);
-	~CDeviceNameService (void);
+    CDeviceNameService (void);
+    ~CDeviceNameService (void);
 
-	/// \param pName	Device name string
-	/// \param pDevice	Pointer to the device object
-	/// \param bBlockDevice TRUE if this is a block device, otherwise character device
-	void AddDevice (const char *pName, CDevice *pDevice, boolean bBlockDevice);
-	/// \param pPrefix	Device name prefix string
-	/// \param nIndex	Device name index
-	/// \param pDevice	Pointer to the device object
-	/// \param bBlockDevice TRUE if this is a block device, otherwise character device
-	void AddDevice (const char *pPrefix, unsigned nIndex, CDevice *pDevice, boolean bBlockDevice);
+    /// デバイスを追加する
+    /// \param pName        デバイス名文字列
+    /// \param pDevice      デバイスオブジェクトへのポインタ
+    /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
+    void AddDevice (const char *pName, CDevice *pDevice, boolean bBlockDevice);
 
-	/// \param pName	Device name string
-	/// \param bBlockDevice TRUE if this is a block device, otherwise character device
-	void RemoveDevice (const char *pName, boolean bBlockDevice);
-	/// \param pPrefix	Device name prefix string
-	/// \param nIndex	Device name index
-	/// \param bBlockDevice TRUE if this is a block device, otherwise character device
-	void RemoveDevice (const char *pPrefix, unsigned nIndex, boolean bBlockDevice);
+    /// デバイスを追加する
+    /// \param pPrefix      デバイス名のプリフィックス文字列
+    /// \param nIndex       デバイス名のインデックス
+    /// \param pDevice      デバイスオブジェクトへのポインタ
+    /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
+    void AddDevice (const char *pPrefix, unsigned nIndex, CDevice *pDevice, boolean bBlockDevice);
 
-	/// \param pName	Device name string
-	/// \param bBlockDevice TRUE if this is a block device, otherwise character device
-	/// \return Pointer to the device object or 0 if not found
-	CDevice *GetDevice (const char *pName, boolean bBlockDevice);
-	/// \param pPrefix	Device name prefix string
-	/// \param nIndex	Device name index
-	/// \param bBlockDevice TRUE if this is a block device, otherwise character device
-	/// \return Pointer to the device object or 0 if not found
-	CDevice *GetDevice (const char *pPrefix, unsigned nIndex, boolean bBlockDevice);
+    /// デバイスを削除する
+    /// \param pName        デバイス名文字列
+    /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
+    void RemoveDevice (const char *pName, boolean bBlockDevice);
 
-	/// \brief Generate device listing
-	/// \param pTarget Device to be used for output
-	void ListDevices (CDevice *pTarget);
+    /// デバイスを削除する
+    /// \param pPrefix      デバイス名のプリフィックス文字列
+    /// \param nIndex       デバイス名のインデックス
+    /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
+    void RemoveDevice (const char *pPrefix, unsigned nIndex, boolean bBlockDevice);
 
-	/// \return The single CDeviceNameService instance of the system
-	static CDeviceNameService *Get (void);
+    /// デバイスをデバイス名で取得する
+    /// \param pName        デバイス名文字列
+    /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
+    /// \return デバイスオブジェクトへのポインタ、見つからない場合は0
+    CDevice *GetDevice (const char *pName, boolean bBlockDevice);
+
+    /// デバイスをデバイス名プリフィックスとインデックスで取得する
+    /// \param pPrefix      デバイス名のプリフィックス文字列
+    /// \param nIndex       デバイス名のインデックス
+    /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
+    /// \return デバイスオブジェクトへのポインタ、見つからない場合は0
+    CDevice *GetDevice (const char *pPrefix, unsigned nIndex, boolean bBlockDevice);
+
+    /// \brief デバイスリストを生成する
+    /// \param pTarget 出力に使用するデバイス
+    void ListDevices (CDevice *pTarget);
+
+    /// \return システムにただ一つのCDeviceNameServiceインスタンス
+    static CDeviceNameService *Get (void);
 
 private:
-	TDeviceInfo *m_pList;
+    TDeviceInfo *m_pList;       //< デバイスリスト
 
-	CSpinLock m_SpinLock;
+    CSpinLock m_SpinLock;       //< スピンロック
 
-	static CDeviceNameService *s_This;
+    static CDeviceNameService *s_This;  // CDeviceNameServiceインスタンス
 };
 
 #endif
