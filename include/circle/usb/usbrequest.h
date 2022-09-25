@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -29,51 +29,120 @@ class CUSBRequest;
 
 typedef void TURBCompletionRoutine (CUSBRequest *pURB, void *pParam, void *pContext);
 
-class CUSBRequest		// URB
+/**
+ * @class CUSBRequest
+ * @brief USBリクエストを表すクラス
+ */
+class CUSBRequest
 {
 public:
-	CUSBRequest (CUSBEndpoint *pEndpoint, void *pBuffer, u32 nBufLen, TSetupData *pSetupData = 0);
-	~CUSBRequest (void);
+    /**
+     * コンストラクタ
+     * @param pEndpoint エンドポイントへのポインタ
+     * @param pBuffer   バッファポインタ
+     * @param nBufLen   バッファ長
+     * @param pSetupData    セットアップデータ
+     */
+    CUSBRequest (CUSBEndpoint *pEndpoint, void *pBuffer, u32 nBufLen, TSetupData *pSetupData = 0);
+    /**
+     * デストラクタ
+     */
+    ~CUSBRequest (void);
 
-	CUSBEndpoint *GetEndpoint (void) const;
+    /**
+     * エンドポイントを取得
+     * @return エンドポイントへのポインタ
+     */
+    CUSBEndpoint *GetEndpoint (void) const;
+    /**
+     * ステータスをセット
+     * @param bStatus ステータス
+     */
+    void SetStatus (int bStatus);
+    /**
+     * 結果の長さをセット
+     * @param nLength 実際の長さ
+     */
+    void SetResultLen (u32 nLength);
+    /**
+     * エラーをセット
+     * @param Error エラー
+     */
+    void SetUSBError (TUSBError Error);
 
-	void SetStatus (int bStatus);
-	void SetResultLen (u32 nLength);
-	void SetUSBError (TUSBError Error);
+    /**
+     * ステータスを取得
+     * @return ステータス
+     */
+    int GetStatus (void) const;
+    /**
+     * 結果の長さを取得
+     * @return 結果の長さ
+     */
+    u32 GetResultLength (void) const;
+    /**
+     * エラーを取得
+     * @return エラー
+     */
+    TUSBError GetUSBError (void) const;
 
-	int GetStatus (void) const;
-	u32 GetResultLength (void) const;
-	TUSBError GetUSBError (void) const;
+    /**
+     * セットアップデータを取得
+     * @return セットアップデータ
+     */
+    TSetupData *GetSetupData (void);
+    /**
+     * バッファを取得
+     * @return バッファ
+     */
+    void *GetBuffer (void);
+    /**
+     * バッファ長を取得
+     * @return バッファ長
+     */
+    u32 GetBufLen (void) const;
 
-	TSetupData *GetSetupData (void);
-	void *GetBuffer (void);
-	u32 GetBufLen (void) const;
-	
-	void SetCompletionRoutine (TURBCompletionRoutine *pRoutine, void *pParam, void *pContext);
-	void CallCompletionRoutine (void);
+    /**
+     * 完了時CBをセット
+     * @param pRoutine コールバック関数
+     * @param pParam コールバック引数
+     * @param pContext 実行コンテキスト
+     */
+    void SetCompletionRoutine (TURBCompletionRoutine *pRoutine, void *pParam, void *pContext);
+    /**
+     * 完了時CBを呼び出し
+     */
+    void CallCompletionRoutine (void);
 
-	// do not retry if request cannot be served immediately (for Bulk in only)
-	void SetCompleteOnNAK (void);
-	boolean IsCompleteOnNAK (void) const;
-	
+    /**
+     * NAK時完了フラグをセット
+     * リクエストがすぐに提供されなかった場合、リトライをしない（バルク入力のみ）
+     */
+    void SetCompleteOnNAK (void);
+    /**
+     * NAK時完了フラグを取得
+     * @return NAK時に完了するか
+     */
+    boolean IsCompleteOnNAK (void) const;
+
 private:
-	CUSBEndpoint *m_pEndpoint;
-	
-	TSetupData *m_pSetupData;
-	void	   *m_pBuffer;
-	u32	    m_nBufLen;
-	
-	int	    m_bStatus;
-	u32	    m_nResultLen;
-	TUSBError   m_USBError;
-	
-	TURBCompletionRoutine *m_pCompletionRoutine;
-	void *m_pCompletionParam;
-	void *m_pCompletionContext;
+    CUSBEndpoint   *m_pEndpoint;                    /**< エンドポイント */
 
-	boolean m_bCompleteOnNAK;
+    TSetupData     *m_pSetupData;                   /**< セットアップデータ */
+    void           *m_pBuffer;                      /**< バッファ */
+    u32             m_nBufLen;                      /**< バッファ長 */
 
-	DECLARE_CLASS_ALLOCATOR
+    int             m_bStatus;                      /**< ステータス */
+    u32             m_nResultLen;                   /**< 実際の長さ */
+    TUSBError       m_USBError;                     /**< エラー */
+
+    TURBCompletionRoutine *m_pCompletionRoutine;    /**< 完了時cbルーチン */
+    void *m_pCompletionParam;                       /**< cbルーチン引数 */
+    void *m_pCompletionContext;                     /**< 完了時コンテキスト */
+
+    boolean m_bCompleteOnNAK;                       /**<  */
+
+    DECLARE_CLASS_ALLOCATOR
 };
 
 #endif
