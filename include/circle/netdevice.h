@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -23,87 +23,101 @@
 #include <circle/macaddress.h>
 #include <circle/types.h>
 
-#define FRAME_BUFFER_SIZE	1600
+#define FRAME_BUFFER_SIZE    1600
 
-#define MAX_NET_DEVICES		5
+#define MAX_NET_DEVICES        5
 
+/// @brief ネットデバイスタイプ
 enum TNetDeviceType
 {
-	NetDeviceTypeEthernet,
-	NetDeviceTypeWLAN,
-	NetDeviceTypeAny,
-	NetDeviceTypeUnknown
+    NetDeviceTypeEthernet,
+    NetDeviceTypeWLAN,
+    NetDeviceTypeAny,
+    NetDeviceTypeUnknown
 };
 
+/// @brief ネットデバイススピード
 enum TNetDeviceSpeed
 {
-	NetDeviceSpeed10Half,
-	NetDeviceSpeed10Full,
-	NetDeviceSpeed100Half,
-	NetDeviceSpeed100Full,
-	NetDeviceSpeed1000Half,
-	NetDeviceSpeed1000Full,
-	NetDeviceSpeedUnknown
+    NetDeviceSpeed10Half,
+    NetDeviceSpeed10Full,
+    NetDeviceSpeed100Half,
+    NetDeviceSpeed100Full,
+    NetDeviceSpeed1000Half,
+    NetDeviceSpeed1000Full,
+    NetDeviceSpeedUnknown
 };
 
-class CNetDevice	/// Base class (interface) of net devices
+/// @brief ネットデバイスの基底クラス（インタフェース）
+class CNetDevice
 {
 public:
-	virtual ~CNetDevice (void) {}
+    virtual ~CNetDevice (void) {}
 
-	/// \return Type of this net device
-	virtual TNetDeviceType GetType (void)		{ return NetDeviceTypeEthernet; }
+    /// \brief このネットデバイスの種別を取得する
+    /// \return ネットデバイスの種別
+    virtual TNetDeviceType GetType (void)        { return NetDeviceTypeEthernet; }
 
-	/// \return Pointer to a MAC address object, which holds our own address
-	virtual const CMACAddress *GetMACAddress (void) const = 0;
+    /// \brief MACアドレスを取得する
+    /// \return 自身のアドレスを保持するMACアドレスオブジェクトへのポインタ
+    virtual const CMACAddress *GetMACAddress (void) const = 0;
 
-	/// \return TRUE if it is advisable to call SendFrame()
-	/// \note SendFrame() can be called at any time, but may fail when the TX queue is full.\n
-	///	  This method gives a hint, if calling SendFrame() is advisable.
-	virtual boolean IsSendFrameAdvisable (void)	{ return TRUE; }
+    /// \brief SendFrame()を呼び出しが望ましいかのヒントを与える
+    /// \return SendFrame()を呼び出しが望ましい場合にRUE
+    /// \note SendFrame()はいつでも呼び出せるが、TXキューがフルの場合は失敗する。\n
+    ///      このメソッドはSendFrame()の呼び出しが望ましいか田舎についてのヒントを与える。
+    virtual boolean IsSendFrameAdvisable (void)    { return TRUE; }
 
-	/// \brief Send a valid Ethernet frame to the network
-	/// \param pBuffer Pointer to the frame, does not contain FCS
-	/// \param nLength Frame length in bytes, does not need to be padded
-	virtual boolean SendFrame (const void *pBuffer, unsigned nLength) = 0;
+    /// \brief ネットワークに正しいEthernetフレームを送信する
+    /// \param pBuffer フレームへのポインタ。FCSは含まない
+    /// \param nLength バイト単位のフレーム長。パディングは不要
+    virtual boolean SendFrame (const void *pBuffer, unsigned nLength) = 0;
 
-	/// \brief Poll for a received Ethernet frame
-	/// \param pBuffer Frame will be placed here, buffer must have size FRAME_BUFFER_SIZE
-	/// \param pResultLength Pointer to variable, which receives the valid frame length
-	/// \return TRUE if a frame is returned in buffer, FALSE if nothing has been received
-	virtual boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength) = 0;
+    /// \brief Ethernetフレームを受信するまでポーリング
+    /// \param pBuffer フレームはここに置かれる。FRAME_BUFFER_SIZEサイズのバッファでなければならない
+    /// \param pResultLength 正しいフレーム帳を受け取る変数へのポインタ
+    /// \return フレームがバッファに返された場合はTRUE、何も受信しなかった場合はFALSE
+    virtual boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength) = 0;
 
-	/// \return TRUE if PHY link is up
-	virtual boolean IsLinkUp (void)			{ return TRUE; }
+    /// \brief PHYはupか
+    /// \return PHYがupの場合にTRUE
+    virtual boolean IsLinkUp (void)            { return TRUE; }
 
-	/// \return The speed of the PHY link, if it is up
-	virtual TNetDeviceSpeed GetLinkSpeed (void)	{ return NetDeviceSpeedUnknown; }
+    /// \brief ィン区スピードを取得する
+    /// \return PHYリンクのスピード（upの場合）
+    virtual TNetDeviceSpeed GetLinkSpeed (void)    { return NetDeviceSpeedUnknown; }
 
-	/// \brief Update device settings according to PHY status
-	/// \return FALSE if not supported
-	/// \note This is called continuously every 2 seconds by the net PHY task
-	virtual boolean UpdatePHY (void)		{ return FALSE; }
+    /// \brief PHYステータスに従いデバイスセッテイングを更新する
+    /// \return サポートしていない場合はFALSE
+    /// \note ネットPHYタスクにより２秒毎に呼び出される
+    virtual boolean UpdatePHY (void)        { return FALSE; }
 
-	/// \param Speed A value returned by GetLinkSpeed()
-	/// \return Description for this speed value
-	static const char *GetSpeedString (TNetDeviceSpeed Speed);
+    /// \brief スピード値に関する文字列を取得する
+    /// \param Speed GetLinkSpeed()により返された値
+    /// \return このスピード値に関する文字列
+    static const char *GetSpeedString (TNetDeviceSpeed Speed);
 
-	/// \param nDeviceNumber Zero-based number of a net device (normally only 0 is used)
-	/// \return Pointer to the device object
-	static CNetDevice *GetNetDevice (unsigned nDeviceNumber);
+    /// \brief 指定の番号のネットデバイスを取得する
+    /// \param nDeviceNumber ネットデバイス番号（0始まり、通常、0だけが使用される）
+    /// \return 出刃シスオブジェクトへのポインタ
+    static CNetDevice *GetNetDevice (unsigned nDeviceNumber);
 
-	/// \param Type Specific net device type to search for (or NetDeviceTypeAny)
-	/// \return Pointer to the first device object of this type
-	static CNetDevice *GetNetDevice (TNetDeviceType Type);
+    /// \brief 指定した種別の最初のネットデバイスを取得する
+    /// \param Type 検索する特定のネットデバイス種別（あるいはNetDeviceTypeAny）
+    /// \return この種別の最初のデバイスオブジェクトへのポインタ
+    static CNetDevice *GetNetDevice (TNetDeviceType Type);
 
 protected:
-	void AddNetDevice (void);
+    /// @brief このデバイスをネットデバイスとして登録する
+    void AddNetDevice (void);
 
 private:
-	static unsigned s_nDeviceNumber;
-	static CNetDevice *s_pDevice[MAX_NET_DEVICES];
-
-	static const char *s_SpeedString[NetDeviceSpeedUnknown];
+    /// @brief デバイス番号
+    static unsigned s_nDeviceNumber;
+    /// @brief ネットデバイス登録配列
+    static CNetDevice *s_pDevice[MAX_NET_DEVICES];
+    /// @brief スピード不明を示す文字列
+    static const char *s_SpeedString[NetDeviceSpeedUnknown];
 };
 
 #endif
