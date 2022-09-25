@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -26,101 +26,110 @@
 #include <circle/net/transportlayer.h>
 #include <circle/types.h>
 
-#define SOCKET_MAX_LISTEN_BACKLOG	32
+#define SOCKET_MAX_LISTEN_BACKLOG    32
 
 class CNetSubSystem;
 
-class CSocket : public CNetSocket	/// Application programming interface to the TCP/IP network
+/// @brief ソケットクラス（TCP／IPネットワークに対するAPI）
+class CSocket : public CNetSocket
 {
 public:
-	/// \param pNetSubSystem Pointer to the network subsystem
-	/// \param nProtocol	 IPPROTO_TCP or IPPROTO_UDP (include circle/net/in.h)
-	CSocket (CNetSubSystem *pNetSubSystem, int nProtocol);
+    /// \brief コンストラクタ
+    /// \param pNetSubSystem ネットワークサブシステムへのポインタ
+    /// \param nProtocol     IPPROTO_TCP か IPPROTO_UDP (circle/net/in.hをインクルードする)
+    CSocket (CNetSubSystem *pNetSubSystem, int nProtocol);
 
-	/// \brief Destructor (terminates an active connection)
-	~CSocket (void);
+    /// \brief デストラクタ（アクティブな接続を終了させる）
+    ~CSocket (void);
 
-	/// \brief Bind own port number to this socket
-	/// \param nOwnPort Port number
-	/// \return Status (0 success, < 0 on error)
-	int Bind (u16 nOwnPort);
+    /// \brief ポート番号をこのソケットにバインドする
+    /// \param nOwnPort ポート番号
+    /// \return ステータス (0 成功, < 0 エラー)
+    int Bind (u16 nOwnPort);
 
-	/// \brief Connect to foreign host/port (TCP), setup foreign host/port address (UDP)
-	/// \param rForeignIP IP address of host to be connected
-	/// \param nForeignPort Number of port to be connected
-	/// \return Status (0 success, < 0 on error)
-	int Connect (CIPAddress &rForeignIP, u16 nForeignPort);
+    /// \brief 外部のホスト/ポートに接続する（TCP）、外部のホスト/ポートアドレスを設定する（UDP）
+    /// \param rForeignIP 接続するホストのIPアドレス
+    /// \param nForeignPort 接続するポート番号
+    /// \return ステータス (0 成功, < 0 エラー)
+    int Connect (CIPAddress &rForeignIP, u16 nForeignPort);
 
-	/// \brief Listen for incoming connections (TCP only, must call Bind() before)
-	/// \param nBackLog Maximum number of simultaneous connections which may be accepted\n
-	/// in a row before Accept() is called (up to SOCKET_MAX_LISTEN_BACKLOG)
-	/// \return Status (0 success, < 0 on error)
-	int Listen (unsigned nBackLog = 4);
-	/// \brief Accept an incoming connection (TCP only, must call Listen() before)
-	/// \param pForeignIP	IP address of the remote host will be returned here
-	/// \param pForeignPort	Remote port number will be returned here
-	/// \return Newly created socket to be used to communicate with the remote host (0 on error)
-	CSocket *Accept (CIPAddress *pForeignIP, u16 *pForeignPort);
+    /// \brief 接続されるのを待つ（TCPのみ、先にBlind()を呼び出す必要がある）
+    /// \param nBackLog Accept()が呼ばれる前に連続して受付可能な最大同時接続数（最大SOCKET_MAX_LISTEN_BACKLOG）
+    /// \return ステータス (0 成功, < 0 エラー)
+    int Listen (unsigned nBackLog = 4);
+    /// \brief 接続を受け付ける（TCPのみ、先にListen()を呼び出す必要がある）
+    /// \param pForeignIP    リモートホストのIPアドレスはここに返される
+    /// \param pForeignPort    リモートポート番号は個々に返される
+    /// \return リモートホストとの通信に使用される新しく作成されたソケット（エラーの場合は0）
+    CSocket *Accept (CIPAddress *pForeignIP, u16 *pForeignPort);
 
-	/// \brief Send a message to a remote host
-	/// \param pBuffer Pointer to the message
-	/// \param nLength Length of the message
-	/// \param nFlags  MSG_DONTWAIT (non-blocking operation) or 0 (blocking operation)
-	/// \return Length of the sent message (< 0 on error)
-	int Send (const void *pBuffer, unsigned nLength, int nFlags);
+    /// \brief リモートホストにメッセージを送信する
+    /// \param pBuffer メッセージへのポインタ
+    /// \param nLength メッセージ長
+    /// \param nFlags  MSG_DONTWAIT（ノンブロッキング操作）または 0（ブロッキング操作）
+    /// \return 送信したメッセージ長（エラー時は< 0）
+    int Send (const void *pBuffer, unsigned nLength, int nFlags);
 
-	/// \brief Receive a message from a remote host
-	/// \param pBuffer Pointer to the message buffer
-	/// \param nLength Size of the message buffer in bytes\n
-	/// Should be at least FRAME_BUFFER_SIZE, otherwise data may get lost
-	/// \param nFlags MSG_DONTWAIT (non-blocking operation) or 0 (blocking operation)
-	/// \return Length of received message (0 with MSG_DONTWAIT if no message available, < 0 on error)
-	int Receive (void *pBuffer, unsigned nLength, int nFlags);
+    /// \brief リモートホストからメッセージを受信する
+    /// \param pBuffer メッセージバッファへのポインタ
+    /// \param nLength メッセージバッファのサイズ（バイト単位）\n
+    /// 少なくともFRAME_BUFFER_SIZEである必要がある。そうでないとソケットによってはデータが損失する場合がある
+    /// \param nFlags MSG_DONTWAIT（ノンブロッキング操作）または 0（ブロッキング操作）
+    /// \return 受信したメッセージ長（メッセージがなかった場合はMSG_DONTWAITで0、エラー時は < 0）
+    int Receive (void *pBuffer, unsigned nLength, int nFlags);
 
-	/// \brief Send a message to a specific remote host
-	/// \param pBuffer	Pointer to the message
-	/// \param nLength	Length of the message
-	/// \param nFlags	MSG_DONTWAIT (non-blocking operation) or 0 (blocking operation)
-	/// \param rForeignIP	IP address of host to be sent to (ignored on TCP socket)
-	/// \param nForeignPort	Number of port to be sent to (ignored on TCP socket)
-	/// \return Length of the sent message (< 0 on error)
-	int SendTo (const void *pBuffer, unsigned nLength, int nFlags,
-		    CIPAddress &rForeignIP, u16 nForeignPort);
+    /// \brief指定のリモートホストにメッセージを送信する
+    /// \param pBuffer    メッセージへのポインタ
+    /// \param nLength    メッセージ長
+    /// \param nFlags    MSG_DONTWAIT（ノンブロッキング操作）または 0（ブロッキング操作）
+    /// \param rForeignIP    送信先ホストのIPアドレス（TCPソケットでは無視される）
+    /// \param nForeignPort    送信先のポート番号（TCPソケットでは無視される）
+    /// \return 送信したメッセージ長（エラー時は< 0）
+    int SendTo (const void *pBuffer, unsigned nLength, int nFlags,
+            CIPAddress &rForeignIP, u16 nForeignPort);
 
-	/// \brief Receive a message from a remote host, return host/port of remote host
-	/// \param pBuffer Pointer to the message buffer
-	/// \param nLength Size of the message buffer in bytes\n
-	/// Should be at least FRAME_BUFFER_SIZE, otherwise data may get lost
-	/// \param nFlags MSG_DONTWAIT (non-blocking operation) or 0 (blocking operation)
-	/// \param pForeignIP	IP address of host which has sent the message will be returned here
-	/// \param pForeignPort	Number of port from which the message has been sent will be returned here
-	/// \return Length of received message (0 with MSG_DONTWAIT if no message available, < 0 on error)
-	int ReceiveFrom (void *pBuffer, unsigned nLength, int nFlags,
-			 CIPAddress *pForeignIP, u16 *pForeignPort);
+    /// \brief リモートホストからメッセージを受信し、リモートホストのホスト/ポートを返す
+    /// \param pBuffer メッセージバッファへのポインタ
+    /// \param nLength ッセージバッファのサイズ（バイト単位）\n
+    /// 少なくともFRAME_BUFFER_SIZEである必要がある。そうでないとソケットによってはデータが損失する場合がある
+    /// \param nFlags MSG_DONTWAIT（ノンブロッキング操作）または 0（ブロッキング操作）
+    /// \param pForeignIP    メッセージを送信したホストのIPアドレスがここに返される
+    /// \param pForeignPort    メッセージを送信したポート番号がここに返される
+    /// \return 受信したメッセージ長（メッセージがなかった場合はMSG_DONTWAITで0、エラー時は < 0）
+    int ReceiveFrom (void *pBuffer, unsigned nLength, int nFlags,
+             CIPAddress *pForeignIP, u16 *pForeignPort);
 
-	/// \brief Call this with bAllowed == TRUE after Bind() or Connect() to be able\n
-	/// to send and receive broadcast messages (ignored on TCP socket)
-	/// \param bAllowed Sending and receiving broadcast messages allowed on this socket? (default FALSE)
-	/// \return Status (0 success, < 0 on error)
-	int SetOptionBroadcast (boolean bAllowed);
+    /// \brief Bind()またはConnect()の後にbAllowed == TRUEで呼び出すと\n
+    /// ブロードキャストメッセージを送受信できる（TCPソケットでは無視される）
+    /// \param bAllowed ブロードキャスの送受信はこのソケットでは許されるか（デフォルトはFALSE）
+    /// \return ステータス (0 成功, < 0 エラー)
+    int SetOptionBroadcast (boolean bAllowed);
 
-	/// \brief Get IP address of connected remote host
-	/// \return Pointer to IP address (four bytes, 0-pointer if not connected)
-	const u8 *GetForeignIP (void) const;
-
-private:
-	CSocket (CSocket &rSocket, int hConnection);
+    /// \brief 接続したリモートホストのIPアドレスを取得する
+    /// \return IPアドレスへのポインタ（4バイト、接続されていない場合はポインタ0）
+    const u8 *GetForeignIP (void) const;
 
 private:
-	CNetConfig	*m_pNetConfig;
-	CTransportLayer	*m_pTransportLayer;
+    /// @brief  コピーコンストラクタ
+    /// @param rSocket ソケットオブジェクト
+    /// @param hConnection コネクション
+    CSocket (CSocket &rSocket, int hConnection);
 
-	int m_nProtocol;
-	u16 m_nOwnPort;
-	int m_hConnection;
-
-	unsigned m_nBackLog;
-	int m_hListenConnection[SOCKET_MAX_LISTEN_BACKLOG];
+private:
+    /// @brief ネットコンフィグレーションオブジェクトへのポインタ
+    CNetConfig      *m_pNetConfig;
+    /// @brief トランスポートレイアオブジェクトへのポインタ
+    CTransportLayer *m_pTransportLayer;
+    /// @brief プロトコル
+    int             m_nProtocol;
+    /// @brief 自身のポート番号
+    u16             m_nOwnPort;
+    /// @brief コネクション番号
+    int             m_hConnection;
+    /// @brief ListenしているがまだAcceptしていないコネクションの数
+    unsigned        m_nBackLog;
+    /// @brief listenしているコネクションの配列
+    int m_hListenConnection[SOCKET_MAX_LISTEN_BACKLOG];
 };
 
 #endif
