@@ -27,46 +27,46 @@
 static const char FromNetSocket[] = "netsocket";
 
 CNetSocket::CNetSocket (CNetSubSystem *pNetSubSystem)
-:	m_pNetSubSystem (pNetSubSystem)
+:    m_pNetSubSystem (pNetSubSystem)
 {
-	assert (m_pNetSubSystem != 0);
+    assert (m_pNetSubSystem != 0);
 }
 
 CNetSocket::~CNetSocket (void)
 {
-	m_pNetSubSystem = 0;
+    m_pNetSubSystem = 0;
 }
 
 int CNetSocket::Connect (const char *pHost, const char *pPort)
 {
-	assert (pHost != 0);
-	assert (pPort != 0);
+    assert (pHost != 0);
+    assert (pPort != 0);
 
-	char *pEnd = 0;
-	unsigned long ulPort = strtoul (pPort, &pEnd, 10);
-	if (   (pEnd != 0 && *pEnd != '\0')
-	    || (ulPort == 0 || ulPort > 0xFFFF))
-	{
-		CLogger::Get ()->Write (FromNetSocket, LogDebug, "Invalid port number: %s", pPort);
+    char *pEnd = 0;
+    unsigned long ulPort = strtoul (pPort, &pEnd, 10);
+    if (   (pEnd != 0 && *pEnd != '\0')
+        || (ulPort == 0 || ulPort > 0xFFFF))
+    {
+        CLogger::Get ()->Write (FromNetSocket, LogDebug, "Invalid port number: %s", pPort);
 
-		return -1;
-	}
+        return -1;
+    }
 
-	assert (m_pNetSubSystem != 0);
-	CIPAddress IPAddress;
-	CDNSClient DNSClient (m_pNetSubSystem);
-	if (!DNSClient.Resolve (pHost, &IPAddress))
-	{
-		CLogger::Get ()->Write (FromNetSocket, LogDebug, "Cannot resolve: %s", pHost);
+    assert (m_pNetSubSystem != 0);
+    CIPAddress IPAddress;
+    CDNSClient DNSClient (m_pNetSubSystem);
+    if (!DNSClient.Resolve (pHost, &IPAddress))
+    {
+        CLogger::Get ()->Write (FromNetSocket, LogDebug, "Cannot resolve: %s", pHost);
 
-		return -1;
-	}
+        return -1;
+    }
 
-	return Connect (IPAddress, static_cast<u16> (ulPort));
+    return Connect (IPAddress, static_cast<u16> (ulPort));
 }
 
 CNetSubSystem *CNetSocket::GetNetSubSystem (void)
 {
-	assert (m_pNetSubSystem != 0);
-	return m_pNetSubSystem;
+    assert (m_pNetSubSystem != 0);
+    return m_pNetSubSystem;
 }
