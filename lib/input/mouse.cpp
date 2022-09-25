@@ -27,74 +27,74 @@ static const char FromMouse[] = "mouse";
 static const char DevicePrefix[] = "mouse";
 
 CMouseDevice::CMouseDevice (unsigned nButtons, boolean bHasWheel)
-:	m_pStatusHandler (0),
-	m_nDeviceNumber (s_DeviceNumberPool.AllocateNumber (TRUE, FromMouse)),
-	m_nButtons (nButtons),
-	m_bHasWheel (bHasWheel)
+:    m_pStatusHandler (0),
+    m_nDeviceNumber (s_DeviceNumberPool.AllocateNumber (TRUE, FromMouse)),
+    m_nButtons (nButtons),
+    m_bHasWheel (bHasWheel)
 {
-	CDeviceNameService::Get ()->AddDevice (DevicePrefix, m_nDeviceNumber, this, FALSE);
+    CDeviceNameService::Get ()->AddDevice (DevicePrefix, m_nDeviceNumber, this, FALSE);
 }
 
 CMouseDevice::~CMouseDevice (void)
 {
-	m_pStatusHandler = 0;
+    m_pStatusHandler = 0;
 
-	CDeviceNameService::Get ()->RemoveDevice (DevicePrefix, m_nDeviceNumber, FALSE);
+    CDeviceNameService::Get ()->RemoveDevice (DevicePrefix, m_nDeviceNumber, FALSE);
 
-	s_DeviceNumberPool.FreeNumber (m_nDeviceNumber);
+    s_DeviceNumberPool.FreeNumber (m_nDeviceNumber);
 }
 
 boolean CMouseDevice::Setup (unsigned nScreenWidth, unsigned nScreenHeight)
 {
-	return m_Behaviour.Setup (nScreenWidth, nScreenHeight);
+    return m_Behaviour.Setup (nScreenWidth, nScreenHeight);
 }
 
 void CMouseDevice::RegisterEventHandler (TMouseEventHandler *pEventHandler)
 {
-	m_Behaviour.RegisterEventHandler (pEventHandler);
+    m_Behaviour.RegisterEventHandler (pEventHandler);
 }
 
 boolean CMouseDevice::SetCursor (unsigned nPosX, unsigned nPosY)
 {
-	return m_Behaviour.SetCursor (nPosX, nPosY);
+    return m_Behaviour.SetCursor (nPosX, nPosY);
 }
 
 boolean CMouseDevice::ShowCursor (boolean bShow)
 {
-	return m_Behaviour.ShowCursor (bShow);
+    return m_Behaviour.ShowCursor (bShow);
 }
 
 void CMouseDevice::UpdateCursor (void)
 {
-	if (m_pStatusHandler == 0)
-	{
-		m_Behaviour.UpdateCursor ();
-	}
+    if (m_pStatusHandler == 0)
+    {
+        m_Behaviour.UpdateCursor ();
+    }
 }
 
 void CMouseDevice::RegisterStatusHandler (TMouseStatusHandler *pStatusHandler)
 {
-	assert (m_pStatusHandler == 0);
-	m_pStatusHandler = pStatusHandler;
-	assert (m_pStatusHandler != 0);
+    assert (m_pStatusHandler == 0);
+    m_pStatusHandler = pStatusHandler;
+    assert (m_pStatusHandler != 0);
 }
 
 void CMouseDevice::ReportHandler (unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove)
 {
-	m_Behaviour.MouseStatusChanged (nButtons, nDisplacementX, nDisplacementY, nWheelMove);
+    m_Behaviour.MouseStatusChanged (nButtons, nDisplacementX, nDisplacementY, nWheelMove);
 
-	if (m_pStatusHandler != 0)
-	{
-		(*m_pStatusHandler) (nButtons, nDisplacementX, nDisplacementY, nWheelMove);
-	}
+    if (m_pStatusHandler != 0)
+    {
+        (*m_pStatusHandler) (nButtons, nDisplacementX, nDisplacementY, nWheelMove);
+    }
 }
 
 unsigned CMouseDevice::GetButtonCount (void) const
 {
-	return m_nButtons;
+    return m_nButtons;
 }
 
 boolean CMouseDevice::HasWheel (void) const
 {
-	return m_bHasWheel;
+    return m_bHasWheel;
 }

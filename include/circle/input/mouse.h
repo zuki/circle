@@ -25,67 +25,71 @@
 #include <circle/numberpool.h>
 #include <circle/types.h>
 
-#define MOUSE_DISPLACEMENT_MIN	-127
-#define MOUSE_DISPLACEMENT_MAX	127
+#define MOUSE_DISPLACEMENT_MIN    -127
+#define MOUSE_DISPLACEMENT_MAX    127
 
 typedef void TMouseStatusHandler (unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove);
 
-class CMouseDevice : public CDevice	/// Generic mouse interface device ("mouse1")
+/**
+ * @class CMouseDevice
+ * @brief 汎用マウスインタフェースデバイス ("mouse1")
+ */
+class CMouseDevice : public CDevice    /// Generic mouse interface device ("mouse1")
 {
 public:
-	/// \brief Construct a mouse device instance
-	/// \param nButtons Number of buttons
-	/// \param bHasWheel Wheel presence
-	CMouseDevice (unsigned nButtons, boolean bHasWheel = FALSE);
-	~CMouseDevice (void);
+    /// \brief マウスデバイスインタフェースのコンストラクタ
+    /// \param nButtons ボタン数
+    /// \param bHasWheel ホイールの有無
+    CMouseDevice (unsigned nButtons, boolean bHasWheel = FALSE);
+    ~CMouseDevice (void);
 
-	/// \brief Setup mouse device in cooked mode
-	/// \param nScreenWidth  Width of the screen in pixels
-	/// \param nScreenHeight Height of the screen in pixels
-	/// \return FALSE on failure
-	boolean Setup (unsigned nScreenWidth, unsigned nScreenHeight);
+    /// \brief マウスデバイスをクックモードでセットアップする
+    /// \param nScreenWidth  スクリーンの幅（ピクセル単位）
+    /// \param nScreenHeight スクリーンの高さ（ピクセル単位）
+    /// \return 失敗したらFALSE
+    boolean Setup (unsigned nScreenWidth, unsigned nScreenHeight);
 
-	/// \brief Register event handler in cooked mode
-	/// \param pEventHandler Pointer to the event handler (see: mousebehaviour.h)
-	void RegisterEventHandler (TMouseEventHandler *pEventHandler);
+    /// \brief クックモードのイベントハンドラを登録する
+    /// \param pEventHandler イベントハンドラへのポインタ（ mousebehaviour.hを参照）
+    void RegisterEventHandler (TMouseEventHandler *pEventHandler);
 
-	/// \brief Set mouse cursor to a specific position in cooked mode
-	/// \param nPosX X-coordinate of the position in pixels (0 is on the left border)
-	/// \param nPosY Y-coordinate of the position in pixels (0 is on the top border)
-	/// \return FALSE on failure
-	boolean SetCursor (unsigned nPosX, unsigned nPosY);
-	/// \brief Switch mouse cursor on or off in cooked mode
-	/// \param bShow TRUE shows the mouse cursor
-	/// \return Previous state
-	boolean ShowCursor (boolean bShow);
+    /// \brief 指定した位置にマウスカーソルをクックモードでセットする
+    /// \param nPosX 位置のX-座標（ピクセル単位、0は左端）
+    /// \param nPosY 位置のY-座標（ピクセル単位、0は上
+    /// \return 失敗したらFALSE
+    boolean SetCursor (unsigned nPosX, unsigned nPosY);
+    /// \brief クックモードのマウスカーソルのオン/オフ切り替え
+    /// \param bShow TRUEはマウスカーソルを表示する
+    /// \return 以前のステート
+    boolean ShowCursor (boolean bShow);
 
-	/// \brief Call this frequently from TASK_LEVEL (cooked mode only)
-	void UpdateCursor (void);
+    /// \brief この関数をTASK_LEVELから頻繁に呼び出す（クックモードのみ）
+    void UpdateCursor (void);
 
-	/// \brief Register mouse status handler in raw mode
-	/// \param pStatusHandler Pointer to the mouse status handler
-	void RegisterStatusHandler (TMouseStatusHandler *pStatusHandler);
+    /// \brief rawモードのマウスステートハンドラを登録する
+    /// \param pStatusHandler マウスステートハンドラへのポインタ
+    void RegisterStatusHandler (TMouseStatusHandler *pStatusHandler);
 
-	/// \return Number of supported mouse buttons
-	unsigned GetButtonCount (void) const;
+    /// \return サポートされているボタンの数
+    unsigned GetButtonCount (void) const;
 
-	/// \return Does the mouse support a mouse wheel?
-	boolean HasWheel (void) const;
+    /// \return マウスホイールをサポートしているか?
+    boolean HasWheel (void) const;
 
 public:
-	/// \warning Do not call this from application!
-	void ReportHandler (unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove);
+    /// \warning このハンドラをアプリケーションから呼び出さないこと!
+    void ReportHandler (unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove);
 
 private:
-	CMouseBehaviour m_Behaviour;
+    CMouseBehaviour m_Behaviour;            //< マウスビヘイビア
 
-	TMouseStatusHandler *m_pStatusHandler;
+    TMouseStatusHandler *m_pStatusHandler;  //< マウスステータスハンドラ
 
-	unsigned m_nDeviceNumber;
-	static CNumberPool s_DeviceNumberPool;
+    unsigned m_nDeviceNumber;               //< デバイス番号
+    static CNumberPool s_DeviceNumberPool;  //< デバイス番号プール
 
-	unsigned m_nButtons;
-	boolean m_bHasWheel;
+    unsigned m_nButtons;                    //< ボタン数
+    boolean m_bHasWheel;                    //< ホイールの有無
 };
 
 #endif
