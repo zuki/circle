@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -20,56 +20,56 @@
 #include <circle/net/netconnection.h>
 #include <assert.h>
 
-CNetConnection::CNetConnection (CNetConfig	*pNetConfig,
-				CNetworkLayer	*pNetworkLayer,
-				CIPAddress	&rForeignIP,
-				u16		 nForeignPort,
-				u16		 nOwnPort,
-				int		 nProtocol)
-:	m_pNetConfig (pNetConfig),
-	m_pNetworkLayer (pNetworkLayer),
-	m_ForeignIP (rForeignIP),
-	m_nForeignPort (nForeignPort),
-	m_nOwnPort (nOwnPort),
-	m_nProtocol (nProtocol),
-	m_Checksum (*pNetConfig->GetIPAddress (), rForeignIP, nProtocol)
+CNetConnection::CNetConnection (CNetConfig    *pNetConfig,
+                CNetworkLayer  *pNetworkLayer,
+                CIPAddress     &rForeignIP,
+                u16             nForeignPort,
+                u16             nOwnPort,
+                int             nProtocol)
+:   m_pNetConfig (pNetConfig),
+    m_pNetworkLayer (pNetworkLayer),
+    m_ForeignIP (rForeignIP),
+    m_nForeignPort (nForeignPort),
+    m_nOwnPort (nOwnPort),
+    m_nProtocol (nProtocol),
+    m_Checksum (*pNetConfig->GetIPAddress (), rForeignIP, nProtocol)
 {
-	assert (m_pNetConfig != 0);
-	assert (m_pNetworkLayer != 0);
+    assert (m_pNetConfig != 0);
+    assert (m_pNetworkLayer != 0);
 }
 
-CNetConnection::CNetConnection (CNetConfig	*pNetConfig,
-				CNetworkLayer	*pNetworkLayer,
-				u16		 nOwnPort,
-				int		 nProtocol)
-:	m_pNetConfig (pNetConfig),
-	m_pNetworkLayer (pNetworkLayer),
-	m_nForeignPort (0),
-	m_nOwnPort (nOwnPort),
-	m_Checksum (*pNetConfig->GetIPAddress (), nProtocol)
+CNetConnection::CNetConnection (CNetConfig    *pNetConfig,
+                CNetworkLayer  *pNetworkLayer,
+                u16             nOwnPort,
+                int             nProtocol)
+:   m_pNetConfig (pNetConfig),
+    m_pNetworkLayer (pNetworkLayer),
+    m_nForeignPort (0),
+    m_nOwnPort (nOwnPort),
+    m_Checksum (*pNetConfig->GetIPAddress (), nProtocol)
 {
-	assert (m_pNetConfig != 0);
-	assert (m_pNetworkLayer != 0);
+    assert (m_pNetConfig != 0);
+    assert (m_pNetworkLayer != 0);
 }
 
 CNetConnection::~CNetConnection (void)
 {
-	m_pNetworkLayer = 0;
-	m_pNetConfig = 0;
+    m_pNetworkLayer = 0;
+    m_pNetConfig = 0;
 }
 
 const u8 *CNetConnection::GetForeignIP (void) const
 {
-	return m_ForeignIP.Get ();
+    return m_ForeignIP.Get ();
 }
 
 u16 CNetConnection::GetOwnPort (void) const
 {
-	assert (m_nOwnPort != 0);
-	return m_nOwnPort;
+    assert (m_nOwnPort != 0);
+    return m_nOwnPort;
 }
 
 int CNetConnection::GetProtocol (void) const
 {
-	return m_nProtocol;
+    return m_nProtocol;
 }
