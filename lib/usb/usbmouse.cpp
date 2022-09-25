@@ -6,7 +6,7 @@
 //
 // USB mouse wheel support including HID report parser:
 // Copyright (C) 2020  H. Kocevar <hinxx@protonmail.com>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -104,7 +104,7 @@ boolean CUSBMouseDevice::Configure (void)
 		return FALSE;
 	}
 
-	
+
 	m_pMouseDevice = new CMouseDevice(m_MouseReport.items[MouseItemButtons].bitSize,
 					  m_MouseReport.items[MouseItemWheel].bitSize != 0);
 	assert (m_pMouseDevice != 0);
@@ -169,6 +169,7 @@ void CUSBMouseDevice::ReportHandler (const u8 *pReport, unsigned nReportSize)
 
 u32 CUSBMouseDevice::ExtractUnsigned(const void *buffer, u32 offset, u32 length)
 {
+    CLogger::Get ()->Write (FromUSBMouse, LogNotice, "offset=0x%x, length=0x%x", offset, length);
 	assert(buffer != 0);
 	assert(length <= 32);
 
