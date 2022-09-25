@@ -28,47 +28,107 @@
 #include <circle/timer.h>
 #include <circle/types.h>
 
+/**
+ * @class  CLAN7800Device
+ * @brief LCAN7800 Ethernetコントローラを表すクラス
+ */
 class CLAN7800Device : public CUSBFunction, CNetDevice
 {
 public:
-	CLAN7800Device (CUSBFunction *pFunction);
-	~CLAN7800Device (void);
+    /// \brief コンストラクタ
+    /// \param pFunction デバイスクラスオブジェクトへのポインタ
+    CLAN7800Device (CUSBFunction *pFunction);
+    /// \brief デストラクタ
+    ~CLAN7800Device (void);
 
-	boolean Configure (void);
+    /// @brief 構成する
+    /// @return 失敗したらFALSE
+    boolean Configure (void);
 
-	const CMACAddress *GetMACAddress (void) const;
+    /// @brief MACアドレスを首都kする
+    /// @return MACアドレスオブジェクトへのポインタ
+    const CMACAddress *GetMACAddress (void) const;
 
-	boolean SendFrame (const void *pBuffer, unsigned nLength);
-	
-	// pBuffer must have size FRAME_BUFFER_SIZE
-	boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength);
+    /// @brief フレームを送信する
+    /// @param pBuffer バッファポインタ
+    /// @param nLength バッファ長
+    /// @return 失敗したらFALSE
+    boolean SendFrame (const void *pBuffer, unsigned nLength);
 
-	// returns TRUE if PHY link is up
-	boolean IsLinkUp (void);
-	
-	TNetDeviceSpeed GetLinkSpeed (void);
+    // pBuffer must have size FRAME_BUFFER_SIZE
+
+    /// @brief フレームを受信する
+    /// pBufferの長さはFRAME_BUFFER_SIZEでなければならない
+    /// @param pBuffer バッファポインタ
+    /// @param pResultLength バッファ読み込みサイズ
+    /// @return 失敗したらFALSE
+    boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength);
+
+    /// @brief PHYリンクはupしているか
+    /// @return upしていたらTRUE
+    boolean IsLinkUp (void);
+
+    /// @brief リンクスピードを取得する
+    /// @return リンクスピード
+    TNetDeviceSpeed GetLinkSpeed (void);
 
 private:
-	boolean InitMACAddress (void);
-	boolean InitPHY (void);
+    /// @brief MACアドレスを初期化する
+    /// @return 失敗したらFALSE
+    boolean InitMACAddress (void);
+    /// @brief PHYを初期化する
+    /// @return 失敗したらFALSE
+    boolean InitPHY (void);
 
-	boolean PHYWrite (u8 uchIndex, u16 usValue);
-	boolean PHYRead (u8 uchIndex, u16 *pValue);
+    /// @brief PHYに書き込み
+    /// @param uchIndex インデックス
+    /// @param usValue 書き込む値
+    /// @return 失敗したらFALSE
+    boolean PHYWrite (u8 uchIndex, u16 usValue);
+    /// @brief PHYを読み込む
+    /// @param uchIndex インデックス
+    /// @param pValue 読み込んだ値を保管する変数のポインタ
+    /// @return 失敗したらFALSE
+    boolean PHYRead (u8 uchIndex, u16 *pValue);
 
-	// wait until register 'nIndex' has value 'nCompare' with mask 'nMask' applied,
-	// check the register each 'nDelayMicros' microseconds, timeout after 'nTimeoutHZ' ticks
-	boolean WaitReg (u32 nIndex, u32 nMask, u32 nCompare = 0,
-			 unsigned nDelayMicros = 1000, unsigned nTimeoutHZ = HZ);
+    // wait until register 'nIndex' has value 'nCompare' with mask 'nMask' applied,
+    // check the register each 'nDelayMicros' microseconds, timeout after 'nTimeoutHZ' ticks
 
-	boolean ReadWriteReg (u32 nIndex, u32 nOrMask, u32 nAndMask = ~0U);
-	boolean WriteReg (u32 nIndex, u32 nValue);
-	boolean ReadReg (u32 nIndex, u32 *pValue);
+    /// @brief レジスタnIndexをnMaskでマスクした値がnComapreになるのを待つ。
+    /// nDelayMicrosマイクロ秒ごとにレジスタをチェックし、nTimeoutHZチック後にタイムアウトする
+    /// @param nIndex レジスタ
+    /// @param nMask マスク値
+    /// @param nCompare 比較値
+    /// @param nDelayMicros チェック間隔
+    /// @param nTimeoutHZ 大雨アウト
+    /// @return タイムアウトしたらFALSE
+    boolean WaitReg (u32 nIndex, u32 nMask, u32 nCompare = 0,
+             unsigned nDelayMicros = 1000, unsigned nTimeoutHZ = HZ);
+
+    /// @brief レジスタ値を読み取り、nOrMaskとnAndMaskを適用して書き戻す
+    /// @param nIndex レジスタ
+    /// @param nOrMask ORマスク値
+    /// @param nAndMask ANDマスク値
+    /// @return 失敗したらFALSE
+    boolean ReadWriteReg (u32 nIndex, u32 nOrMask, u32 nAndMask = ~0U);
+    /// @brief レジスタに値を書き込む
+    /// @param nIndex レジスタ
+    /// @param nValue 書き込む値
+    /// @return 失敗したらFALSE
+    boolean WriteReg (u32 nIndex, u32 nValue);
+    /// @brief レジスタを読む
+    /// @param nIndex レジスタ
+    /// @param pValue 読み込んだ値を保管する変数のポインタ
+    /// @return
+    boolean ReadReg (u32 nIndex, u32 *pValue);
 
 private:
-	CUSBEndpoint *m_pEndpointBulkIn;
-	CUSBEndpoint *m_pEndpointBulkOut;
-
-	CMACAddress m_MACAddress;
+    /// @brief IN用のエンドポイント
+    CUSBEndpoint *m_pEndpointBulkIn;
+    /// @brief OUT用のエンドポイント
+    CUSBEndpoint *m_pEndpointBulkOut;
+    /// @brief MACアドレス
+    CMACAddress m_MACAddress;
 };
 
 #endif
