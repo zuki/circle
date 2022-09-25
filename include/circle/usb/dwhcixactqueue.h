@@ -30,29 +30,33 @@
 
 class CUSBDevice;
 
-class CDWHCITransactionQueue		// Queues coming USB transactions (FIFO)
+/**
+ * @class CDWHCITransactionQueue
+ * @brief USBトランザクションを入れるキュー
+ */
+class CDWHCITransactionQueue        // Queues coming USB transactions (FIFO)
 {
 public:
-	CDWHCITransactionQueue (unsigned nMaxElements,
-				unsigned nMaxAccessLevel);	//  IRQ_LEVEL or FIQ_LEVEL
-	~CDWHCITransactionQueue (void);
+    CDWHCITransactionQueue (unsigned nMaxElements,
+                unsigned nMaxAccessLevel);    //  IRQ_LEVEL or FIQ_LEVEL
+    ~CDWHCITransactionQueue (void);
 
-	// remove all entries
-	void Flush (void);
+    //! すべてのエントリを削除する
+    void Flush (void);
 
-	// remove entries for device
-	void FlushDevice (CUSBDevice *pUSBDevice);
+    //! 指定したデバイスのエントリを削除する
+    void FlushDevice (CUSBDevice *pUSBDevice);
 
-	// enqueue transaction to be processed at usFrameNumber
-	void Enqueue (CDWHCITransferStageData *pStageData, u16 usFrameNumber);
+    //! usFrameNumberの処理されるトランザクションをエンキュー
+    void Enqueue (CDWHCITransferStageData *pStageData, u16 usFrameNumber);
 
-	// dequeue next transaction to be processed at usFrameNumber (or earlier)
-	CDWHCITransferStageData *Dequeue (u16 usFrameNumber);
+    //! usFrameNumber（またはそれ以前）の処理される次のトランザクションをデキュー
+    CDWHCITransferStageData *Dequeue (u16 usFrameNumber);
 
 private:
-	CPtrListFIQ m_List;
+    CPtrListFIQ m_List;         ///< キュー
 
-	CSpinLock m_SpinLock;
+    CSpinLock m_SpinLock;       ///< スピンロック
 };
 
 #endif
