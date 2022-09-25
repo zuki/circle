@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2017-2019  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -27,29 +27,46 @@
 #include <circle/macaddress.h>
 #include <circle/types.h>
 
+/// @brief CDC Ethernetデバイスクラス
 class CUSBCDCEthernetDevice : public CUSBFunction, CNetDevice
 {
 public:
-	CUSBCDCEthernetDevice (CUSBFunction *pFunction);
-	~CUSBCDCEthernetDevice (void);
+    /// @brief コンストラクタ
+    /// @param pFunction 属性クラスオブジェクトへのポインタ
+    CUSBCDCEthernetDevice (CUSBFunction *pFunction);
+    /// @brief デストラクタ
+    ~CUSBCDCEthernetDevice (void);
+    /// @brief コンフィグレーションを行う
+    /// @return 操作の成否
+    boolean Configure (void);
+    /// @brief MACアドレスを取得
+    /// @return  MACアドレスへのポインタ
+    const CMACAddress *GetMACAddress (void) const;
+    /// @brief フレームの送信
+    /// @param pBuffer データバッファへのポインタ
+    /// @param nLength データ長
+    /// @return 操作の成否
+    boolean SendFrame (const void *pBuffer, unsigned nLength);
 
-	boolean Configure (void);
-
-	const CMACAddress *GetMACAddress (void) const;
-
-	boolean SendFrame (const void *pBuffer, unsigned nLength);
-
-	// pBuffer must have size FRAME_BUFFER_SIZE
-	boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength);
+    /// @brief フレームの受信
+    /// @param pBuffer データバッファへのポインタ（FRAME_BUFFER_SIZEのサイズが必要）
+    /// @param pResultLength 受信したデータ長
+    /// @return 操作の成否
+    boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength);
 
 private:
-	boolean InitMACAddress (u8 iMACAddress);
+    /// @brief MACアドレスの初期化
+    /// @param iMACAddress MACアドレス
+    /// @return 操作の成否
+    boolean InitMACAddress (u8 iMACAddress);
 
 private:
-	CUSBEndpoint *m_pEndpointBulkIn;
-	CUSBEndpoint *m_pEndpointBulkOut;
-
-	CMACAddress m_MACAddress;
+    /// @brief バルク転送入力用パイプ
+    CUSBEndpoint   *m_pEndpointBulkIn;
+    /// @brief バルク転送出力用パイプ
+    CUSBEndpoint   *m_pEndpointBulkOut;
+    /// @brief MACアドレス
+    CMACAddress     m_MACAddress;
 };
 
 #endif
