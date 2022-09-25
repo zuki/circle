@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -24,24 +24,41 @@
 #include <circle/string.h>
 #include <circle/types.h>
 
-#define USB_DEVICE(vendorid, deviceid)		vendorid, deviceid
+#define USB_DEVICE(vendorid, deviceid)        vendorid, deviceid
 
+/**
+ * @struct TUSBDeviceID
+ * @brief デバイスID構造体
+ */
 struct TUSBDeviceID
 {
-	u16	usVendorID;
-	u16	usDeviceID;
+    u16    usVendorID;
+    u16    usDeviceID;
 };
 
+/**
+ * @class CUSBDeviceFactory
+ * @brief USBデバイスファクトリクラス
+ */
 class CUSBDeviceFactory
 {
 public:
-	static CUSBFunction *GetDevice (CUSBFunction *pParent, CString *pName);
+    /// @brief 指定のデバイス名またはインタフェース名のデバイスを取得する
+    /// @param pParent 親デバイスオブジェクトへのポインタ
+    /// @param pName インタフェース名(venxxx-xxx, intx-x-x)
+    /// @return デバイスへのポインタ。見つからなかった場合は0
+    static CUSBFunction *GetDevice (CUSBFunction *pParent, CString *pName);
 
 private:
-	// for "int3-0-0" devices
-	static CUSBFunction *GetGenericHIDDevice (CUSBFunction *pParent);
-
-	static boolean FindDeviceID (CString *pName, const TUSBDeviceID *pIDTable);
+    /// @brief int3-0-0のデバイスからタッチパネルまたはゲームパッドデバイスを取得する
+    /// @param pParent 親デバイスオブジェクトへのポインタ
+    /// @return デバイスへのポインタ。見つからなかった場合は0
+    static CUSBFunction *GetGenericHIDDevice (CUSBFunction *pParent);
+    /// @brief デバイスIDテーブルで指定のデバイス名を検索する
+    /// @param pName デバイス名
+    /// @param pIDTable デバイスIDテーブル
+    /// @return あればTRUE、なければFALSE
+    static boolean FindDeviceID (CString *pName, const TUSBDeviceID *pIDTable);
 };
 
 #endif
