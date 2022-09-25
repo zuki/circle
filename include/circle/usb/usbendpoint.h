@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,55 +25,81 @@
 #include <circle/usb/xhciendpoint.h>
 #include <circle/types.h>
 
+/// @brief エンドポイント転送種別
 enum TEndpointType
 {
-	EndpointTypeControl,
-	EndpointTypeBulk,
-	EndpointTypeInterrupt,
-	EndpointTypeIsochronous
+    EndpointTypeControl,
+    EndpointTypeBulk,
+    EndpointTypeInterrupt,
+    EndpointTypeIsochronous
 };
 
+/// @brief USBエンドポイントクラス
 class CUSBEndpoint
 {
 public:
-	CUSBEndpoint (CUSBDevice *pDevice);					// control endpoint 0
-	CUSBEndpoint (CUSBDevice *pDevice, const TUSBEndpointDescriptor *pDesc);
-	~CUSBEndpoint (void);
-
-	CUSBDevice *GetDevice (void) const;
-
-	u8 GetNumber (void) const;
-	TEndpointType GetType (void) const;
-	boolean IsDirectionIn (void) const;
-
-	boolean SetMaxPacketSize (u32 nMaxPacketSize);
-	u32 GetMaxPacketSize (void) const;
+    /// @brief コンストラクタ（EP0を制御）
+    /// @param pDevice デバイスクラスへのポインタ
+    CUSBEndpoint (CUSBDevice *pDevice);
+    /// @brief コンストラクタ
+    /// @param pDevice デバイスクラスへのポインタ
+    /// @param pDesc エンドポイントディスクリプタオブジェクトへのポインタ
+    CUSBEndpoint (CUSBDevice *pDevice, const TUSBEndpointDescriptor *pDesc);
+    /// @brief デストラクタ
+    ~CUSBEndpoint (void);
+    /// @brief このEPのデバイスオブジェクトを取得
+    /// @return デバイスオブジェクトへのポインタ
+    CUSBDevice *GetDevice (void) const;
+    /// @brief EP番号を取得
+    /// @return EP番号
+    u8 GetNumber (void) const;
+    /// @brief EP転送種別を取得
+    /// @return EP転送種別
+    TEndpointType GetType (void) const;
+    /// @brief 転送の方向を取得
+    /// @return 転送の方向
+    boolean IsDirectionIn (void) const;
+    /// @brief パケットの最大サイズを設定
+    /// @param nMaxPacketSize パケットの最大サイズ
+    /// @return 常にTRUE
+    boolean SetMaxPacketSize (u32 nMaxPacketSize);
+    /// @brief パケットの最大サイズを取得
+    /// @return パケットの最大サイズ
+    u32 GetMaxPacketSize (void) const;
 
 #if RASPPI <= 3
-	unsigned GetInterval (void) const;		// Milliseconds
-
-	TUSBPID GetNextPID (boolean bStatusStage);
-	void SkipPID (unsigned nPackets, boolean bStatusStage);
+    /// @brief インターバルを取得（インタラプト転送以外はpanic）
+    /// @return インターバル値（ミリ秒）
+    unsigned GetInterval (void) const;
+    /// @brief 次の転送のPIDを取得
+    /// @param bStatusStage ステータスステージにあるか
+    /// @return 次の転送のPID
+    TUSBPID GetNextPID (boolean bStatusStage);
+    /// @brief 転送をスキップする
+    /// @param nPackets 現パケット
+    /// @param bStatusStage ステータスステージにあるか
+    void SkipPID (unsigned nPackets, boolean bStatusStage);
 #endif
-	void ResetPID (void);
+    /// @brief 転送をリセットする
+    void ResetPID (void);
 
 #if RASPPI >= 4
-	CXHCIEndpoint *GetXHCIEndpoint (void);
+    CXHCIEndpoint *GetXHCIEndpoint (void);
 #endif
 
 private:
-	CUSBDevice	*m_pDevice;
-	u8		 m_ucNumber;
-	TEndpointType	 m_Type;
-	boolean		 m_bDirectionIn;
-	u32		 m_nMaxPacketSize;
+    CUSBDevice     *m_pDevice;              /**< デバイス */
+    u8              m_ucNumber;             /**< エンドポイント番号 */
+    TEndpointType   m_Type;                 /**< 種別 */
+    boolean         m_bDirectionIn;         /**< 転送方向 */
+    u32             m_nMaxPacketSize;       /**< 最大パケットサイズ */
 #if RASPPI <= 3
-	unsigned	 m_nInterval;			// Milliseconds
-	TUSBPID		 m_NextPID;
+    unsigned        m_nInterval;            /**< 間隔（ミリ秒） */
+    TUSBPID         m_NextPID;              /**< 次のPID */
 #endif
 
 #if RASPPI >= 4
-	CXHCIEndpoint	*m_pXHCIEndpoint;
+    CXHCIEndpoint  *m_pXHCIEndpoint;
 #endif
 };
 
