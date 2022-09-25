@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -27,79 +27,122 @@
 #include <circle/spinlock.h>
 #include <circle/types.h>
 
-// Timeouts are supported on interrupt endpoints only!
+// タイムアウトはインターラプトエンドポイントのみでサポートされる
 
-#define USB_TIMEOUT_NONE	0	// Wait forever
+#define USB_TIMEOUT_NONE    0    // Wait forever
 
 class CUSBHCIRootPort;
 class CUSBStandardHub;
 class CUSBDevice;
 
+/**
+ * @class CUSBHostController
+ * @brief USBホストコントローラを表すクラス
+ */
 class CUSBHostController
 {
 public:
-	CUSBHostController (boolean bPlugAndPlay);
-	virtual ~CUSBHostController (void);
-	
-	// returns resulting length or < 0 on failure
-	int GetDescriptor (CUSBEndpoint *pEndpoint,
-			   unsigned char ucType, unsigned char ucIndex,
-			   void *pBuffer, unsigned nBufSize,
-			   unsigned char ucRequestType = REQUEST_IN,
-			   unsigned short wIndex = 0);		// endpoint, interface or language ID
-	
-	boolean SetAddress (CUSBEndpoint *pEndpoint, u8 ucDeviceAddress);
-	
-	boolean SetConfiguration (CUSBEndpoint *pEndpoint, u8 ucConfigurationValue);
-	
-	// returns resulting length or < 0 on failure
-	int ControlMessage (CUSBEndpoint *pEndpoint,
-			    u8 ucRequestType, u8 ucRequest, u16 usValue, u16 usIndex,
-			    void *pData, u16 usDataSize);
+    CUSBHostController (boolean bPlugAndPlay);
+    virtual ~CUSBHostController (void);
 
-	// returns resulting length or < 0 on failure
-	int Transfer (CUSBEndpoint *pEndpoint, void *pBuffer, unsigned nBufSize,
-		      unsigned nTimeoutMs = USB_TIMEOUT_NONE);
+    /**
+     * ディスクリプタを取得する
+     * @param pEndpoint エンドポイント
+     * @param ucType ディスクリプタのタイプ
+     * @param ucIndex インデックス
+     * @param pBuffer バッファ
+     * @param nBufSize バッファのサイズ
+     * @param ucRequestType リクエストタイプ
+     * @param wIndex エンドポイント、インタフェース、言語IDのいずれか
+     * @return 長さ、失敗した場合は負値
+     */
+    int GetDescriptor (CUSBEndpoint *pEndpoint,
+               unsigned char ucType, unsigned char ucIndex,
+               void *pBuffer, unsigned nBufSize,
+               unsigned char ucRequestType = REQUEST_IN,
+               unsigned short wIndex = 0);        // endpoint, interface or language ID
+
+    /**
+     * デバイスアドレスをセット
+     * @param pEndpoint エンドポイント
+     * @param ucDeviceAddress デバイスアドレス
+     * @return 成功したらTRUE, 失敗したらFALSE
+     */
+    boolean SetAddress (CUSBEndpoint *pEndpoint, u8 ucDeviceAddress);
+    /**
+     * コンフィグレーションをセット
+     * @param pEndpoint エンドポイント
+     * @param ucConfigurationValue コンフィグレーション値
+     * @return 成功したらTRUE, 失敗したらFALSE
+     */
+    boolean SetConfiguration (CUSBEndpoint *pEndpoint, u8 ucConfigurationValue);
+
+    /**
+     * メッセージを送信する
+     * @param pEndpoint エンドポイント
+     * @param ucRequestType リクエストタイプ
+     * @param ucRequest リクエスト
+     * @param usValue 値
+     * @param usIndex インデックス
+     * @param pData データ
+     * @param usDataSize データサイズ
+     * @return 長さ、失敗した場合は負値
+     */
+    int ControlMessage (CUSBEndpoint *pEndpoint,
+                u8 ucRequestType, u8 ucRequest, u16 usValue, u16 usIndex,
+                void *pData, u16 usDataSize);
+
+    /**
+     * 転送する
+     * @return 長さ、失敗した場合は負値
+     */
+    int Transfer (CUSBEndpoint *pEndpoint, void *pBuffer, unsigned nBufSize,
+              unsigned nTimeoutMs = USB_TIMEOUT_NONE);
 
 public:
-	virtual boolean SubmitBlockingRequest (CUSBRequest *pURB,
-					       unsigned nTimeoutMs = USB_TIMEOUT_NONE) = 0;
+    virtual boolean SubmitBlockingRequest (CUSBRequest *pURB,
+                           unsigned nTimeoutMs = USB_TIMEOUT_NONE) = 0;
 
-	virtual boolean SubmitAsyncRequest (CUSBRequest *pURB,
-					    unsigned nTimeoutMs = USB_TIMEOUT_NONE) = 0;
+    virtual boolean SubmitAsyncRequest (CUSBRequest *pURB,
+                        unsigned nTimeoutMs = USB_TIMEOUT_NONE) = 0;
 
-	virtual void CancelDeviceTransactions (CUSBDevice *pUSBDevice) {}
+    virtual void CancelDeviceTransactions (CUSBDevice *pUSBDevice) {}
 
 public:
-	static boolean IsPlugAndPlay (void);
+    static boolean IsPlugAndPlay (void);
 
-	// must be called from TASK_LEVEL, if Plug-and-Play is enabled
-	// returns TRUE if device tree might have been updated (always TRUE on first call)
-	boolean UpdatePlugAndPlay (void);
+    /**
+     * デバイスツリーが更新されたか
+     *
+     * TASK_LEVELで呼び出す必要がある。
+     * @return プラグアンドプレイが有効な場合、デバイスツリーが更新された場合
+     *         TRUEを返す（最初に呼び出されたときは常にTRUEを返す）
+     */
+    boolean UpdatePlugAndPlay (void);
 
-	static boolean IsActive (void)
-	{
-		return s_pThis != 0 ? TRUE : FALSE;
-	}
+    static boolean IsActive (void)
+    {
+        return s_pThis != 0 ? TRUE : FALSE;
+    }
 
-	static CUSBHostController *Get (void);
+    static CUSBHostController *Get (void);
 
 protected:
-	void PortStatusChanged (CUSBHCIRootPort *pRootPort);
-	friend class CXHCIRootPort;
+    void PortStatusChanged (CUSBHCIRootPort *pRootPort);
+    friend class CXHCIRootPort;
 
 private:
-	void PortStatusChanged (CUSBStandardHub *pHub);
-	friend class CUSBStandardHub;
+    void PortStatusChanged (CUSBStandardHub *pHub);
+    friend class CUSBStandardHub;
 
 private:
-	static boolean s_bPlugAndPlay;
-	boolean m_bFirstUpdateCall;
+    static boolean s_bPlugAndPlay;          //< プラグアンドプレイは有効か
+    boolean m_bFirstUpdateCall;             //< 最初の更新呼び出しか
 
-	CPtrList  m_HubList;
-	CSpinLock m_SpinLock;
+    CPtrList  m_HubList;                    //< ハブリスト
+    CSpinLock m_SpinLock;                   //< スピンロック
 
-	static CUSBHostController *s_pThis;
+    static CUSBHostController *s_pThis;     //< USBホストコントローラインスタンス
 };
 
 #endif
