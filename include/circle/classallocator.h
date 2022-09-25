@@ -26,100 +26,104 @@
 #include <circle/types.h>
 #include <assert.h>
 
-// Use the following macros to provide a class-specific allocator to a class:
+// 以下のマクロはクラスにクラス固有のアロケータを定休する場合に使用する
 
-// goes to the end of a class declaration
-#define DECLARE_CLASS_ALLOCATOR							\
-	public:									\
-		void *operator new (size_t nSize);				\
-		void operator delete (void *pBlock, size_t nSize);		\
-		static void InitAllocator (unsigned nReservedObjects);		\
-		static void InitProtectedAllocator (unsigned nReservedObjects,	\
-						    unsigned nTargetLevel);	\
-	private:								\
-		static CClassAllocator *s_pAllocator;
+// クラス定義の最後に指定する
+#define DECLARE_CLASS_ALLOCATOR                 \
+    public:                                     \
+        void *operator new (size_t nSize);      \
+        void operator delete (void *pBlock, size_t nSize);      \
+        static void InitAllocator (unsigned nReservedObjects);  \
+        static void InitProtectedAllocator (unsigned nReservedObjects,  \
+                            unsigned nTargetLevel);             \
+    private:                                    \
+        static CClassAllocator *s_pAllocator;
 
-// goes to the end of a class implementation file
-#define IMPLEMENT_CLASS_ALLOCATOR(class)				\
-	CClassAllocator *class::s_pAllocator = 0;			\
-	void *class::operator new (size_t nSize)			\
-	{								\
-		assert (nSize == sizeof (class));			\
-		assert (s_pAllocator != 0);				\
-		return s_pAllocator->Allocate ();			\
-	}								\
-	void class::operator delete (void *pBlock, size_t nSize)	\
-	{								\
-		assert (nSize == sizeof (class));			\
-		assert (s_pAllocator != 0);				\
-		s_pAllocator->Free (pBlock);				\
-	}								\
-	void class::InitAllocator (unsigned nReservedObjects)		\
-	{								\
-		assert (s_pAllocator == 0);				\
-		s_pAllocator = new CClassAllocator (sizeof (class),	\
-						    nReservedObjects,	\
-						    #class);		\
-		assert (s_pAllocator != 0);				\
-	}								\
-	void class::InitProtectedAllocator (unsigned nReservedObjects,	\
-					    unsigned nTargetLevel)	\
-	{								\
-		if (s_pAllocator == 0)					\
-		{							\
-			s_pAllocator = new CClassAllocator (		\
-						sizeof (class),		\
-						nReservedObjects,	\
-						nTargetLevel,		\
-						#class);		\
-			assert (s_pAllocator != 0);			\
-		}							\
-		else							\
-			s_pAllocator->Extend (nReservedObjects,		\
-					      nTargetLevel);		\
-	}
+// クラス実装ファイルの最後に指定する
+#define IMPLEMENT_CLASS_ALLOCATOR(class)        \
+    CClassAllocator *class::s_pAllocator = 0;   \
+    void *class::operator new (size_t nSize)    \
+    {                                \
+        assert (nSize == sizeof (class));       \
+        assert (s_pAllocator != 0);             \
+        return s_pAllocator->Allocate ();       \
+    }                                \
+    void class::operator delete (void *pBlock, size_t nSize)    \
+    {                                \
+        assert (nSize == sizeof (class));       \
+        assert (s_pAllocator != 0);             \
+        s_pAllocator->Free (pBlock);            \
+    }                                \
+    void class::InitAllocator (unsigned nReservedObjects)       \
+    {                                \
+        assert (s_pAllocator == 0);             \
+        s_pAllocator = new CClassAllocator (sizeof (class),     \
+                            nReservedObjects,   \
+                            #class);            \
+        assert (s_pAllocator != 0);             \
+    }                                \
+    void class::InitProtectedAllocator (unsigned nReservedObjects,  \
+                        unsigned nTargetLevel)  \
+    {                                \
+        if (s_pAllocator == 0)                  \
+        {                            \
+            s_pAllocator = new CClassAllocator (    \
+                        sizeof (class),         \
+                        nReservedObjects,       \
+                        nTargetLevel,           \
+                        #class);                \
+            assert (s_pAllocator != 0);         \
+        }                            \
+        else                         \
+            s_pAllocator->Extend (nReservedObjects, \
+                          nTargetLevel);        \
+    }
 
-// call this somewhere before the class is instantiated
+// クラスをインスタンス化する前のどこかでこれを呼び出す
 #define INIT_CLASS_ALLOCATOR(class, objects) \
-	class::InitAllocator (objects)
-// initializes an allocator which is protected by a spin lock
+    class::InitAllocator (objects)
+// スピンロックにより保護されているアロケータを初期化する
 #define INIT_PROTECTED_CLASS_ALLOCATOR(class, objects, level) \
-	class::InitProtectedAllocator (objects, level)
+    class::InitProtectedAllocator (objects, level)
 
+/**
+ * @class CClassAllocator
+ * @brief クラス固有アロケータを表すクラス
+ */
 class CClassAllocator
 {
 public:
-	CClassAllocator (size_t      nObjectSize,
-			 unsigned    nReservedObjects,
-			 const char *pClassName);
+    CClassAllocator (size_t nObjectSize,
+             unsigned       nReservedObjects,
+             const char    *pClassName);
 
-	CClassAllocator (size_t      nObjectSize,
-			 unsigned    nReservedObjects,
-			 unsigned    nTargetLevel,
-			 const char *pClassName);
+    CClassAllocator (size_t nObjectSize,
+             unsigned       nReservedObjects,
+             unsigned       nTargetLevel,
+             const char    *pClassName);
 
-	~CClassAllocator (void);
+    ~CClassAllocator (void);
 
-	void *Allocate (void);
+    void *Allocate (void);
 
-	void Free (void *pBlock);
+    void Free (void *pBlock);
 
-	void Extend (unsigned nReservedObjects, unsigned nTargetLevel);
-
-private:
-	void Init (size_t nObjectSize, unsigned nReservedObjects);
+    void Extend (unsigned nReservedObjects, unsigned nTargetLevel);
 
 private:
-	size_t      m_nObjectSize;
-	unsigned    m_nReservedObjects;
-	const char *m_pClassName;
+    void Init (size_t nObjectSize, unsigned nReservedObjects);
 
-	unsigned char *m_pMemory;
-	struct TBlock *m_pFreeList;
+private:
+    size_t      m_nObjectSize;          ///< オブジェクトサイズ
+    unsigned    m_nReservedObjects;     ///< 予約オブジェクト数
+    const char *m_pClassName;           ///< クラス名
 
-	boolean   m_bProtected;
-	unsigned  m_nTargetLevel;
-	CSpinLock m_SpinLock;
+    unsigned char *m_pMemory;           ///< メモリへのポインタ
+    struct TBlock *m_pFreeList;         ///< 空きリスト
+
+    boolean   m_bProtected;             ///< 保護されているか
+    unsigned  m_nTargetLevel;           ///< 対象レベル
+    CSpinLock m_SpinLock;               ///< スピンロック
 };
 
 #endif
