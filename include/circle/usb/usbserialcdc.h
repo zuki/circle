@@ -23,24 +23,28 @@
 #include <circle/usb/usbserial.h>
 #include <circle/types.h>
 
+/**
+ * @class CUSBSerialCDCDevice
+ * @brief シリアルCDCクラスのデバイスを表すクラス
+ */
 class CUSBSerialCDCDevice : public CUSBSerialDevice
 {
 public:
-	CUSBSerialCDCDevice (CUSBFunction *pFunction);
-	~CUSBSerialCDCDevice (void);
+    CUSBSerialCDCDevice (CUSBFunction *pFunction);
+    ~CUSBSerialCDCDevice (void);
 
-	boolean Configure (void);
+    boolean Configure (void);
 
-	boolean SetBaudRate (unsigned nBaudRate);
-	boolean SetLineProperties (TUSBSerialDataBits DataBits, TUSBSerialParity Parity,
-				   TUSBSerialStopBits StopBits);
-
-private:
-	boolean SetLineCoding (void);
+    boolean SetBaudRate (unsigned nBaudRate);
+    boolean SetLineProperties (TUSBSerialDataBits DataBits, TUSBSerialParity Parity,
+                   TUSBSerialStopBits StopBits);
 
 private:
-	u8 m_ucCommunicationsInterfaceNumber;
-	boolean m_bInterfaceOK;
+    boolean SetLineCoding (void);
+
+private:
+    u8 m_ucCommunicationsInterfaceNumber;   /** 通信インタフェース番号 */
+    boolean m_bInterfaceOK;                 /** インターフェースOK */
 };
 
 #endif
