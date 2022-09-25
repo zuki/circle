@@ -22,18 +22,23 @@
 
 #include <circle/types.h>
 
+/// @brief USBホストコントローラのルートポートクラス
 class CUSBHCIRootPort
 {
 public:
-	virtual ~CUSBHCIRootPort (void) {}
-
-	virtual boolean ReScanDevices (void) = 0;
-	virtual boolean RemoveDevice (void) = 0;
-
-	virtual void HandlePortStatusChange (void) = 0;
+    /// @brief デストラクタ
+    virtual ~CUSBHCIRootPort (void) {}
+    /// @brief デバイスを再スキャン
+    /// @return 操作の可否
+    virtual boolean ReScanDevices (void) = 0;
+    /// @brief デバイスの削除
+    /// @return 操作の可否
+    virtual boolean RemoveDevice (void) = 0;
+    /// @brief ポートステータスの変更書を処理
+    virtual void HandlePortStatusChange (void) = 0;
 
 #if RASPPI >= 4
-	virtual u8 GetPortID (void) const = 0;
+    virtual u8 GetPortID (void) const = 0;
 #endif
 };
 
