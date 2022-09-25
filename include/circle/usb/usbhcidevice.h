@@ -21,7 +21,7 @@
 #define _circle_usb_usbhcidevice_h
 
 /// \class CUSBHCIDevice
-/// \brief Alias for CDWHCIDevice or CXHCIDevice, depending on Raspberry Pi model
+/// \brief CDWHCIDevice か CXHCIDeviceの別名（Raspiのモデルによる）
 
 #if RASPPI <= 3
 	#include <circle/usb/dwhcidevice.h>
