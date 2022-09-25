@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2017  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -26,25 +26,34 @@
 
 class CUSBDevice;
 
+/**
+ * @class CUSBString
+ * @brief USB文字列
+ */
 class CUSBString
 {
 public:
-	CUSBString (CUSBDevice *pDevice);
-	CUSBString (CUSBString *pParent);	// copy constructor
-	~CUSBString (void);
+    CUSBString (CUSBDevice *pDevice);
+    CUSBString (CUSBString *pParent);    // copy constructor
+    ~CUSBString (void);
+    /**
+     * @brief 文字列ディスクリプタを取得
+     * @param ucID 文字列ID
+     * @param usLanguageID 言語ID
+     * @return 成否を返す
+     */
+    boolean GetFromDescriptor (u8 ucID, u16 usLanguageID);
 
-	boolean GetFromDescriptor (u8 ucID, u16 usLanguageID);
+    const char *Get (void) const;
 
-	const char *Get (void) const;
-
-	u16 GetLanguageID (void);
+    u16 GetLanguageID (void);
 
 private:
-	CUSBDevice *m_pDevice;
+    CUSBDevice *m_pDevice;              /**< デバイス */
 
-	TUSBStringDescriptor *m_pUSBString;
+    TUSBStringDescriptor *m_pUSBString; /**< ストリングディスクリプタ */
 
-	CString *m_pString;
+    CString *m_pString;                 /**< 文字列 */
 };
 
 #endif
