@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2020  H. Kocevar <hinxx@protonmail.com>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -27,15 +27,15 @@
 class CUSBSerialCP2102Device : public CUSBSerialDevice
 {
 public:
-	CUSBSerialCP2102Device (CUSBFunction *pFunction);
-	~CUSBSerialCP2102Device (void);
+    CUSBSerialCP2102Device (CUSBFunction *pFunction);
+    ~CUSBSerialCP2102Device (void);
 
-	boolean Configure (void);
-	boolean SetBaudRate (unsigned nBaudRate);
-	boolean SetLineProperties (TUSBSerialDataBits nDataBits,
-				   TUSBSerialParity nParity, TUSBSerialStopBits nStopBits);
+    boolean Configure (void);
+    boolean SetBaudRate (unsigned nBaudRate);
+    boolean SetLineProperties (TUSBSerialDataBits nDataBits,
+                   TUSBSerialParity nParity, TUSBSerialStopBits nStopBits);
 
-	static const TUSBDeviceID *GetDeviceIDTable (void);
+    static const TUSBDeviceID *GetDeviceIDTable (void);
 };
 
 #endif
