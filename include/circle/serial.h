@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -28,12 +28,12 @@
 #include <circle/types.h>
 
 /// \class CSerialDevice
-/// \brief Driver for PL011 UART
+/// \brief PL011 UARTドライバ
 ///
-/// \details GPIO pin mapping (chip numbers)
+/// \details GPIO ピンマッピング（チップ番号）
 /// nDevice | TXD    | RXD    | Support
 /// :-----: | :----: | :----: | :------
-/// 0       | GPIO14 | GPIO15 | All boards
+/// 0       | GPIO14 | GPIO15 | すべてのボード
 /// ^       | GPIO32 | GPIO33 | Compute Modules
 /// ^       | GPIO36 | GPIO37 | Compute Modules
 /// 1       |        |        | None (AUX)
@@ -41,145 +41,157 @@
 /// 3       | GPIO4  | GPIO5  | Raspberry Pi 4 only
 /// 4       | GPIO8  | GPIO9  | Raspberry Pi 4 only
 /// 5       | GPIO12 | GPIO13 | Raspberry Pi 4 only
-/// GPIO32/33 and GPIO36/37 can be selected with system option SERIAL_GPIO_SELECT.\n
-/// GPIO0/1 are normally reserved for ID EEPROM.\n
-/// Handshake lines CTS and RTS are not supported.
+/// GPIO32/33とGPIO36/37はシステムオプションSERIAL_GPIO_SELECTで選択できる。\n
+/// GPIO0/1は通常、ID EEPROM用に予約されている。\n
+/// ハンドシェークライン CTS と RTS はサポートされていない。
 
 #if RASPPI < 4
-	#define SERIAL_DEVICES		1
+    #define SERIAL_DEVICES      1
 #else
-	#define SERIAL_DEVICES		6
+    #define SERIAL_DEVICES      6
 #endif
 
-#define SERIAL_BUF_SIZE		2048			// must be a power of 2
-#define SERIAL_BUF_MASK		(SERIAL_BUF_SIZE-1)
+#define SERIAL_BUF_SIZE         2048                // 2のべき乗である必要ある
+#define SERIAL_BUF_MASK         (SERIAL_BUF_SIZE-1)
 
-// serial options
-#define SERIAL_OPTION_ONLCR	(1 << 0)	///< Translate NL to NL+CR on output (default)
+// シリアルオプション
+#define SERIAL_OPTION_ONLCR     (1 << 0)    ///< 出力時にNLをNL+CRに変換（デフォルト）
 
-// returned from Read/Write as negative value
-#define SERIAL_ERROR_BREAK	1
-#define SERIAL_ERROR_OVERRUN	2
-#define SERIAL_ERROR_FRAMING	3
-#define SERIAL_ERROR_PARITY	4
+// Read/Write時に負値として返される
+#define SERIAL_ERROR_BREAK      1
+#define SERIAL_ERROR_OVERRUN    2
+#define SERIAL_ERROR_FRAMING    3
+#define SERIAL_ERROR_PARITY     4
 
 class CSerialDevice : public CDevice
 {
 public:
-	enum TParity
-	{
-		ParityNone,
-		ParityOdd,
-		ParityEven,
-		ParityUnknown
-	};
+    /// @brief パリティ
+    enum TParity
+    {
+        ParityNone,
+        ParityOdd,
+        ParityEven,
+        ParityUnknown
+    };
 
 public:
 #ifndef USE_RPI_STUB_AT
-	/// \param pInterruptSystem Pointer to interrupt system object (or 0 for polling driver)
-	/// \param bUseFIQ Use FIQ instead of IRQ
-	/// \param nDevice Device number (see: GPIO pin mapping)
-	CSerialDevice (CInterruptSystem *pInterruptSystem = 0, boolean bUseFIQ = FALSE,
-		       unsigned nDevice = 0);
-
-	~CSerialDevice (void);
+    /// \brief コンストラクタ
+    /// \param pInterruptSystem 割り込みシステムオブジェクトへのポインタ（ポーリングドライバの場合は0）
+    /// \param bUseFIQ IRQではなくFIQを使用する
+    /// \param nDevice デバイス番号（GPIO品マッピングを参照）
+    CSerialDevice (CInterruptSystem *pInterruptSystem = 0, boolean bUseFIQ = FALSE,
+               unsigned nDevice = 0);
+    /// \brief デストラクタ
+    ~CSerialDevice (void);
 #endif
-
-	/// \param nBaudrate Baud rate in bits per second
-	/// \param nDataBits Number of data bits (5..8, default 8)
-	/// \param nStopBits Number of stop bits (1..2, default 1)
-	/// \param Parity Parity setting (ParityNone (default), ParityOdd or ParityEven)
-	/// \return Operation successful?
+    /// \brief 初期化関数
+    /// \param nBaudrate ボーレート（1秒あたりのビット数）
+    /// \param nDataBits データビット数（5..8, デフォルトは 8）
+    /// \param nStopBits ストップビット数（1..2, デフォルトは 1）
+    /// \param Parity パリティ（ParityNone (デフォルト), ParityOdd, ParityEvenのいずれか）
+    /// \return 操作は成功したか?
 #ifndef USE_RPI_STUB_AT
-	boolean Initialize (unsigned nBaudrate = 115200,
-			    unsigned nDataBits = 8, unsigned nStopBits = 1,
-			    TParity Parity = ParityNone);
+    boolean Initialize (unsigned nBaudrate = 115200,
+                unsigned nDataBits = 8, unsigned nStopBits = 1,
+                TParity Parity = ParityNone);
 #else
-	boolean Initialize (unsigned nBaudrate = 115200);
+    boolean Initialize (unsigned nBaudrate = 115200);
 #endif
-
-	/// \param pBuffer Pointer to data to be sent
-	/// \param nCount Number of bytes to be sent
-	/// \return Number of bytes successfully sent (< 0 on error)
-	int Write (const void *pBuffer, size_t nCount);
+    /// \brief データを送信する
+    /// \param pBuffer 送信するデータへのポインタ
+    /// \param nCount 送信するバイト数
+    /// \return 送信に成功したバイト数（エラーの場合は負値）
+    int Write (const void *pBuffer, size_t nCount);
 
 #ifndef USE_RPI_STUB_AT
-	/// \param pBuffer Pointer to buffer for received data
-	/// \param nCount Maximum number of bytes to be received
-	/// \return Number of bytes received (0 no data available, < 0 on error)
-	int Read (void *pBuffer, size_t nCount);
+    /// \brief データを受信する
+    /// \param pBuffer 受信データ用のバッファへのポインタ
+    /// \param nCount 受信可能な最大バイト数
+    /// \return 受信したバイト数（データなしは0、エラーの場合は負値）
+    int Read (void *pBuffer, size_t nCount);
+    /// \brief オプションを取得する
+    /// \return シリアルオプションマスク（シリアルオプションを参照）
+    unsigned GetOptions (void) const;
+    /// \brief オプションを設定
+    /// \param nOptions Serial シリアルオプションマスク（シリアルオプションを参照）
+    void SetOptions (unsigned nOptions);
 
-	/// \return Serial options mask (see serial options)
-	unsigned GetOptions (void) const;
-	/// \param nOptions Serial options mask (see serial options)
-	void SetOptions (unsigned nOptions);
-
-	typedef void TMagicReceivedHandler (void);
-	/// \param pMagic String for which is searched in the received data\n
-	/// (must remain valid after return from this method)
-	/// \param pHandler Handler which is called, when the magic string is found
-	/// \note Does only work with interrupt driver.
-	void RegisterMagicReceivedHandler (const char *pMagic, TMagicReceivedHandler *pHandler);
+    typedef void TMagicReceivedHandler (void);
+    /// \brief マジック文字列とそのハンドラを登録する
+    /// \param pMagic 受信データ内で検索する文字列\n
+    /// （このメソッドから帰った後もvalidでなければならない）
+    /// \param pHandler マジック文字列が見つかった場合に呼び出されるハンドラ
+    /// \note 割り込みドライバの場合にのみ動作する
+    void RegisterMagicReceivedHandler (const char *pMagic, TMagicReceivedHandler *pHandler);
 
 protected:
-	/// \return Number of bytes buffer space available for Write()
-	/// \note Does only work with interrupt driver.
-	unsigned AvailableForWrite (void);
+    /// \brief 使用可能なバッファスペースのバイト数を返す
+    /// \return Write()で使用可能なバッファスペースのバイト数
+    /// \note 割り込みドライバの場合にのみ動作する
+    unsigned AvailableForWrite (void);
 
-	/// \return Number of bytes already received available for Read()
-	/// \note Does only work with interrupt driver.
-	unsigned AvailableForRead (void);
+    /// \brief 使用可能な受信済みのバイト数を返す
+    /// \return Read()で使用可能な受信済みのバイト数
+    /// \note 割り込みドライバの場合にのみ動作する
+    unsigned AvailableForRead (void);
 
-	/// \return Next received byte which will be returned by Read() (-1 if no data available)
-	/// \note Does only work with interrupt driver.
-	int Peek (void);
+    /// \brief 次の受信データを覗き見る
+    /// \return Read()により返される次の受信バイト（データがない場合は-1）
+    /// \note 割り込みドライバの場合にのみ動作する
+    int Peek (void);
 
-	/// \brief Waits until all written bytes have been sent out
-	void Flush (void);
-
-private:
-	boolean Write (u8 uchChar);
-
-	void InterruptHandler (void);
-	static void InterruptStub (void *pParam);
+    /// \brief 送信データがすべて送信されるまで待機する
+    void Flush (void);
 
 private:
-	CInterruptSystem *m_pInterruptSystem;
-	boolean m_bUseFIQ;
-	unsigned m_nDevice;
-	uintptr  m_nBaseAddress;
-	boolean  m_bValid;
+    /// @brief 1文字送信する
+    /// @param uchChar 送信文字
+    /// @return 送信の成否
+    boolean Write (u8 uchChar);
+    /// @brief 割り込みを処理する
+    void InterruptHandler (void);
+    /// @brief 割り込みを処理する
+    static void InterruptStub (void *pParam);
+
+private:
+    CInterruptSystem *m_pInterruptSystem;
+    boolean  m_bUseFIQ;
+    unsigned m_nDevice;
+    uintptr  m_nBaseAddress;
+    boolean  m_bValid;
 
 #if SERIAL_GPIO_SELECT == 14
-	CGPIOPin m_GPIO32;
-	CGPIOPin m_GPIO33;
+    CGPIOPin m_GPIO32;
+    CGPIOPin m_GPIO33;
 #endif
-	CGPIOPin m_TxDPin;
-	CGPIOPin m_RxDPin;
+    CGPIOPin m_TxDPin;
+    CGPIOPin m_RxDPin;
 
-	u8 m_RxBuffer[SERIAL_BUF_SIZE];
-	volatile unsigned m_nRxInPtr;
-	volatile unsigned m_nRxOutPtr;
-	volatile int m_nRxStatus;
+    u8 m_RxBuffer[SERIAL_BUF_SIZE];
+    volatile unsigned m_nRxInPtr;
+    volatile unsigned m_nRxOutPtr;
+    volatile int m_nRxStatus;
 
-	u8 m_TxBuffer[SERIAL_BUF_SIZE];
-	volatile unsigned m_nTxInPtr;
-	volatile unsigned m_nTxOutPtr;
+    u8 m_TxBuffer[SERIAL_BUF_SIZE];
+    volatile unsigned m_nTxInPtr;
+    volatile unsigned m_nTxOutPtr;
 
-	unsigned m_nOptions;
+    unsigned m_nOptions;
 
-	const char *m_pMagic;
-	const char *m_pMagicPtr;
-	TMagicReceivedHandler *m_pMagicReceivedHandler;
+    const char *m_pMagic;
+    const char *m_pMagicPtr;
+    TMagicReceivedHandler *m_pMagicReceivedHandler;
 
-	CSpinLock m_SpinLock;
-	CSpinLock m_LineSpinLock;
+    CSpinLock m_SpinLock;
+    CSpinLock m_LineSpinLock;
 
-	static unsigned s_nInterruptUseCount;
-	static CInterruptSystem *s_pInterruptSystem;
-	static boolean s_bUseFIQ;
-	static volatile u32 s_nInterruptDeviceMask;
-	static CSerialDevice *s_pThis[SERIAL_DEVICES];
+    static unsigned s_nInterruptUseCount;
+    static CInterruptSystem *s_pInterruptSystem;
+    static boolean s_bUseFIQ;
+    static volatile u32 s_nInterruptDeviceMask;
+    static CSerialDevice *s_pThis[SERIAL_DEVICES];
 #endif
 };
 
