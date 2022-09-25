@@ -5,7 +5,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2022  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -24,58 +24,56 @@
 
 ///////////////////////////////////////////////////////////////////////
 //
-// Memory
+// メモリ
 //
 ///////////////////////////////////////////////////////////////////////
 
 #define MEGABYTE		0x100000	// do not change
 
-// KERNEL_MAX_SIZE is the maximum allowed size of a built kernel image.
-// If your kernel image contains big data areas it may be required to
-// increase this value. The value must be a multiple of 16 KByte.
+// KERNEL_MAX_SIZEはビルドするカーネルイメージの最大許容サイズです。
+// 作成するカーネルイメージが大量のデータを含む場合はこの値を増加
+// させるひつようがあるかもしれません。値は16KBの倍数である必要があります。
 
 #ifndef KERNEL_MAX_SIZE
 #define KERNEL_MAX_SIZE		(2 * MEGABYTE)
 #endif
 
-// HEAP_DEFAULT_NEW defines the default heap to be used for the "new"
-// operator, if a memory type is not explicitly specified. Possible
-// values are HEAP_LOW (memory below 1 GByte), HEAP_HIGH (memory above
-// 1 GByte) or HEAP_ANY (memory above 1 GB, if available, or memory
-// below 1 GB otherwise). This value can be set to HEAP_ANY for
-// a virtually unified heap, which uses the whole available memory
-// space. Because this may cause problems with some devices, which
-// explicitly need low memory for DMA, this value defaults to HEAP_LOW.
-// This setting is only of importance for the Raspberry Pi 4.
+// HEAP_DEFAULT_NEWは、メモリタイプが明示的に指定されない場合に、
+// "new"演算子で使用するデフォルトヒープを定義します。指定可能な
+// 値は、HEAP_LOW（1GB以下のメモリ）、HEAP_HIGH（1GB以上のメモリ）、
+// HEAP_ANY（利用可能であれば1GB以上 、そうでなければ1GB以下のメモリ） 。
+// この値にHEAP_ANYを設定すると事実上統一ヒープとなり、利用可能な
+// すべてのメモリ空間を使用します。これはDMA用に明示的に低位メモリを
+// 必要とする一部のデバイスで問題を引き起こす可能性があるため、この値の
+// デフォルトはHEAP_LOWに設定されています。この設定が重要なのはRaspberry
+// Pi 4だけです。
 
 #ifndef HEAP_DEFAULT_NEW
 #define HEAP_DEFAULT_NEW	HEAP_LOW
 #endif
 
-// HEAP_DEFAULT_MALLOC defines the heap to be used for malloc() and
-// calloc() calls. See the description of HEAP_DEFAULT_NEW for details!
-// Modifying this setting is not recommended, because there are device
-// drivers, which require to allocate low memory for DMA purpose using
-// malloc(). This setting is only of importance for the Raspberry Pi 4.
+// HEAP_DEFAULT_MALLOCは、malloc()とcalloc()で使用されるヒープを定義します。
+// 書斎はHEAP_DEFAULT_NEWの説明を参照してください。おの設定を変更することは
+// 推奨しません。malloc()を使ってDMA用に低位メモリの割当を要求する
+// デバイスドライバが存在するためです。この設定が重要なのはRaspberry
+// Pi 4だけです。
 
 #ifndef HEAP_DEFAULT_MALLOC
 #define HEAP_DEFAULT_MALLOC	HEAP_LOW
 #endif
 
-// HEAP_BLOCK_BUCKET_SIZES configures the heap allocator, which is the
-// base of dynamic memory management ("new" operator and malloc()). The
-// heap allocator manages free memory blocks in a number of free lists
-// (buckets). Each free list contains blocks of a specific size. On
-// block allocation the requested block size is rounded up to the
-// size of next available bucket size. If the requested size is greater
-// than the largest available bucket size, the block can be allocated,
-// but the memory space is lost, if the block will be freed later.
-// Because the block buckets have to be walked through on each allocate
-// and free operation, it is preferable to have only a few buckets.
-// With this option you can configure the bucket sizes, so that they
-// fit best for your application needs. You have to define a comma
-// separated list of increasing bucket sizes. All sizes must be a
-// multiple of 64. Up to 20 sizes can be defined.
+// HEAP_BLOCK_BUCKET_SIZESは、動的メモリ管理 ("new" 演算子と malloc()) の
+// ベースとなるヒープアロケータを構成します。ヒープアロケータは空きメモリ
+// ブロックをいくつかの空きリスト (バケット) に分けて管理します。各フリー
+// リストには特定のサイズのブロックが含まれています。ブロックを割り当てる際
+// 要求されたブロックサイズは次に利用可能なバケットサイズのサイズに切り上げ
+// られます。要求されたサイズが利用可能な最大のバケットサイズより大きい場合、
+// そのブロックは割り当てられますが、そのブロックが解放される際にそのメモリ
+// 領域は失われます。ブロックバケットは割当と解放のたびに確認しなければなら
+// ないのでバケットの数は少ないほうが望ましい。このオプションを使用すると
+// アプリケーションのニーズに最適なバケットサイズを設定することができます。
+// バケツサイズをカンマ区切りで昇順に指定する必要があります。すべてのサイズは
+// 64の倍数である必要があります。最大で20個のサイズを定義することができます。
 
 #ifndef HEAP_BLOCK_BUCKET_SIZES
 #define HEAP_BLOCK_BUCKET_SIZES	0x40,0x400,0x1000,0x4000,0x10000,0x40000,0x80000
@@ -108,11 +106,11 @@
 
 #if RASPPI == 1 || RASPPI == 3
 
-// USE_PWM_AUDIO_ON_ZERO can be defined to use GPIO12/13 (or 18/19) for
-// PWM audio output on RPi Zero (W) and Zero 2 W. Some external circuit
-// is needed to use this.
-// WARNING: Do not feed voltage into these GPIO pins with this option
-//          defined on a RPi Zero, because this may destroy the pins.
+// USE_PWM_AUDIO_ON_ZEROは、RPi Zero（W）とZero 2 WでGPIO12/13
+// （または18/19）をPWMオーディオ出力に使用するために定義できます。
+// これを使用するには何らかの外部回路が必要です。
+// 警告: RPi Zeroでこのオプションを定義した場合は、これらのGPIOピンに
+//       電圧を印加しないでください、ピンが破壊される可能性があります。
 
 //#define USE_PWM_AUDIO_ON_ZERO
 
@@ -143,10 +141,11 @@
 
 #ifndef USE_RPI_STUB_AT
 
-// ARM_ALLOW_MULTI_CORE has to be defined to use multi-core support
-// with the class CMultiCoreSupport. It should not be defined for
-// single core applications, because this may slow down the system
-// because multiple cores may compete for bus time without use.
+// ARM_ALLOW_MULTI_COREは、CMultiCoreSupportクラスによるマルチコア
+// サポートを使用するには、定義しなければなりません。シングルコア
+// アプリケーションの場合は定義するべきではありません。マルチコアは
+// 使用しなくてもバス時間を計算するのでシステムがスローダウンする
+// 可能性があるためです。
 
 //#define ARM_ALLOW_MULTI_CORE
 
@@ -196,26 +195,26 @@
 
 //#define REALTIME
 
-// USE_USB_SOF_INTR improves the compatibility with low-/full-speed
-// USB devices. If your application uses such devices, this option
-// should normally be set. Unfortunately this causes a heavily changed
-// system timing, because it triggers up to 8000 IRQs per second. For
-// USB plug-and-play operation this option must be set in any case.
-// This option has no influence on the Raspberry Pi 4.
+// USE_USB_SOF_INTRは、LS/FS USBデバイスとの互換性を向上させます。
+// このようなデバイスを使用するアプリケーションでは通常、この
+// オプションを設定するべきです。残念ながら、このオプションはシステムの
+// タイミングを大きく変化させる原因となります。1秒間に最大8000回、IRQを
+// トリガーするためです。USBのプラグアンドプレイを動作させるためには
+// このオプションはいかなる場合でも設定しなければなりません。この
+// オプションはRaspberry Pi 4には影響ありません。
 
 #ifndef NO_USB_SOF_INTR
 #define USE_USB_SOF_INTR
 #endif
 
-// USE_USB_FIQ makes the USB timing more accurate, by using the FIQ to
-// handle time-critical interrupts from the USB controller, which are
-// triggered 8000 times per second. When using the default IRQ instead,
-// USB interrupts may be delayed or entire micro-frames may be skipped,
-// when other IRQs are currently handled, which could result in
-// communication problems with some USB devices. If this option is
-// enabled, USE_USB_SOF_INTR will be enabled too, and the FIQ cannot be
-// used for other purposes. This option has no influence on the
-// Raspberry Pi 4.
+// USE_USB_FIQは、USBコントローラからのタイムクリティカルな割り込み
+// （毎秒8000回発生）をFIQで処理することでUSBのタイミングをより正確に
+// するものです。デフォルトのIRQを使用すると、他のIRQが処理されている
+// ときにUSB割り込みが遅れたり、マイクロフレーム全体がスキップされる
+// ことがあり、一部のUSBデバイスとの通信に問題が発生する場合があります。
+// このオプションを有効にする場合はUSE_USB_SOF_INTRも有効にします。FIQを
+// 他の用途に使用することができなくなります。このオプションはRaspberry
+// Pi 4には影響ありません。
 
 //#define USE_USB_FIQ
 
@@ -261,10 +260,10 @@
 #define TASK_STACK_SIZE		0x8000
 #endif
 
-// NO_BUSY_WAIT deactivates busy waiting in the EMMC, SDHOST and USB
-// drivers, while waiting for the completion of a synchronous transfer.
-// This requires the scheduler in the system and transfers must not be
-// initiated from a secondary CPU core, when this option is enabled.
+// NO_BUSY_WAITは、EMMC、SDHOST、USBドライバで同期転送の完了を待つ
+// ビジーウェイトを無効にします。このオプションを有効にするには
+// システムにスケジューラが必要となり、セカンダリCPUコアから転送を
+// 開始することはできません。
 
 //#define NO_BUSY_WAIT
 
@@ -295,18 +294,17 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-// SCREEN_HEADLESS can be defined, if your Raspberry Pi runs without
-// a display connected. Most Circle sample programs normally expect
-// a display connected to work, but some can be used without a display
-// available. Historically the screen initialization was working even
-// without a display connected, without returning an error, but
-// especially on the Raspberry Pi 4 this is not the case any more. Here
-// it is required to define this option, otherwise the program
-// initialization will fail without notice. In your own headless
-// applications you should just not use the CScreenDevice class instead
-// and direct the logger output to CSerialDevice or CNullDevice.
+// SCREEN_HEADLESSは、Raspberry Piがディスプレイを接続せずに動作する場合に
+// 定義することができます。Circleのサンプルプログラムの多くは、通常、
+// ディスプレイが接続されていることを前提に動作しますが、中にはディスプレイが
+// なくても使用できるものもあります。以前はディスプレイが接続されていなくても
+// 画面の初期化はエラーを返さずに動作していましたが、特にRaspberry Pi 4では
+// そのようなことはありません。このオプションを定義しておかないと、プログラムの
+// 初期化に失敗します。ヘッドレスアプリケーションでは、CScreenDeviceクラスを
+// 使用せず直接、CSerialDeviceまたはCNullDeviceにロガー出力指定する必要が
+// あります。
 
-//#define SCREEN_HEADLESS
+#define SCREEN_HEADLESS
 
 // SERIAL_GPIO_SELECT selects the TXD GPIO pin used for the serial
 // device (UART0). The RXD pin is (SERIAL_GPIO_SELECT+1). Modifying
@@ -373,10 +371,10 @@
 
 //#define LEAVE_QEMU_ON_HALT
 
-// USE_QEMU_USB_FIX fixes an issue when using Circle images inside
-// QEMU. If you encounter Circle freezing when using USB in QEMU
-// you should activate this option. It must not be defined for
-// Circle images which will run on real Raspberry Pi boards.
+// USE_QEMU_USB_FIXは、QEMUでCircleイメージを使用する際の問題を修正
+// します。QEMUでUSBを使用する際にCircleがフリーズした場合、この
+// オプションを有効にする必要があります。実際のRaspberry Piボードで
+// 動作させるCircleイメージでは定義してはいけません。
 
 //#define USE_QEMU_USB_FIX
 
