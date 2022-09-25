@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -23,37 +23,41 @@
 #include <circle/usb/dwhci.h>
 #include <circle/types.h>
 
+/**
+ * @class CDWHCIRegister
+ * @brief DWHCレジスタを表すクラス
+ */
 class CDWHCIRegister
 {
 public:
-	CDWHCIRegister (u32 nAddress);
-	CDWHCIRegister (u32 nAddress, u32 nValue);
-	~CDWHCIRegister (void);
+    CDWHCIRegister (u32 nAddress);
+    CDWHCIRegister (u32 nAddress, u32 nValue);
+    ~CDWHCIRegister (void);
 
-	u32 Read (void);
-	void Write (void);
+    u32 Read (void);
+    void Write (void);
 
-	u32 Get (void) const;
-	void Set (u32 nValue);
+    u32 Get (void) const;
+    void Set (u32 nValue);
 
-	boolean IsSet (u32 nMask) const;
-	
-	void And (u32 nMask);
-	void Or (u32 nMask);
-	
-	void ClearBit (unsigned nBit);
-	void SetBit (unsigned nBit);
-	void ClearAll (void);
-	void SetAll (void);
+    boolean IsSet (u32 nMask) const;
+
+    void And (u32 nMask);
+    void Or (u32 nMask);
+
+    void ClearBit (unsigned nBit);
+    void SetBit (unsigned nBit);
+    void ClearAll (void);
+    void SetAll (void);
 
 #ifndef NDEBUG
-	void Dump (void) const;
+    void Dump (void) const;
 #endif
-	
+
 private:
-	boolean	m_bValid;
-	u32	m_nAddress;
-	u32	m_nBuffer;
+    boolean     m_bValid;       ///< レジスタ値
+    u32         m_nAddress;     ///< レジスタアドレス
+    u32         m_nBuffer;      ///< バッファ
 };
 
 #endif
