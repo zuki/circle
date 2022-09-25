@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2017  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,32 +25,36 @@
 #include <circle/classallocator.h>
 #include <circle/types.h>
 
+/**
+ * @class CDWHCIFrameSchedulerNoSplit
+ * @brief DWHCIの分割しないフレームスケジューラを表すクラス
+ */
 class CDWHCIFrameSchedulerNoSplit : public CDWHCIFrameScheduler
 {
 public:
-	CDWHCIFrameSchedulerNoSplit (boolean bIsPeriodic);
-	~CDWHCIFrameSchedulerNoSplit (void);
+    CDWHCIFrameSchedulerNoSplit (boolean bIsPeriodic);
+    ~CDWHCIFrameSchedulerNoSplit (void);
 
-	void StartSplit (void);
-	boolean CompleteSplit (void);
-	void TransactionComplete (u32 nStatus);
-	
+    void StartSplit (void);
+    boolean CompleteSplit (void);
+    void TransactionComplete (u32 nStatus);
+
 #ifndef USE_USB_SOF_INTR
-	void WaitForFrame (void);
+    void WaitForFrame (void);
 #else
-	u16 GetFrameNumber (void);
+    u16 GetFrameNumber (void);
 
-	void PeriodicDelay (u16 usFrameOffset);
+    void PeriodicDelay (u16 usFrameOffset);
 #endif
 
-	boolean IsOddFrame (void) const;
+    boolean IsOddFrame (void) const;
 
 private:
-	boolean m_bIsPeriodic;
+    boolean m_bIsPeriodic;          ///< 周期的か
 
-	u16 m_usNextFrame;
+    u16 m_usNextFrame;              ///< 次のフレーム
 
-	DECLARE_CLASS_ALLOCATOR
+    DECLARE_CLASS_ALLOCATOR
 };
 
 #endif

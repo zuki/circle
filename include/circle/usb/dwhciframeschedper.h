@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2017  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -26,38 +26,42 @@
 #include <circle/classallocator.h>
 #include <circle/types.h>
 
+/**
+ * @class CDWHCIFrameSchedulerPeriodic
+ * @brief DWHCIの周期的フレームスケジューラを表すクラス
+ */
 class CDWHCIFrameSchedulerPeriodic : public CDWHCIFrameScheduler
 {
 public:
-	CDWHCIFrameSchedulerPeriodic (void);
-	~CDWHCIFrameSchedulerPeriodic (void);
+    CDWHCIFrameSchedulerPeriodic (void);
+    ~CDWHCIFrameSchedulerPeriodic (void);
 
-	void StartSplit (void);
-	boolean CompleteSplit (void);
-	void TransactionComplete (u32 nStatus);
-	
+    void StartSplit (void);
+    boolean CompleteSplit (void);
+    void TransactionComplete (u32 nStatus);
+
 #ifndef USE_USB_SOF_INTR
-	void WaitForFrame (void);
+    void WaitForFrame (void);
 #else
-	u16 GetFrameNumber (void);
+    u16 GetFrameNumber (void);
 
-	void PeriodicDelay (u16 usFrameOffset);
+    void PeriodicDelay (u16 usFrameOffset);
 #endif
 
-	boolean IsOddFrame (void) const;
+    boolean IsOddFrame (void) const;
 
 private:
-	CTimer *m_pTimer;
+    CTimer *m_pTimer;           ///< タイマー
 
-	unsigned m_nState;
-	unsigned m_nTries;
+    unsigned m_nState;          ///< 状態
+    unsigned m_nTries;          ///< 試行数
 
 #ifdef USE_USB_SOF_INTR
-	u16 m_usFrameOffset;
+    u16 m_usFrameOffset;        ///< フレームオフセット
 #endif
-	u16 m_usNextFrame;
+    u16 m_usNextFrame;          ///< 次のフレーム
 
-	DECLARE_CLASS_ALLOCATOR
+    DECLARE_CLASS_ALLOCATOR
 };
 
 #endif

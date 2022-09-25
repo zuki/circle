@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2017  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -23,24 +23,28 @@
 #include <circle/sysconfig.h>
 #include <circle/types.h>
 
+/**
+ * @class CDWHCIFrameScheduler
+ * @brief DWHCIフレームスケジューラの基底クラス
+ */
 class CDWHCIFrameScheduler
 {
 public:
-	virtual ~CDWHCIFrameScheduler (void) {}
+    virtual ~CDWHCIFrameScheduler (void) {}
 
-	virtual void StartSplit (void) = 0;
-	virtual boolean CompleteSplit (void) = 0;
-	virtual void TransactionComplete (u32 nStatus) = 0;
+    virtual void StartSplit (void) = 0;
+    virtual boolean CompleteSplit (void) = 0;
+    virtual void TransactionComplete (u32 nStatus) = 0;
 
 #ifndef USE_USB_SOF_INTR
-	virtual void WaitForFrame (void) = 0;
+    virtual void WaitForFrame (void) = 0;
 #else
-	virtual u16 GetFrameNumber (void) = 0;
+    virtual u16 GetFrameNumber (void) = 0;
 
-	virtual void PeriodicDelay (u16 usFrameOffset) = 0;
+    virtual void PeriodicDelay (u16 usFrameOffset) = 0;
 #endif
 
-	virtual boolean IsOddFrame (void) const = 0;
+    virtual boolean IsOddFrame (void) const = 0;
 };
 
 #endif
