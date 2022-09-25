@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -26,47 +26,71 @@
 
 typedef void TIRQHandler (void *pParam);
 
+/// @brief 割り込みシステムクラス
 class CInterruptSystem
 {
 public:
-	CInterruptSystem (void);
-	~CInterruptSystem (void);
-
-	boolean Initialize (void);
-
-	void ConnectIRQ (unsigned nIRQ, TIRQHandler *pHandler, void *pParam);
-	void DisconnectIRQ (unsigned nIRQ);
-
-	void ConnectFIQ (unsigned nFIQ, TFIQHandler *pHandler, void *pParam);
-	void DisconnectFIQ (void);
-
-	static void EnableIRQ (unsigned nIRQ);
-	static void DisableIRQ (unsigned nIRQ);
-
-	static void EnableFIQ (unsigned nFIQ);
-	static void DisableFIQ (void);
-
-	static CInterruptSystem *Get (void);
-
-	static void InterruptHandler (void);
+    /// @brief コンストラクタ
+    CInterruptSystem (void);
+    /// @brief デストラクタ
+    ~CInterruptSystem (void);
+    /// @brief 初期関数
+    /// @return 常にTRUE
+    boolean Initialize (void);
+    /// @brief 割り込みを設定
+    /// @param nIRQ 割り込み番号
+    /// @param pHandler 割り込みハンドラ
+    /// @param pParam 割り込みハンドラに渡すパラメタ
+    void ConnectIRQ (unsigned nIRQ, TIRQHandler *pHandler, void *pParam);
+    /// @brief 割り込みを削除
+    /// @param nIRQ 割り込み番号
+    void DisconnectIRQ (unsigned nIRQ);
+    /// @brief 高速割り込みを設定
+    /// @param nFIQ 高速割り込み番号
+    /// @param pHandler 高速割り込みハンドラ
+    /// @param pParam 高速割り込みハンドラに渡すパラメタ
+    void ConnectFIQ (unsigned nFIQ, TFIQHandler *pHandler, void *pParam);
+    /// @brief 高速割り込みを削除
+    void DisconnectFIQ (void);
+    /// @brief 割り込みを有効化
+    /// @param nIRQ 割り込み番号
+    static void EnableIRQ (unsigned nIRQ);
+    /// @brief 割り込みを無効化
+    /// @param nIRQ 割り込み番号
+    static void DisableIRQ (unsigned nIRQ);
+    /// @brief 高速割り込みを有効化
+    /// @param nFIQ 高速割り込み番号
+    static void EnableFIQ (unsigned nFIQ);
+    /// @brief 高速割り込みを無効化
+    static void DisableFIQ (void);
+    /// @brief 割り込みシステムオブジェクトを取得する
+    /// @return 割り込みシステムオブジェクト
+    static CInterruptSystem *Get (void);
+    /// @brief 割り込みハンドラを呼び出す
+    static void InterruptHandler (void);
 
 #if RASPPI >= 4
-	static void InitializeSecondary (void);
+    static void InitializeSecondary (void);
 
-	static void SendIPI (unsigned nCore, unsigned nIPI);
+    static void SendIPI (unsigned nCore, unsigned nIPI);
 
-	static void CallSecureMonitor (u32 nFunction, u32 nParam);
-	static void SecureMonitorHandler (u32 nFunction, u32 nParam);
+    static void CallSecureMonitor (u32 nFunction, u32 nParam);
+    static void SecureMonitorHandler (u32 nFunction, u32 nParam);
 #endif
 
 private:
-	boolean CallIRQHandler (unsigned nIRQ);
+    /// @brief 割り込みハンドラを実行する
+    /// @param nIRQ 割り込み番号
+    /// @return 実行した場合はTRUE、ハンドラが設定されていなかったらFALSE
+    boolean CallIRQHandler (unsigned nIRQ);
 
 private:
-	TIRQHandler	*m_apIRQHandler[IRQ_LINES];
-	void		*m_pParam[IRQ_LINES];
-
-	static CInterruptSystem *s_pThis;
+    /// @brief 割り込みハンドラの配列
+    TIRQHandler *m_apIRQHandler[IRQ_LINES];
+    /// @brief 割り込みハンドラに渡すパラメタの配列
+    void        *m_pParam[IRQ_LINES];
+    /// @brief 唯一のこのオブジェクト
+    static CInterruptSystem *s_pThis;
 };
 
 #endif
