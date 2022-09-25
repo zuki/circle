@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2016  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -23,17 +23,24 @@
 #include <circle/net/netsubsystem.h>
 #include <circle/net/ipaddress.h>
 
+/// @brief NTPクライアントクラス
 class CNTPClient
 {
 public:
-	CNTPClient (CNetSubSystem *pNetSubSystem);
-	~CNTPClient (void);
+    /// @brief コンストラクタ
+    /// @param pNetSubSystem ネットワークサブシステムオブジェクトへのポインタ
+    CNTPClient (CNetSubSystem *pNetSubSystem);
+    /// @brief デストラクタ
+    ~CNTPClient (void);
 
-	/// \return Seconds since 1970-01-01 00:00:00 UTC, 0 on error
-	unsigned GetTime (CIPAddress &rServerIP);
+    /// @brief NTPサーバから現在時刻を取得する
+    /// @param rServerIP NTPサーバのIPアドレス
+    /// @return 1970-01-01 00:00:00 UTC以来の秒数、エラーの場合は0
+    unsigned GetTime (CIPAddress &rServerIP);
 
 private:
-	CNetSubSystem *m_pNetSubSystem;
+    /// @brief ネットワークサブシステムオブジェクト
+    CNetSubSystem *m_pNetSubSystem;
 };
 
 #endif
