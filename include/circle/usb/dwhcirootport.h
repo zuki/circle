@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -26,23 +26,28 @@
 
 class CDWHCIDevice;
 
+/**
+ * @class CDWHCIRootPort
+ * @brief DWHCIのルートポートを表すクラス
+ */
 class CDWHCIRootPort : public CUSBHCIRootPort
 {
 public:
-	CDWHCIRootPort (CDWHCIDevice *pHost);
-	~CDWHCIRootPort (void);
+    CDWHCIRootPort (CDWHCIDevice *pHost);
+    ~CDWHCIRootPort (void);
 
-	boolean Initialize (void);
+    //! ルートポートの初期化（成功はTRUE，失敗はFALSE）
+    boolean Initialize (void);
 
-	boolean ReScanDevices (void);
-	boolean RemoveDevice (void);
+    boolean ReScanDevices (void);
+    boolean RemoveDevice (void);
 
-	void HandlePortStatusChange (void);
+    void HandlePortStatusChange (void);
 
 private:
-	CDWHCIDevice *m_pHost;
+    CDWHCIDevice *m_pHost;      ///< DWHCIホストコントローラ
 
-	CUSBDevice *m_pDevice;
+    CUSBDevice *m_pDevice;      ///< USBデバイス
 };
 
 #endif

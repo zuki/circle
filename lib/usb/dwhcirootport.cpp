@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,112 +25,113 @@
 static const char FromDWHCIRoot[] = "dwroot";
 
 CDWHCIRootPort::CDWHCIRootPort (CDWHCIDevice *pHost)
-:	m_pHost (pHost),
-	m_pDevice (0)
+:    m_pHost (pHost),
+    m_pDevice (0)
 {
-	assert (m_pHost != 0);
+    assert (m_pHost != 0);
 }
 
 CDWHCIRootPort::~CDWHCIRootPort (void)
 {
-	delete m_pDevice;
-	m_pDevice = 0;
+    delete m_pDevice;
+    m_pDevice = 0;
 
-	m_pHost = 0;
+    m_pHost = 0;
 }
 
 boolean CDWHCIRootPort::Initialize (void)
 {
-	assert (m_pHost != 0);
-	TUSBSpeed Speed = m_pHost->GetPortSpeed ();
-	if (Speed == USBSpeedUnknown)
-	{
-		CLogger::Get ()->Write (FromDWHCIRoot, LogError, "Cannot detect port speed");
+    assert (m_pHost != 0);
+    TUSBSpeed Speed = m_pHost->GetPortSpeed ();
+    // ポートスピード不明の場合はエラー
+    if (Speed == USBSpeedUnknown)
+    {
+        CLogger::Get ()->Write (FromDWHCIRoot, LogError, "Cannot detect port speed");
 
-		return FALSE;
-	}
-	
-	// first create default device
-	assert (m_pDevice == 0);
-	m_pDevice = new CUSBDevice (m_pHost, Speed, this);
-	assert (m_pDevice != 0);
+        return FALSE;
+    }
 
-	if (!m_pDevice->Initialize ())
-	{
-		delete m_pDevice;
-		m_pDevice = 0;
+    // まず、デフォルトデバイスを作成する
+    assert (m_pDevice == 0);
+    m_pDevice = new CUSBDevice (m_pHost, Speed, this);
+    assert (m_pDevice != 0);
+    // デフォルトデバイスの初期化
+    if (!m_pDevice->Initialize ())
+    {
+        delete m_pDevice;
+        m_pDevice = 0;
 
-		return FALSE;
-	}
+        return FALSE;
+    }
+    // デフォルトデバイスの構成
+    if (!m_pDevice->Configure ())
+    {
+        CLogger::Get ()->Write (FromDWHCIRoot, LogWarning, "Cannot configure device");
 
-	if (!m_pDevice->Configure ())
-	{
-		CLogger::Get ()->Write (FromDWHCIRoot, LogWarning, "Cannot configure device");
+        delete m_pDevice;
+        m_pDevice = 0;
 
-		delete m_pDevice;
-		m_pDevice = 0;
+        return FALSE;
+    }
 
-		return FALSE;
-	}
+    CLogger::Get ()->Write (FromDWHCIRoot, LogDebug, "Device configured");
 
-	CLogger::Get ()->Write (FromDWHCIRoot, LogDebug, "Device configured");
+    // 過電流を検知したらルートポートは無効としてFALSEを返す
+    if (m_pHost->OvercurrentDetected ())
+    {
+        CLogger::Get ()->Write (FromDWHCIRoot, LogError, "Over-current condition");
 
-	// check for over-current
-	if (m_pHost->OvercurrentDetected ())
-	{
-		CLogger::Get ()->Write (FromDWHCIRoot, LogError, "Over-current condition");
+        m_pHost->DisableRootPort ();
 
-		m_pHost->DisableRootPort ();
+        delete m_pDevice;
+        m_pDevice = 0;
 
-		delete m_pDevice;
-		m_pDevice = 0;
+        return FALSE;
+    }
 
-		return FALSE;
-	}
-
-	return TRUE;
+    return TRUE;
 }
 
 boolean CDWHCIRootPort::ReScanDevices (void)
 {
-	if (m_pDevice == 0)
-	{
-		CLogger::Get ()->Write (FromDWHCIRoot, LogWarning,
-					"Previous attempt to initialize device failed");
+    if (m_pDevice == 0)
+    {
+        CLogger::Get ()->Write (FromDWHCIRoot, LogWarning,
+                    "Previous attempt to initialize device failed");
 
-		return FALSE;
-	}
+        return FALSE;
+    }
 
-	return m_pDevice->ReScanDevices ();
+    return m_pDevice->ReScanDevices ();
 }
 
 boolean CDWHCIRootPort::RemoveDevice (void)
 {
-	assert (m_pHost != 0);
-	m_pHost->DisableRootPort (FALSE);
+    assert (m_pHost != 0);
+    m_pHost->DisableRootPort (FALSE);
 
-	delete m_pDevice;
-	m_pDevice = 0;
+    delete m_pDevice;
+    m_pDevice = 0;
 
-	return TRUE;
+    return TRUE;
 }
 
 void CDWHCIRootPort::HandlePortStatusChange (void)
 {
-	assert (m_pHost != 0);
+    assert (m_pHost != 0);
 
-	if (m_pHost->DeviceConnected ())
-	{
-		if (m_pDevice == 0)
-		{
-			m_pHost->ReScanDevices ();
-		}
-	}
-	else
-	{
-		if (m_pDevice != 0)
-		{
-			RemoveDevice ();
-		}
-	}
+    if (m_pHost->DeviceConnected ())
+    {
+        if (m_pDevice == 0)
+        {
+            m_pHost->ReScanDevices ();
+        }
+    }
+    else
+    {
+        if (m_pDevice != 0)
+        {
+            RemoveDevice ();
+        }
+    }
 }
