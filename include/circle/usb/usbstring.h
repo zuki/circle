@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 // usbstring.h
 //
@@ -56,4 +59,5 @@ private:
     CString *m_pString;                 /**< 文字列 */
 };
 
+/** @} */
 #endif

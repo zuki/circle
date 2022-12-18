@@ -114,7 +114,7 @@ cont
     make: *** [run-ninja] Error 1
     ```
 
-- [Circle用パッチ](https://gitlab.com/qemu-project/qemu/-/issues/129)を適用
+- [QEMU-issue129](https://gitlab.com/qemu-project/qemu/-/issues/129)の[パッチ](https://gitlab.com/qemu-project/qemu/-/commit/75eebe0b1f15464d19a39c4186bfabf328ab601a)を適用
 
     - 画面表示せず（02-screenpixel, 03-screentext, 17-fractalのいずれも）、真っ黒なGUI画面。
     - 21-webserverは動作
@@ -131,7 +131,7 @@ cont
       dwhci: Unknown vendor 0x4F54294A
       ```
 
-- [Circle用パッチ](https://gitlab.com/qemu-project/qemu/-/issues/129)を適用
+- [Circle用パッチ](https://gitlab.com/qemu-project/qemu/-/commit/75eebe0b1f15464d19a39c4186bfabf328ab601a)を適用
   - 画面表示OK
   - USBデバイスの使用もOK
 

@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 // usbcdcethernet.h
 //
@@ -68,5 +71,7 @@ private:
     /// @brief MACアドレス
     CMACAddress     m_MACAddress;
 };
+
+/** @} */
 
 #endif

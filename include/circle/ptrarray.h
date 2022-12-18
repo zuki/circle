@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -20,26 +20,39 @@
 #ifndef _circle_ptrarray_h
 #define _circle_ptrarray_h
 
-class CPtrArray					// dynamic array of pointers
+/// @brief ポインタを格納する動的配列クラス
+class CPtrArray
 {
 public:
-	CPtrArray (unsigned nInitialSize = 100, unsigned nSizeIncrement = 100);
-	~CPtrArray (void);
+    CPtrArray (unsigned nInitialSize = 100, unsigned nSizeIncrement = 100);
+    ~CPtrArray (void);
 
-	unsigned GetCount (void) const;			// get number of elements in the array
+    /// @brief 配列の要素数を取得
+    unsigned GetCount (void) const;
 
-	void *&operator[] (unsigned nIndex);		// get element for index
-	void *operator[] (unsigned  nIndex) const;
+    /// @brief &[]オペレータ: 指定したインデックスの要素を取得
+    /// @param nIndex インデックス
+    /// @return 指定したインデックスに格納されているポインタ
+    void *&operator[] (unsigned nIndex);
 
-	unsigned Append (void *pPtr);			// append element to end of array
+    /// @brief []オペレータ: 指定したインデックスの要素を取得
+    /// @param nIndex インデックス
+    /// @return 指定したインデックスに格納されているポインタ
+    void *operator[] (unsigned  nIndex) const;
 
-	void RemoveLast (void);				// remove last element
+    /// @brief 配列の末尾に要素を追加する
+    /// @param pPtr 要素へのポインタ
+    /// @return 要素数
+    unsigned Append (void *pPtr);
+
+    /// @brief 配列の最後の要素を削除する
+    void RemoveLast (void);
 
 private:
-	unsigned  m_nReservedSize;
-	unsigned  m_nSizeIncrement;
-	unsigned  m_nUsedCount;
-	void	**m_ppArray;
+    unsigned  m_nReservedSize;      ///< 確保済み要素数
+    unsigned  m_nSizeIncrement;     ///< 拡張増分数
+    unsigned  m_nUsedCount;         ///< 使用済み要素数
+    void    **m_ppArray;            ///< この配列のポインタ
 };
 
 #endif

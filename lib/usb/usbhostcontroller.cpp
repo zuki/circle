@@ -21,6 +21,8 @@
 #include <circle/usb/usbhcirootport.h>
 #include <circle/usb/usbstandardhub.h>
 #include <circle/timer.h>
+#include <circle/logger.h>
+#include <circle/debug.h>
 #include <assert.h>
 
 /// @brief ポートステータスイベント構造体
@@ -95,6 +97,9 @@ int CUSBHostController::ControlMessage (CUSBEndpoint *pEndpoint,
                     u16 usValue, u16 usIndex,
                     void *pData, u16 usDataSize)
 {
+    CLogger::Get ()->Write("hc", LogNotice, "ep=0x%p, type=0x%x, req=%d, value=0x%04x, index=%d, len=%d",
+        pEndpoint, ucRequestType, ucRequest, usValue, usIndex, usDataSize);
+    if (usDataSize > 0) debug_hexdump(pData, usDataSize, "data");
     TSetupData *pSetup = new TSetupData;
     assert (pSetup != 0);
 

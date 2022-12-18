@@ -36,6 +36,7 @@ CSocket::CSocket (CNetSubSystem *pNetSubSystem, int nProtocol)
     assert (m_pTransportLayer != 0);
 }
 
+// コピーコンストラクタ
 CSocket::CSocket (CSocket &rSocket, int hConnection)
 :   CNetSocket (rSocket.GetNetSubSystem ()),
     m_pNetConfig (rSocket.m_pNetConfig),

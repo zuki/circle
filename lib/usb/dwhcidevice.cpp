@@ -39,7 +39,7 @@
 //
 // 構成
 //
-#define DWC_CFG_DYNAMIC_FIFO                    // これらのサイズのFIFOを再プロぐむ
+#define DWC_CFG_DYNAMIC_FIFO        // 次のサイズでFIFOを再プログラム
     #define DWC_CFG_HOST_RX_FIFO_SIZE       1024    // 32ビットワードの数
     #define DWC_CFG_HOST_NPER_TX_FIFO_SIZE  1024    // 32ビットワードの数
     #define DWC_CFG_HOST_PER_TX_FIFO_SIZE   1024    // 32ビットワードの数
@@ -161,7 +161,10 @@ boolean CDWHCIDevice::Initialize (boolean bScanDevices)
     assert (m_pTimer != 0);
 
     CDWHCIRegister VendorId (DWHCI_CORE_VENDOR_ID);
-    if (VendorId.Read () != 0x4F54280A)     // 0x4F54280A: Circle独自? QEMUの設定値に変更すると動かない
+    // この値はDWC OTG HW Release versionの値。
+    // レジスタにはversion 2_80aの値が書かれている模様（linux/drivers/usb/dwc2/core.h参照
+    // QEMUの設定値(0x4f54294a)に変更すると動かない
+    if (VendorId.Read () != 0x4F54280A)
     {
         LOGERR ("Unknown vendor 0x%0X", VendorId.Get ());
         return FALSE;
@@ -781,6 +784,7 @@ boolean CDWHCIDevice::TransferStageAsync (CUSBRequest *pURB, boolean bIn, boolea
     CDWHCITransferStageData *pStageData =
         new CDWHCITransferStageData (nChannel, pURB, bIn, bStatusStage, nTimeoutMs);
     assert (pStageData != 0);
+    pStageData->DebugStdata();
 
 #ifndef USE_USB_SOF_INTR
     assert (m_pStageData[nChannel] == 0);

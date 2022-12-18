@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 // usbconfigparser.h
 //
@@ -68,4 +71,5 @@ private:
     const TUSBDescriptor   *m_pErrorPosition;
 };
 
+/** @} */
 #endif

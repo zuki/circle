@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // netdevice.h
 //
@@ -65,7 +68,7 @@ public:
     /// \brief SendFrame()を呼び出しが望ましいかのヒントを与える
     /// \return SendFrame()を呼び出しが望ましい場合にRUE
     /// \note SendFrame()はいつでも呼び出せるが、TXキューがフルの場合は失敗する。\n
-    ///      このメソッドはSendFrame()の呼び出しが望ましいか田舎についてのヒントを与える。
+    ///      このメソッドはSendFrame()の呼び出しが望ましいか否かについてのヒントを与える。
     virtual boolean IsSendFrameAdvisable (void)    { return TRUE; }
 
     /// \brief ネットワークに正しいEthernetフレームを送信する
@@ -80,10 +83,10 @@ public:
     virtual boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength) = 0;
 
     /// \brief PHYはupか
-    /// \return PHYがupの場合にTRUE
+    /// \return PHYがupの場合にTRUE (USBCDCEthernetは常にtrue)
     virtual boolean IsLinkUp (void)            { return TRUE; }
 
-    /// \brief ィン区スピードを取得する
+    /// \brief リンクスピードを取得する
     /// \return PHYリンクのスピード（upの場合）
     virtual TNetDeviceSpeed GetLinkSpeed (void)    { return NetDeviceSpeedUnknown; }
 
@@ -120,4 +123,5 @@ private:
     static const char *s_SpeedString[NetDeviceSpeedUnknown];
 };
 
+/** @} */
 #endif

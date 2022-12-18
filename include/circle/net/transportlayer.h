@@ -1,9 +1,12 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // transportlayer.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2018  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -30,53 +33,65 @@
 #include <circle/spinlock.h>
 #include <circle/types.h>
 
+/// @brief トランスポートレイヤ（TCP/UDP）の処理クラス
 class CTransportLayer
 {
 public:
-	CTransportLayer (CNetConfig *pNetConfig, CNetworkLayer *pNetworkLayer);
-	~CTransportLayer (void);
+    /// @brief コンストラクタ
+    /// @param pNetConfig ネットワークコンフィグオブジェクト
+    /// @param pNetworkLayer ネットワークレイヤ(IP)オブジェクト
+    CTransportLayer (CNetConfig *pNetConfig, CNetworkLayer *pNetworkLayer);
 
-	boolean Initialize (void);
+    /// @brief デストラクタ
+    ~CTransportLayer (void);
 
-	void Process (void);
+    /// @brief 初期化関数
+    /// @return 成功したらTRUE
+    boolean Initialize (void);
 
-	// nOwnPort must not be 0
-	int Bind (u16 nOwnPort, int nProtocol);
+    /// @brief 処理関数
+    /// @param
+    void Process (void);
 
-	// nOwnPort may be 0 (dynamic port assignment)
-	int Connect (CIPAddress &rIPAddress, u16 nPort, u16 nOwnPort, int nProtocol);
+    // nOwnPort must not be 0
+    int Bind (u16 nOwnPort, int nProtocol);
 
-	int Listen (u16 nOwnPort, int nProtocol);
-	int Accept (CIPAddress *pForeignIP, u16 *pForeignPort, int hConnection);
+    // nOwnPort may be 0 (dynamic port assignment)
+    int Connect (CIPAddress &rIPAddress, u16 nPort, u16 nOwnPort, int nProtocol);
 
-	int Disconnect (int hConnection);
+    int Listen (u16 nOwnPort, int nProtocol);
+    int Accept (CIPAddress *pForeignIP, u16 *pForeignPort, int hConnection);
 
-	int Send (const void *pData, unsigned nLength, int nFlags, int hConnection);
+    int Disconnect (int hConnection);
 
-	// pBuffer must have size FRAME_BUFFER_SIZE
-	int Receive (void *pBuffer, int nFlags, int hConnection);
+    int Send (const void *pData, unsigned nLength, int nFlags, int hConnection);
 
-	int SendTo (const void *pData, unsigned nLength, int nFlags,
-		    CIPAddress &rForeignIP, u16 nForeignPort, int hConnection);
+    // pBuffer must have size FRAME_BUFFER_SIZE
+    int Receive (void *pBuffer, int nFlags, int hConnection);
 
-	// pBuffer must have size FRAME_BUFFER_SIZE
-	int ReceiveFrom (void *pBuffer, int nFlags, CIPAddress *pForeignIP,
-			 u16 *pForeignPort, int hConnection);
+    int SendTo (const void *pData, unsigned nLength, int nFlags,
+            CIPAddress &rForeignIP, u16 nForeignPort, int hConnection);
 
-	int SetOptionBroadcast (boolean bAllowed, int hConnection);
+    // pBuffer must have size FRAME_BUFFER_SIZE
+    int ReceiveFrom (void *pBuffer, int nFlags, CIPAddress *pForeignIP,
+             u16 *pForeignPort, int hConnection);
 
-	boolean IsConnected (int hConnection) const;
-	const u8 *GetForeignIP (int hConnection) const;		// returns 0 if not connected
+    int SetOptionBroadcast (boolean bAllowed, int hConnection);
+
+    boolean IsConnected (int hConnection) const;
+    const u8 *GetForeignIP (int hConnection) const;        // returns 0 if not connected
 
 private:
-	CNetConfig    *m_pNetConfig;
-	CNetworkLayer *m_pNetworkLayer;
+    CNetConfig     *m_pNetConfig;
+    CNetworkLayer  *m_pNetworkLayer;
 
-	CPtrArray m_pConnection;
-	u16 m_nOwnPort;
-	CSpinLock m_SpinLock;
+    CPtrArray       m_pConnection;
+    u16             m_nOwnPort;
+    CSpinLock       m_SpinLock;
 
-	CTCPRejector m_TCPRejector;
+    CTCPRejector    m_TCPRejector;
 };
+
+/** @} */
 
 #endif

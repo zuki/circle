@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // netdevlayer.h
 //
@@ -34,27 +37,33 @@ public:
     /// @param pNetConfig ネットワーク構成オブジェクトへのポインタ
     /// @param DeviceType ネットワークデバイスタイプ
     CNetDeviceLayer (CNetConfig *pNetConfig, TNetDeviceType DeviceType);
+
     /// @brief デストラクタ
     ~CNetDeviceLayer (void);
+
     /// @brief 初期化関数（bWaitForActivate=FALSEの場合は直ちにTRUEで返る）
     /// @param bWaitForActivate デバイスの活性化を待つか
     /// @return 初期化の成否
     boolean Initialize (boolean bWaitForActivate);
+
     /// @brief 送受信を行う
     void Process (void);
 
     /// @brief デバイスのMACアドレスを取得する
     /// @return デバイスのMACアドレス、デバイスが設定されていない場合は0
     const CMACAddress *GetMACAddress (void) const;
+
     /// @brief 送信キューにデータを追加する
     /// @param pBuffer データバッファ
     /// @param nLength データ長
     void Send (const void *pBuffer, unsigned nLength);
+
     /// @brief 受信キューからデータを取得する
     /// @param pBuffer 受信バッファ
     /// @param pResultLength データ長
     /// @return 操作の成否
     boolean Receive (void *pBuffer, unsigned *pResultLength);
+
     /// @brief デバイスが利用可能か
     /// @return 可能であればTRUE
     boolean IsRunning (void) const;
@@ -76,4 +85,5 @@ private:
 #endif
 };
 
+/** @} */
 #endif

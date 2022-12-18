@@ -1,3 +1,6 @@
+/** @addtogroup dwhc
+ *  @{
+ */
 //
 // dwhci.h
 //
@@ -78,7 +81,9 @@
 #define DWHCI_CORE_I2C_CTRL             (ARM_USB_CORE_BASE + 0x030)
 #define DWHCI_CORE_PHY_VENDOR_CTRL      (ARM_USB_CORE_BASE + 0x034)
 #define DWHCI_CORE_GPIO                 (ARM_USB_CORE_BASE + 0x038)
+// DWC OTGのユーザID: 0x2708A000 が書かれている模様。これはraspiのIDだと思われる
 #define DWHCI_CORE_USER_ID              (ARM_USB_CORE_BASE + 0x03C)
+// DWC OTG HW Release version値:  0x4F54280A が書かれている模様
 #define DWHCI_CORE_VENDOR_ID            (ARM_USB_CORE_BASE + 0x040)
 #define DWHCI_CORE_HW_CFG1              (ARM_USB_CORE_BASE + 0x044)    // RO
 #define DWHCI_CORE_HW_CFG2              (ARM_USB_CORE_BASE + 0x048)    // RO
@@ -221,4 +226,5 @@
 //
 #define DWHCI_DATA_FIFO(chan)           (ARM_USB_HOST_BASE + 0x1000 + (chan)*DWHCI_DATA_FIFO_SIZE)
 
+/** @} */
 #endif

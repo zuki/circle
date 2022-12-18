@@ -1,3 +1,6 @@
+/** @addtogroup dwhc
+ *  @{
+ */
 //
 // dwhcixactqueue.h
 //
@@ -60,5 +63,7 @@ private:
 };
 
 #endif
+
+/** @} */
 
 #endif

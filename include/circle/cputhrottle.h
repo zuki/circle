@@ -26,126 +26,129 @@
 
 enum TCPUSpeed
 {
-	CPUSpeedLow,
-	CPUSpeedMaximum,
-	CPUSpeedUnknown
+    CPUSpeedLow,
+    CPUSpeedMaximum,
+    CPUSpeedUnknown
 };
 
 enum TSystemThrottledState
 {
-	SystemStateNothingOccurred		= 0,
+    SystemStateNothingOccurred        = 0,
 
-	SystemStateUnderVoltageOccurred		= BIT (16),
-	SystemStateFrequencyCappingOccurred	= BIT (17),
-	SystemStateThrottlingOccurred		= BIT (18),
-	SystemStateSoftTempLimitOccurred	= BIT (19)
+    SystemStateUnderVoltageOccurred        = BIT (16),
+    SystemStateFrequencyCappingOccurred    = BIT (17),
+    SystemStateThrottlingOccurred        = BIT (18),
+    SystemStateSoftTempLimitOccurred    = BIT (19)
 };
 
 typedef void TSystemThrottledHandler (TSystemThrottledState CurrentState, void *pParam);
 
-/// \warning You have to repeatedly call SetOnTemperature() or Update() if you use this class!\n
-///	     See the description of SetOnTemperature() for details!\n
-///	     IF YOU ARE NOT SURE ABOUT HOW TO MANAGE THIS, DO NOT USE THIS CLASS!
+/// \warning このクラスを使用する場合はSetOnTemperature()とUpdate()を\n
+///     繰り返し呼び出す必要がある。詳細は SetOnTemperature() の説明を\n
+///     参照されたい。これを管理する方法がよくわからない場合はこのクラスを\n
+///     使用しないこと。
 
-/// \warning CCPUThrottle cannot be used together with code doing I2C or SPI transfers.\n
-///	     Because clock rate changes to the CPU clock may also effect the CORE clock,\n
-///	     this could result in a changing transfer speed.
+/// \warning CCPUThrottleクラスはI2C転送とSPI転送を行うコードには使用\n
+///     できない。CPUクロックのクロックレートの変化は、COREクロックにも影響を\n
+///     与える可能性があるため、転送速度を変更してしまう可能性があるからである。
 
-/// \note If the cmdline.txt option "gpiofanpin=" is used, this class controls a GPIO fan\n
-///	  not the CPU clock rate.
+/// \note cmdline.txtのオプション "gpiofanpin=" を使用すると、このクラスは\n
+///     CPUクロックではなくGPIOのファンを制御する。
 
-class CCPUThrottle	/// Manages CPU clock rate depending on app/user requirements and SoC temperature
+class CCPUThrottle    /// アプリケーションやユーザーの要求、SoCの温度に応じてCPUクロックレートを管理する
 {
 public:
-	/// \param InitialSpeed CPU speed to be set initially\n
-	/// CPUSpeedUnknown: use the cmdline.txt parameter "fast=true" or CPUSpeedLow (if not set)\n
-	/// Otherwise: the selected value
-	CCPUThrottle (TCPUSpeed InitialSpeed = CPUSpeedUnknown);
-	~CCPUThrottle (void);
+    /// \param InitialSpeed 初期セットしてセットするCPU速度\n
+    /// CPUSpeedUnknown: cmdline.txtのパラメタ"fast=true"を見る。\n
+    /// （セットされていない場合は）CPUSpeedLow\n
+    /// その他の場合: 選択した値
+    CCPUThrottle (TCPUSpeed InitialSpeed = CPUSpeedUnknown);
+    ~CCPUThrottle (void);
 
-	/// \return Is CPU clock rate change supported?\n
-	/// Other Methods can be called in any case, but may be nop's\n
-	/// or return invalid values if IsDynamic() returns FALSE.
-	boolean IsDynamic (void) const;
+    /// \return CPUクロックレート変更機能をサポートしているか?\n
+    /// その他のメソッドはどのような場合でも呼び出すことができるが、\n
+    /// nopの可能性がある。そうでなければ、IsDynamic()がFALSEを\n
+    /// 返した場合は不正値を返す
+    boolean IsDynamic (void) const;
 
-	/// \return Current CPU clock rate in Hz, 0 on failure
-	unsigned GetClockRate (void) const;
-	/// \return Minimum CPU clock rate in Hz
-	unsigned GetMinClockRate (void) const;
-	/// \return Maximum CPU clock rate in Hz
-	unsigned GetMaxClockRate (void) const;
+    /// \return 現在のCPUクロックレートをHz単位で返す。失敗の場合は0を返す。
+    unsigned GetClockRate (void) const;
+    /// \return 最小CPUクロックレートをHz単位で返す
+    unsigned GetMinClockRate (void) const;
+    /// \return 最大CPUクロックレートをHz単位で返す
+    unsigned GetMaxClockRate (void) const;
 
-	/// \return Current SoC temperature in degrees Celsius, 0 on failure
-	unsigned GetTemperature (void) const;
-	/// \return Maximum SoC temperature in degrees Celsius
-	unsigned GetMaxTemperature (void) const;
+    /// \return 現在のSoC温度を℃で返す。失敗の場合は0を返す。
+    unsigned GetTemperature (void) const;
+    /// \return 最大SoC温度を℃で返す
+    unsigned GetMaxTemperature (void) const;
 
-	/// \brief Sets the CPU speed
-	/// \param Speed Speed to be set (overwrites intial value)
-	/// \param bWait Wait for new clock rate to settle?
-	/// \return Previous setting or CPUSpeedUnknown on error
-	TCPUSpeed SetSpeed (TCPUSpeed Speed, boolean bWait = TRUE);
+    /// \brief CPU速度をセットする
+    /// \param Speed セットする速度（初期値を上書きする）
+    /// \param bWait 新しいクロックレートが落ち着くまで待つか？
+    /// \return 以前の設定。エラーの場合はCPUSpeedUnknown
+    TCPUSpeed SetSpeed (TCPUSpeed Speed, boolean bWait = TRUE);
 
-	/// \brief Sets the CPU speed depending on current SoC temperature.\n
-	/// Call this repeatedly all 2 to 5 seconds to hold temperature down!\n
-	/// Throttles the CPU down when the SoC temperature reaches 60 degrees Celsius\n
-	/// (or the value set using the cmdline.txt parameter "socmaxtemp").
-	/// \return Operation successful?
-	boolean SetOnTemperature (void);
+    /// \brief 現在のSoC温度に応じてCPU速度を設定する。\n
+    /// 2〜5秒おきに繰り返し呼び出すことで温度を下げないようにする。\n
+    /// SoC温度が60℃（またはcmdline.txtのパラメータ "socmaxtemp "で\n
+    /// 設定した値）になるとCPUをスローダウンさせる。
+    /// \return 操作の成否
+    boolean SetOnTemperature (void);
 
-	/// \brief Same function as SetOnTemperature(), but can be called\n
-	/// as often as you want without checking the calling interval.\n
-	/// Additionally checks for system throttled conditions, if a system\n
-	/// throttled handler is registered.
-	/// \return Operation successful?
-	boolean Update (void);
+    /// \brief SetOnTemperature()と同じ関数だが、呼び出し間隔をチェック\n
+    /// することなく、何度でも呼び出すことができる。さらに、システム\n
+    /// スロットルハンドラが登録されている場合はシステムスロットル状態を\n
+    /// チェックする。
+    /// \return 操作の成否
+    boolean Update (void);
 
-	/// \brief Register a callback function, which is called from Update(),\n
-	/// when a system throttled condition occurs, which is given in StateMask.
-	/// \param StateMask TSystemThrottledState values to be watched (or'ed together)
-	/// \param pHandler Callback function to be called
-	/// \param pParam User parameter to be handed over to the callback function
-	void RegisterSystemThrottledHandler (unsigned StateMask,
-					     TSystemThrottledHandler *pHandler, void *pParam = 0);
+    /// \brief StateMaskで指定されたシステムスロットル状態が発生した際に\n
+    /// Update()から呼び出されるコールバック関数を登録する。
+    /// \param StateMask 監視するTSystemThrottledState値
+    /// \param pHandler 呼び出されるコールバック関数
+    /// \param pParam コールバック関数に渡されるユーザパラメタ
+    void RegisterSystemThrottledHandler (unsigned StateMask,
+                         TSystemThrottledHandler *pHandler, void *pParam = 0);
 
-	/// \brief Dump some information on the current CPU status
-	/// \param bAll Dump all information (only current clock rate and temperature otherwise)
-	void DumpStatus (boolean bAll = TRUE);
+    /// \brief 現在のCPU状態に関する情報をダンプする
+    /// \param bAll すべての情報をダンプする（FALSEの場合は現在のクロックレートと温度のみ）
+    void DumpStatus (boolean bAll = TRUE);
 
-	/// \return Pointer to the only CCPUThrottle object in the system
-	static CCPUThrottle *Get (void);
-
-private:
-	boolean SetSpeedInternal (TCPUSpeed Speed, boolean bWait);
-
-	boolean CheckThrottledState (void);
-
-	void SetToSetDelay (void);
-
-	static unsigned GetClockRate (unsigned nTagId);		// returns 0 on failure
-	static unsigned GetTemperature (unsigned nTagId);	// returns 0 on failure
-	static boolean SetClockRate (unsigned nRate, boolean bSkipTurbo);
+    /// \return システムに唯一存在するCCPUThrottleオブジェクトへのポインタ
+    static CCPUThrottle *Get (void);
 
 private:
-	boolean  m_bDynamic;
-	unsigned m_nMinClockRate;
-	unsigned m_nMaxClockRate;
-	unsigned m_nMaxTemperature;
-	unsigned m_nEnforcedTemperature;
+    boolean SetSpeedInternal (TCPUSpeed Speed, boolean bWait);
 
-	TCPUSpeed m_SpeedSet;
-	unsigned  m_nTicksLastSet;
-	unsigned  m_nTicksLastUpdate;
+    boolean CheckThrottledState (void);
 
-	TSystemThrottledState m_ThrottledStateMask;
-	TSystemThrottledState m_LastThrottledState;
-	TSystemThrottledHandler *m_pThrottledHandler;
-	void *m_pThrottledParam;
+    void SetToSetDelay (void);
 
-	boolean m_bFanConnected;
-	CGPIOPin m_FanPin;
+    static unsigned GetClockRate (unsigned nTagId);     // returns 0 on failure
+    static unsigned GetTemperature (unsigned nTagId);   // returns 0 on failure
+    static boolean SetClockRate (unsigned nRate, boolean bSkipTurbo);
 
-	static CCPUThrottle *s_pThis;
+private:
+    boolean  m_bDynamic;
+    unsigned m_nMinClockRate;
+    unsigned m_nMaxClockRate;
+    unsigned m_nMaxTemperature;
+    unsigned m_nEnforcedTemperature;
+
+    TCPUSpeed m_SpeedSet;
+    unsigned  m_nTicksLastSet;
+    unsigned  m_nTicksLastUpdate;
+
+    TSystemThrottledState m_ThrottledStateMask;
+    TSystemThrottledState m_LastThrottledState;
+    TSystemThrottledHandler *m_pThrottledHandler;
+    void *m_pThrottledParam;
+
+    boolean m_bFanConnected;
+    CGPIOPin m_FanPin;
+
+    static CCPUThrottle *s_pThis;
 };
 
 #endif

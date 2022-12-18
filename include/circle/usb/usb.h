@@ -1,3 +1,9 @@
+/** @defgroup usb USB関連
+ *
+ *  @defgroup usb_core USBコアクラス
+ *  @ingroup usb
+ *  @{
+*/
 //
 // usb.h
 //
@@ -17,6 +23,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+
+
 #ifndef _circle_usb_usb_h
 #define _circle_usb_usb_h
 
@@ -232,4 +240,5 @@ struct TUSBStringDescriptor
 }
 PACKED;
 
+/** @} */
 #endif

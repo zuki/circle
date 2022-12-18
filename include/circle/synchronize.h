@@ -159,6 +159,6 @@ void SyncDataAndInstructionCache (void);
 }
 #endif
 
-#endif
+#endif  /* AARCH != 64 */
 
 #endif

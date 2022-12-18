@@ -116,7 +116,7 @@ void CNetworkLayer::Process (void)
             continue;
         }
         nResultLength = nTotalLength;        // ignore padding
-
+        // . ネットワークプライベートデータの作成
         TNetworkPrivateData *pParam = new TNetworkPrivateData;
         assert (pParam != 0);
         pParam->nProtocol = pHeader->nProtocol;

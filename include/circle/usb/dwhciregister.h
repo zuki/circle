@@ -1,3 +1,6 @@
+/** @addtogroup dwhc
+ *  @{
+ */
 //
 // dwhciregister.h
 //
@@ -60,4 +63,5 @@ private:
     u32         m_nBuffer;      ///< バッファ
 };
 
+/** @} */
 #endif

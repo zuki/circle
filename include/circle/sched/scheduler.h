@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2021  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -28,92 +28,92 @@
 
 typedef void TSchedulerTaskHandler (CTask *pTask);
 
-/// \note This scheduler uses the round-robin policy, without priorities.
+/// \note このスケジューラは優先順位を持たないラウンドロビン方式を使用する
 
-class CScheduler /// Cooperative non-preemtive scheduler, which controls which task runs at a time
+class CScheduler /// 協調型の非プリエンプティスケジューラ。ある時点でどのタスクが実行するかを制御する
 {
 public:
-	CScheduler (void);
-	~CScheduler (void);
+    CScheduler (void);
+    ~CScheduler (void);
 
-	/// \brief Switch to the next task
-	/// \note A task should call this from time to time, if it does longer calculations.
-	void Yield (void);
+    /// \brief 杉のタスクに切り替える
+    /// \note タスクは長い計算をする場合、時折このメソッドを呼び出す必要がある
+    void Yield (void);
 
-	/// \param nSeconds Number of seconds, the current task will be sleep
-	void Sleep (unsigned nSeconds);
-	/// \param nMilliSeconds Number of milliseconds, the current task will be sleep
-	void MsSleep (unsigned nMilliSeconds);
-	/// \param nMicroSeconds Number of microseconds, the current task will be sleep
-	void usSleep (unsigned nMicroSeconds);
+    /// \param nSeconds 現在のタスクがスリープする秒数
+    void Sleep (unsigned nSeconds);
+    /// \param nMilliSeconds 現在のタスクがスリープするミリ秒数
+    void MsSleep (unsigned nMilliSeconds);
+    /// \param nMicroSeconds 現在のタスクがスリープするマイクロ秒数
+    void usSleep (unsigned nMicroSeconds);
 
-	/// \return Pointer to the CTask object of the currently running task
-	CTask *GetCurrentTask (void);
+    /// \return 現在実行中のCTaskオブジェクトへのポインタ
+    CTask *GetCurrentTask (void);
 
-	/// \param pTaskName Task name to look for
-	/// \return Pointer to the CTask object of the task with the given name (0 if not found)
-	CTask *GetTask (const char *pTaskName);
+    /// \param pTaskName 検索するタスク名
+    /// \return 指定した名前を持つCTaskオブジェクトへのポインタ（見つからなかった場合は0）
+    CTask *GetTask (const char *pTaskName);
 
-	/// \param pTask Any pointer
-	/// \return Is is this pointer referencing a CTask object of a currently known task?
-	boolean IsValidTask (CTask *pTask);
+    /// \param pTask 任意のポインタ
+    /// \return このポインタは現在知られているタスクのCTaskオブジェクトを参照しているか？
+    boolean IsValidTask (CTask *pTask);
 
-	/// \param pHandler Callback, which is called on each task switch
-	/// \note The handler is called with a pointer to the CTask object of the task,\n
-	///	  which gets control now.
-	void RegisterTaskSwitchHandler (TSchedulerTaskHandler *pHandler);
-	/// \param pHandler Callback, which is called, when a task terminates
-	/// \note The handler is called with a pointer to the CTask object of the task,\n
-	///	  which terminates.
-	void RegisterTaskTerminationHandler (TSchedulerTaskHandler *pHandler);
+    /// \param pHandler タスクスイッチの際に呼び出されるコールバック関数
+    /// \note ハンドラは次に制御を取得するタスクのCTaskオブジェクトへのポインタを\n
+    ///      引数に呼び出される
+    void RegisterTaskSwitchHandler (TSchedulerTaskHandler *pHandler);
+    /// \param pHandler タスクが終了する際に呼び出されるコールバック関数
+    /// \note ハンドラは終了するタスクのCTaskオブジェクトへのポインタを\n
+    ///      引数に呼び出される
+    void RegisterTaskTerminationHandler (TSchedulerTaskHandler *pHandler);
 
-	/// \brief Causes all new tasks to be created in a suspended state
-	/// \note Nested calls to SuspendNewTasks() and ResumeNewTasks() are allowed.
-	void SuspendNewTasks (void);
-	/// \brief Stops causing new tasks to be created in a suspended state\n
-	///	   and starts any tasks that were created suspended.
-	void ResumeNewTasks (void);
+    /// \brief すべての新規タスクをサスペンド状態で作成するようにする
+    /// \note SuspendNewTasks()とResumeNewTasks()のネストした呼び出しが可能である
+    void SuspendNewTasks (void);
+    /// \brief サスペンド状態の新規タスクの作成を停止し、\n
+    ///       サスペンド状態で作成されたタスクを開始する
+    void ResumeNewTasks (void);
 
-	/// \brief Generate task listing
-	/// \param pTarget Device to be used for output
-	void ListTasks (CDevice *pTarget);
+    /// \brief タスクリストを作成する
+    /// \param pTarget 出力に使用するデバイス
+    void ListTasks (CDevice *pTarget);
 
-	/// \return Pointer to the only scheduler object in the system
-	static CScheduler *Get (void);
+    /// \return システムに唯一つのスケジューラオブジェクトへのポインタ
+    static CScheduler *Get (void);
 
-	/// \return Is the scheduler available in the system?
-	/// \note The scheduler is optional in Circle.
-	static boolean IsActive (void)
-	{
-		return s_pThis != 0 ? TRUE : FALSE;
-	}
-
-private:
-	void AddTask (CTask *pTask);
-	friend class CTask;
-
-	boolean BlockTask (CTask **ppWaitListHead, unsigned nMicroSeconds);
-	void WakeTasks (CTask **ppWaitListHead); // can be called from interrupt context
-	friend class CSynchronizationEvent;
-
-	void RemoveTask (CTask *pTask);
-	unsigned GetNextTask (void); // returns index into m_pTask or MAX_TASKS if no task was found
+    /// \return このシステムではスケジューラが利用可能か?
+    /// \note Circleではスケジューラの使用はオプションである
+    static boolean IsActive (void)
+    {
+        return s_pThis != 0 ? TRUE : FALSE;
+    }
 
 private:
-	CTask *m_pTask[MAX_TASKS];
-	unsigned m_nTasks;
+    void AddTask (CTask *pTask);
+    friend class CTask;
 
-	CTask *m_pCurrent;
-	unsigned m_nCurrent;	// index into m_pTask
+    boolean BlockTask (CTask **ppWaitListHead, unsigned nMicroSeconds);
+    void WakeTasks (CTask **ppWaitListHead); // 割り込みコンテキストからの呼び出しが可能
+    friend class CSynchronizationEvent;
 
-	TSchedulerTaskHandler *m_pTaskSwitchHandler;
-	TSchedulerTaskHandler *m_pTaskTerminationHandler;
+    void RemoveTask (CTask *pTask);
+    unsigned GetNextTask (void); // m_pTaskへのインデックス、タスクが見つからなかった場合はMAX_TASKSを返す
 
-	int m_iSuspendNewTasks;
+private:
+    CTask *m_pTask[MAX_TASKS];      ///< タスク配列
+    unsigned m_nTasks;              ///< タスクの数
 
-	CSpinLock m_SpinLock;
+    CTask *m_pCurrent;              ///< 現在実行中のタスク
+    unsigned m_nCurrent;            ///< m_pTaskのインデックス
 
-	static CScheduler *s_pThis;
+    TSchedulerTaskHandler *m_pTaskSwitchHandler;        ///< タスクスイッチの際に呼び出されるコールバック関数
+    TSchedulerTaskHandler *m_pTaskTerminationHandler;   ///< タスクが終了する際に呼び出されるコールバック関数
+
+    int m_iSuspendNewTasks;         ///< 新規タスクをサスペンド状態で作成するか
+
+    CSpinLock m_SpinLock;           ///< ロック（処理待ちリストを保護）
+
+    static CScheduler *s_pThis;     ///< スケジューラ（システムに一つ）
 };
 
 #endif

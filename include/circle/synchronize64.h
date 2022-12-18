@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 //
-// Execution levels
+// 実行レベル
 //
 #define TASK_LEVEL      0        // IRQs と FIQs が有効
 #define IRQ_LEVEL       1        // IRQsは無効、FIQsは有効
@@ -41,7 +41,7 @@ extern "C" {
 unsigned CurrentExecutionLevel (void);
 
 //
-// 割り込み制御
+// 割り込み制御（msr daifclr/set #2: irq, #1: fiq）
 //
 #define    EnableIRQs()         asm volatile ("msr DAIFClr, #2")
 #define    DisableIRQs()        asm volatile ("msr DAIFSet, #2")

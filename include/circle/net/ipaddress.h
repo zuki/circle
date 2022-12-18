@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // ipaddress.h
 //
@@ -109,11 +112,12 @@ public:
 
 private:
 #ifndef NDEBUG
-    /// @brief 正しいアドレスka
+    /// @brief 正しいアドレスか
     boolean m_bValid;
 #endif
     /// @brief アドレス値
     u32 m_nAddress;
 };
 
+/** @} */
 #endif

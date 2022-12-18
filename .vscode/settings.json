@@ -6,5 +6,14 @@
         "tools/flashy/node_modules/**",
         "sample/**"
     ],
-    "C_Cpp.errorSquiggles": "Disabled"
+    "C_Cpp.errorSquiggles": "Disabled",
+    "files.associations": {
+        "*.h": "c",
+        "*.ld": "editorconfig",
+        "array": "cpp",
+        "iterator": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "vector": "cpp"
+    }
 }

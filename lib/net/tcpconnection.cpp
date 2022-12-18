@@ -636,26 +636,28 @@ int CTCPConnection::PacketReceived (const void    *pPacket,
                     CIPAddress    &rReceiverIP,
                     int         nProtocol)
 {
+    // 1. プロトコルはTCP
     if (nProtocol != IPPROTO_TCP)
     {
         return 0;
     }
-
+    // 2. データ長はTCPヘッダー長以上
     if (nLength < sizeof (TTCPHeader))
     {
         return -1;
     }
-
+    // 3. パケットをTCPヘッダーとして読み込む
     assert (pPacket != 0);
     TTCPHeader *pHeader = (TTCPHeader *) pPacket;
-
+    // 4. 自分宛てであること
     if (m_nOwnPort != be2le16 (pHeader->nDestPort))
     {
         return 0;
     }
-
+    // 5-1. リッスン中でない場合
     if (m_State != TCPStateListen)
     {
+        // 5-1-1. 送信元は宛先IPで送信元ポートは宛先ポートであること
         if (   m_ForeignIP != rSenderIP
             || m_nForeignPort != be2le16 (pHeader->nSourcePort))
         {
@@ -671,17 +673,17 @@ int CTCPConnection::PacketReceived (const void    *pPacket,
 
         m_Checksum.SetDestinationAddress (rSenderIP);
     }
-
+    // 6. チェックサムのチェック
     if (m_Checksum.Calculate (pPacket, nLength) != CHECKSUM_OK)
     {
         return 0;
     }
-
+    // 7. TCPデータの位置と長さを取得
     u16 nFlags = pHeader->nDataOffsetFlags;
     u32 nDataOffset = TCP_DATA_OFFSET (pHeader->nDataOffsetFlags)*4;
     u32 nDataLength = nLength-nDataOffset;
 
-    // Current Segment Variables
+    // 8. 現在のセグメント変数を取得
     u32 nSEG_SEQ = be2le32 (pHeader->nSequenceNumber);
     u32 nSEG_ACK = be2le32 (pHeader->nAcknowledgmentNumber);
 

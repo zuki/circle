@@ -1,3 +1,6 @@
+/** @addtogroup dwhc
+ *  @{
+ */
 //
 // dwhcirootport.h
 //
@@ -49,5 +52,7 @@ private:
 
     CUSBDevice *m_pDevice;      ///< USBデバイス
 };
+
+/** @} */
 
 #endif

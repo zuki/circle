@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -29,109 +29,110 @@
 boolean CSpinLock::s_bEnabled = FALSE;
 
 CSpinLock::CSpinLock (unsigned nTargetLevel)
-:	m_nTargetLevel (nTargetLevel),
-	m_nLocked (0)
+:   m_nTargetLevel (nTargetLevel),
+    m_nLocked (0)
 {
-	assert (nTargetLevel <= FIQ_LEVEL);
+    assert (nTargetLevel <= FIQ_LEVEL);
 }
 
 CSpinLock::~CSpinLock (void)
 {
-	assert (m_nLocked == 0);
+    assert (m_nLocked == 0);
 }
 
 void CSpinLock::Acquire (void)
 {
-	if (m_nTargetLevel >= IRQ_LEVEL)
-	{
-		EnterCritical (m_nTargetLevel);
-	}
+    // 1. TASKレベル以外はクリティカルセクションに入る
+    if (m_nTargetLevel >= IRQ_LEVEL)
+    {
+        EnterCritical (m_nTargetLevel);
+    }
 
-	if (s_bEnabled)
-	{
+    if (s_bEnabled)
+    {
 #if AARCH == 32
-		// See: ARMv7-A Architecture Reference Manual, Section D7.3
-		asm volatile
-		(
-			"mov r1, %0\n"
-			"mov r2, #1\n"
-			"1: ldrex r3, [r1]\n"
-			"cmp r3, #0\n"
+        // See: ARMv7-A Architecture Reference Manual, Section D7.3
+        asm volatile
+        (
+            "mov r1, %0\n"
+            "mov r2, #1\n"
+            "1: ldrex r3, [r1]\n"
+            "cmp r3, #0\n"
 #ifdef SPINLOCK_SAVE_POWER
-			"wfene\n"
+            "wfene\n"
 #endif
-			"strexeq r3, r2, [r1]\n"
-			"cmpeq r3, #0\n"
-			"bne 1b\n"
-			"dmb\n"
+            "strexeq r3, r2, [r1]\n"
+            "cmpeq r3, #0\n"
+            "bne 1b\n"
+            "dmb\n"
 
-			: : "r" ((uintptr) &m_nLocked) : "r1", "r2", "r3"
-		);
+            : : "r" ((uintptr) &m_nLocked) : "r1", "r2", "r3"
+        );
 #else
-		// See: ARMv8-A Architecture Reference Manual, Section K10.3.1
-		asm volatile
-		(
-			"mov x1, %0\n"
-			"mov w2, #1\n"
-			"prfm pstl1keep, [x1]\n"
+        // See: ARMv8-A Architecture Reference Manual, Section K10.3.1
+        asm volatile
+        (
+            "mov x1, %0\n"
+            "mov w2, #1\n"
+            "prfm pstl1keep, [x1]\n"
 #ifdef SPINLOCK_SAVE_POWER
-			"sevl\n"
-			"1: wfe\n"
+            "sevl\n"
+            "1: wfe\n"
 #else
-			"1:\n"
+            "1:\n"
 #endif
-			"ldaxr w3, [x1]\n"
-			"cbnz w3, 1b\n"
-			"stxr w3, w2, [x1]\n"
-			"cbnz w3, 1b\n"
+            "ldaxr w3, [x1]\n"
+            "cbnz w3, 1b\n"
+            "stxr w3, w2, [x1]\n"
+            "cbnz w3, 1b\n"
 
-			: : "r" ((uintptr) &m_nLocked) : "x1", "x2", "x3"
-		);
+            : : "r" ((uintptr) &m_nLocked) : "x1", "x2", "x3"
+        );
 #endif
-	}
+    }
 }
 
 void CSpinLock::Release (void)
 {
-	if (s_bEnabled)
-	{
+    if (s_bEnabled)
+    {
 #if AARCH == 32
-		// See: ARMv7-A Architecture Reference Manual, Section D7.3
-		asm volatile
-		(
-			"mov r1, %0\n"
-			"mov r2, #0\n"
-			"dmb\n"
-			"str r2, [r1]\n"
+        // See: ARMv7-A Architecture Reference Manual, Section D7.3
+        asm volatile
+        (
+            "mov r1, %0\n"
+            "mov r2, #0\n"
+            "dmb\n"
+            "str r2, [r1]\n"
 #ifdef SPINLOCK_SAVE_POWER
-			"dsb\n"
-			"sev\n"
+            "dsb\n"
+            "sev\n"
 #endif
 
-			: : "r" ((uintptr) &m_nLocked) : "r1", "r2"
-		);
+            : : "r" ((uintptr) &m_nLocked) : "r1", "r2"
+        );
 #else
-		// See: ARMv8-A Architecture Reference Manual, Section K10.3.2
-		asm volatile
-		(
-			"mov x1, %0\n"
-			"stlr wzr, [x1]\n"
+        // See: ARMv8-A Architecture Reference Manual, Section K10.3.2
+        asm volatile
+        (
+            "mov x1, %0\n"
+            "stlr wzr, [x1]\n"
 
-			: : "r" ((uintptr) &m_nLocked) : "x1"
-		);
+            : : "r" ((uintptr) &m_nLocked) : "x1"
+        );
 #endif
-	}
+    }
 
-	if (m_nTargetLevel >= IRQ_LEVEL)
-	{
-		LeaveCritical ();
-	}
+    if (m_nTargetLevel >= IRQ_LEVEL)
+    {
+        LeaveCritical ();
+    }
 }
 
 void CSpinLock::Enable (void)
 {
-	assert (!s_bEnabled);
-	s_bEnabled = TRUE;
+    assert (!s_bEnabled);
+    s_bEnabled = TRUE;
 }
 
 #endif

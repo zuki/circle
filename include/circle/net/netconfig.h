@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // netconfig.h
 //
@@ -99,4 +102,5 @@ private:
     CIPAddress m_BroadcastAddress;
 };
 
+/** @} */
 #endif

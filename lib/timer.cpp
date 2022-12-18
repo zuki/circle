@@ -98,6 +98,7 @@ CTimer::~CTimer (void)
 
 boolean CTimer::Initialize (void)
 {
+    // 物理タイマーを10MSごとに発火
     assert (m_pInterruptSystem != 0);
 #ifndef USE_PHYSICAL_COUNTER
     m_pInterruptSystem->ConnectIRQ (ARM_IRQ_TIMER3, InterruptHandler, this);
@@ -107,6 +108,7 @@ boolean CTimer::Initialize (void)
     write32 (ARM_SYSTIMER_CLO, -(30 * CLOCKHZ));    // timer wraps soon, to check for problems
 
     write32 (ARM_SYSTIMER_C3, read32 (ARM_SYSTIMER_CLO) + CLOCKHZ / HZ);
+// こちらが該当する(non secure physical counter)
 #else
     m_pInterruptSystem->ConnectIRQ (ARM_IRQLOCAL0_CNTPNS, InterruptHandler, this);
 
@@ -120,23 +122,29 @@ boolean CTimer::Initialize (void)
 
     asm volatile ("mcr p15, 0, %0, c14, c2, 1" :: "r" (1));
 #else
+    // ここから該当
     u64 nCNTFRQ;
+    // nCNTFRQ = 19.2 MHz
     asm volatile ("mrs %0, CNTFRQ_EL0" : "=r" (nCNTFRQ));
     assert (nCNTFRQ % HZ == 0);
+    // m_nClockTicksPerHZTick = 19.2 * 10^6 / 100 = 192_000
     m_nClockTicksPerHZTick = nCNTFRQ / HZ;
 
+    // HZ (10ms = 100Hz) ごとに割り込み
     u64 nCNTPCT;
-    asm volatile ("mrs %0, CNTPCT_EL0" : "=r" (nCNTPCT));
-    asm volatile ("msr CNTP_CVAL_EL0, %0" :: "r" (nCNTPCT + m_nClockTicksPerHZTick));
+    asm volatile ("mrs %0, CNTPCT_EL0" : "=r" (nCNTPCT));   // get 64-bit physical count value
+    asm volatile ("msr CNTP_CVAL_EL0, %0" :: "r" (nCNTPCT + m_nClockTicksPerHZTick)); // 現時点から1/HZ後
 
-    asm volatile ("msr CNTP_CTL_EL0, %0" :: "r" (1));
+    asm volatile ("msr CNTP_CTL_EL0, %0" :: "r" (1));       // Physical Timer enable
 #endif
 #endif
 
+// タイマーの微調整
 #ifdef CALIBRATE_DELAY
     TuneMsDelay ();
 #endif
 
+// ここから無関係
 #if defined (USE_PHYSICAL_COUNTER) && AARCH == 32
     u32 nCNTFRQ;
     asm volatile ("mrc p15, 0, %0, c14, c0, 0" : "=r" (nCNTFRQ));
@@ -156,7 +164,7 @@ boolean CTimer::Initialize (void)
                     nCNTFRQ, nPrescaler);
     }
 #endif
-
+// ここまで無関係
     PeripheralExit ();
 
     return TRUE;
@@ -228,6 +236,7 @@ unsigned CTimer::GetClockTicks (void)
 
     return nCNTPCTLow;
 #else
+    // ここから該当
     InstructionSyncBarrier ();
 
     u64 nCNTPCT;
@@ -235,6 +244,7 @@ unsigned CTimer::GetClockTicks (void)
     u64 nCNTFRQ;
     asm volatile ("mrs %0, CNTFRQ_EL0" : "=r" (nCNTFRQ));
 
+    // カウント数 * 1 MHz / 19.2 MHz
     return (unsigned) (nCNTPCT * CLOCKHZ / nCNTFRQ);
 #endif
 #endif
@@ -467,12 +477,16 @@ void CTimer::PollKernelTimers (void)
         assert (pTimer != 0);
         assert (pTimer->m_nMagic == KERNEL_TIMER_MAGIC);
 
-        if ((int) (pTimer->m_nElapsesAt-m_nTicks) > 0)
+        // リストはハッカ時刻ごとに並んでいるので対象となるタイマーの
+        // 発火時刻が現時刻より後であれば、発火すべきタイマーは存在
+        // しないのでこれで処理終了
+        if ((int) (pTimer->m_nElapsesAt - m_nTicks) > 0)
         {
             break;
         }
 
         TPtrListElement *pNextElement = m_KernelTimerList.GetNext (pElement);
+        // 発火するタイマーをリストから削除
         m_KernelTimerList.Remove (pElement);
         pElement = pNextElement;
 
@@ -480,6 +494,8 @@ void CTimer::PollKernelTimers (void)
 
         TKernelTimerHandler *pHandler = pTimer->m_pHandler;
         assert (pHandler != 0);
+
+        // ハンドラを実行
         (*pHandler) ((TKernelTimerHandle) pTimer, pTimer->m_pParam, pTimer->m_pContext);
 
 #ifndef NDEBUG
@@ -510,7 +526,7 @@ void CTimer::InterruptHandler (void)
     write32 (ARM_SYSTIMER_CS, 1 << 3);
 
     PeripheralExit ();
-#else
+#else /* USE_PHYSICAL_COUNTER */
 #if AARCH == 32
     u32 nCNTP_CVALLow, nCNTP_CVALHigh;
     asm volatile ("mrrc p15, 2, %0, %1, c14" : "=r" (nCNTP_CVALLow), "=r" (nCNTP_CVALHigh));
@@ -518,12 +534,13 @@ void CTimer::InterruptHandler (void)
     u64 nCNTP_CVAL = ((u64) nCNTP_CVALHigh << 32 | nCNTP_CVALLow) + CLOCKHZ / HZ;
     asm volatile ("mcrr p15, 2, %0, %1, c14" :: "r" (nCNTP_CVAL & 0xFFFFFFFFU),
                             "r" (nCNTP_CVAL >> 32));
-#else
+#else /* AARCH != 32 */
+    // ここからが該当: 発火時間を再設定
     u64 nCNTP_CVAL;
     asm volatile ("mrs %0, CNTP_CVAL_EL0" : "=r" (nCNTP_CVAL));
     asm volatile ("msr CNTP_CVAL_EL0, %0" :: "r" (nCNTP_CVAL + m_nClockTicksPerHZTick));
-#endif
-#endif
+#endif /* AARCH == 32 */
+#endif /* !USE_PHYSICAL_COUNTER */
 
 #ifndef NDEBUG
     //debug_click ();
@@ -531,6 +548,7 @@ void CTimer::InterruptHandler (void)
 
     m_TimeSpinLock.Acquire ();
 
+    // 1/HZ毎にm_nTicksを増分し、1秒ごとにm_nUptimeとm_nTimeを増分する
     if (++m_nTicks % HZ == 0)
     {
         m_nUptime++;
@@ -539,8 +557,10 @@ void CTimer::InterruptHandler (void)
 
     m_TimeSpinLock.Release ();
 
+    // カーネルタイマーを発火させる
     PollKernelTimers ();
 
+    // 周期ハンドラを実行
     for (unsigned i = 0; i < m_nPeriodicHandlers; i++)
     {
         (*m_pPeriodicHandler[i]) ();

@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // in.h
 //
@@ -10,4 +13,5 @@
 
 #define MSG_DONTWAIT	0x40
 
+/** @} */
 #endif

@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 /// \file usbhcidevice.h
 //
@@ -31,4 +34,5 @@
 	#define CUSBHCIDevice	CXHCIDevice
 #endif
 
+/** @} */
 #endif

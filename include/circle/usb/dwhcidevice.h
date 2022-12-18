@@ -1,3 +1,7 @@
+/** @defgroup dwhc DesignWareホストコントローラ関連クラス
+ *  @ingroup usb
+ *  @{
+ */
 //
 // dwhcidevice.h
 //
@@ -259,5 +263,7 @@ private:
 
     volatile boolean m_bShutdown;               ///< USBドライバはshutdownするか
 };
+
+/** @} */
 
 #endif

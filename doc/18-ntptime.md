@@ -82,3 +82,7 @@ PING 192.168.10.114 (192.168.10.114): 56 data bytes
 6 packets transmitted, 6 packets received, 0.0% packet loss
 round-trip min/avg/max/stddev = 0.503/0.675/0.947/0.150 ms
 ```
+
+#### QEMUでの実行
+
+![18-ntptime](doc/qemu/18-ntptime.png)

@@ -1,3 +1,6 @@
+/** @addtogroup dwhc
+ *  @{
+ */
 //
 // dwhciframeschednsplit.h
 //
@@ -57,4 +60,5 @@ private:
     DECLARE_CLASS_ALLOCATOR
 };
 
+/** @} */
 #endif

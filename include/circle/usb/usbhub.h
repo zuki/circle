@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 // usbhub.h
 //
@@ -117,4 +120,5 @@ struct TUSBHubInfo
 
 #endif
 
+/** @} */
 #endif

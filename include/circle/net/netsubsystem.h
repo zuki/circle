@@ -1,3 +1,9 @@
+/** @defgroup net NET関連
+ *
+ *  @defgroup net_core NETコアクラス
+ *  @ingroup net
+ *  @{
+*/
 //
 // netsubsystem.h
 //
@@ -17,6 +23,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+
+
 #ifndef _circle_net_netsubsystem_h
 #define _circle_net_netsubsystem_h
 
@@ -32,7 +40,7 @@
 
 class CDHCPClient;
 
-/// @brief ネットサブシステムクラス
+/// @brief ネットワークサブシステムクラス
 class CNetSubSystem
 {
 public:
@@ -100,5 +108,7 @@ private:
     /// @brief 自オブジェクトへのポインタ
     static CNetSubSystem *s_pThis;
 };
+
+/** @} */
 
 #endif

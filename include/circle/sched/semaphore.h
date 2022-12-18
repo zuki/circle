@@ -23,32 +23,32 @@
 #include <circle/sched/synchronizationevent.h>
 #include <circle/types.h>
 
-class CSemaphore	/// Implements a semaphore synchronization class
+class CSemaphore    /// セマフォ動機クラスを実装する
 {
 public:
-	/// \param nInitialCount Initial count of the semaphore
-	CSemaphore (unsigned nInitialCount = 1);
+    /// \param nInitialCount セマフォの初期カウント
+    CSemaphore (unsigned nInitialCount = 1);
 
-	~CSemaphore (void);
+    ~CSemaphore (void);
 
-	/// \return Current semaphore count
-	unsigned GetState (void) const;
+    /// \return 現在のセマフォカウント
+    unsigned GetState (void) const;
 
-	/// \brief Decrement semaphore count; block task, if count is already 0
-	void Down (void);
+    /// \brief セマフォカウントをデクリメントする; カウントがすでに0の場合はタスクをブロックする
+    void Down (void);
 
-	/// \brief Increment semaphore count; wake another waiting task, if count was 0
-	/// \note Can be called from interrupt context.
-	void Up (void);
+    /// \brief セマフォカウントをインクリメントする; カウントが0の場合は他の待機タスクを起床させる
+    /// \note 割り込みコンテキストから呼び出し可能
+    void Up (void);
 
-	/// \brief Try to decrement semaphore count
-	/// \return Operation successful?
-	boolean TryDown (void);
+    /// \brief セマフォカウントのデクリメントを試みる
+    /// \return 操作は成功したか?
+    boolean TryDown (void);
 
 private:
-	volatile int m_nCount;
+    volatile int m_nCount;          ///< カウント
 
-	CSynchronizationEvent m_Event;
+    CSynchronizationEvent m_Event;  ///< イベント
 };
 
 #endif

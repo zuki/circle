@@ -1,3 +1,6 @@
+/** @addtogroup dwhc
+ *  @{
+ */
 //
 // dwhciframeschedper.h
 //
@@ -64,4 +67,5 @@ private:
     DECLARE_CLASS_ALLOCATOR
 };
 
+/** @} */
 #endif

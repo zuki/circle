@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -22,77 +22,78 @@
 #include <assert.h>
 
 CPtrArray::CPtrArray (unsigned nInitialSize, unsigned nSizeIncrement)
-:	m_nReservedSize (nInitialSize),
-	m_nSizeIncrement (nSizeIncrement),
-	m_nUsedCount (0),
-	m_ppArray (0)
+:    m_nReservedSize (nInitialSize),
+    m_nSizeIncrement (nSizeIncrement),
+    m_nUsedCount (0),
+    m_ppArray (0)
 {
-	assert (m_nReservedSize > 0);
-	assert (m_nSizeIncrement > 0);
-
-	m_ppArray = new void * [m_nReservedSize];
-	assert (m_ppArray != 0);
+    assert (m_nReservedSize > 0);
+    assert (m_nSizeIncrement > 0);
+    // 初期配列を作成
+    m_ppArray = new void * [m_nReservedSize];
+    assert (m_ppArray != 0);
 }
 
 CPtrArray::~CPtrArray (void)
 {
-	m_nReservedSize = 0;
-	m_nSizeIncrement = 0;
+    m_nReservedSize = 0;
+    m_nSizeIncrement = 0;
 
-	delete [] m_ppArray;
-	m_ppArray = 0;
+    delete [] m_ppArray;
+    m_ppArray = 0;
 }
 
 unsigned CPtrArray::GetCount (void) const
 {
-	return m_nUsedCount;
+    return m_nUsedCount;
 }
 
 void *&CPtrArray::operator[] (unsigned nIndex)
 {
-	assert (nIndex < m_nUsedCount);
-	assert (m_nUsedCount <= m_nReservedSize);
-	assert (m_ppArray != 0);
+    assert (nIndex < m_nUsedCount);
+    assert (m_nUsedCount <= m_nReservedSize);
+    assert (m_ppArray != 0);
 
-	return m_ppArray[nIndex];
+    return m_ppArray[nIndex];
 }
 
 void *CPtrArray::operator[] (unsigned  nIndex) const
 {
-	assert (nIndex < m_nUsedCount);
-	assert (m_nUsedCount <= m_nReservedSize);
-	assert (m_ppArray != 0);
+    assert (nIndex < m_nUsedCount);
+    assert (m_nUsedCount <= m_nReservedSize);
+    assert (m_ppArray != 0);
 
-	return m_ppArray[nIndex];
+    return m_ppArray[nIndex];
 }
 
 unsigned CPtrArray::Append (void *pPtr)
 {
-	assert (m_nReservedSize > 0);
-	assert (m_ppArray != 0);
+    assert (m_nReservedSize > 0);
+    assert (m_ppArray != 0);
 
-	assert (m_nUsedCount <= m_nReservedSize);
-	if (m_nUsedCount == m_nReservedSize)
-	{
-		assert (m_nSizeIncrement > 0);
-		void **ppNewArray = new void * [m_nReservedSize + m_nSizeIncrement];
-		assert (ppNewArray != 0);
+    assert (m_nUsedCount <= m_nReservedSize);
+    // 1. 確保分がすべて使用済みの場合は配列を拡張してコピー
+    if (m_nUsedCount == m_nReservedSize)
+    {
+        assert (m_nSizeIncrement > 0);
+        void **ppNewArray = new void * [m_nReservedSize + m_nSizeIncrement];
+        assert (ppNewArray != 0);
 
-		memcpy (ppNewArray, m_ppArray, m_nReservedSize * sizeof (void *));
+        memcpy (ppNewArray, m_ppArray, m_nReservedSize * sizeof (void *));
 
-		delete [] m_ppArray;
-		m_ppArray = ppNewArray;
+        delete [] m_ppArray;
+        m_ppArray = ppNewArray;
 
-		m_nReservedSize += m_nSizeIncrement;
-	}
+        m_nReservedSize += m_nSizeIncrement;
+    }
 
-	m_ppArray[m_nUsedCount] = pPtr;
+    m_ppArray[m_nUsedCount] = pPtr;
 
-	return m_nUsedCount++;
+    return m_nUsedCount++;
 }
 
 void CPtrArray::RemoveLast (void)
 {
-	assert (m_nUsedCount > 0);
-	m_nUsedCount--;
+    assert (m_nUsedCount > 0);
+    m_nUsedCount--;
 }

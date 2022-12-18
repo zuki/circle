@@ -27,42 +27,44 @@ class CUserTimer;
 
 typedef void TUserTimerHandler (CUserTimer *pUserTimer, void *pParam);
 
-class CUserTimer	/// Fine grained user programmable interrupt timer (based on ARM_IRQ_TIMER1)
+class CUserTimer    /// きめ細かいユーザプログラマブルな割り込みタイマー（ARM_IRQ_TIMER1ベース）
 {
 public:
-	/// \param pInterruptSystem Pointer to the interrupt system object
-	/// \param pHandler Pointer to the user timer handler
-	/// \param pParam Parameter handed over to the user timer handler
-	/// \param bUseFIQ Use FIQ instead of IRQ
-	CUserTimer (CInterruptSystem *pInterruptSystem,
-		    TUserTimerHandler *pHandler, void *pParam = 0,
-		    boolean bUseFIQ = FALSE);
+    /// \param pInterruptSystem 割り込みシステムオブジェクトへのポインタ
+    /// \param pHandler ユーザタイマーハンドラへのポインタ
+    /// \param pParam ユーザタイマーハンドラへ渡されるパラメタ
+    /// \param bUseFIQ IRQではなくFIQを使用する
+    CUserTimer (CInterruptSystem *pInterruptSystem,
+            TUserTimerHandler *pHandler, void *pParam = 0,
+            boolean bUseFIQ = FALSE);
 
-	~CUserTimer (void);
+    ~CUserTimer (void);
 
-	/// \return Operation successful?
-	/// \note Automatically starts the timer with a delay of 1 hour
-	boolean Initialize (void);
+    /// \return 操作の成否
+    /// \note 1時間後に発火するタイマーが自動的にスタートする
+    boolean Initialize (void);
 
-	/// \brief Stops the user timer, has to be re-initialized to be used again
-	void Stop (void);
+    /// \brief ユーザタイマーを停止する。再度利用する場合は初期化が必要
+    void Stop (void);
 
-	/// \param nDelayMicros User timer elapses after this number of microseconds (> 1)
-	/// \note Must be called from user timer handler to a set new delay!
-	/// \note Can be called on a running user timer with a new delay
-	void Start (unsigned nDelayMicros);
-#define USER_CLOCKHZ	1000000U
-
-private:
-	static void InterruptHandler (void *pParam);
+    /// \param nDelayMicros ユーザタイマーの発火時間（マイクロ秒単位で > 1）
+    /// \note 新しい発火時間をセットするにめにユーザタイマーから呼び出される必要がある
+    /// \note 実行中のユーザータイマーを新しいディレイで呼び出すことができる
+    void Start (unsigned nDelayMicros);
+#define USER_CLOCKHZ    1000000U
 
 private:
-	CInterruptSystem  *m_pInterruptSystem;
-	TUserTimerHandler *m_pHandler;
-	void		  *m_pParam;
-	boolean		   m_bUseFIQ;
+    /// \breief 割り込みハンドラ
+    /// \param ユーザタイマーハンドラへ渡されたパラメタ（CUserTimerへのポインタ）
+    static void InterruptHandler (void *pParam);
 
-	boolean m_bInitialized;
+private:
+    CInterruptSystem    *m_pInterruptSystem;    // 割り込みシステムオブジェクトへのポインタ
+    TUserTimerHandler   *m_pHandler;            // 割り込みハンドラへのポインタ
+    void                *m_pParam;              // ユーザタイマーハンドラへ渡されるパラメタ
+    boolean              m_bUseFIQ;             // IRQではなくFIQを使用する
+
+    boolean              m_bInitialized;        // 初期化済みか
 };
 
 #endif

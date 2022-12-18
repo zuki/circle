@@ -56,6 +56,7 @@ void CTransportLayer::Process (void)
     CIPAddress Receiver;
     int nProtocol;
     assert (m_pNetworkLayer != 0);
+    // 1. データ受信処理
     u8 Buffer[FRAME_BUFFER_SIZE];
     while (m_pNetworkLayer->Receive (Buffer, &nResultLength, &Sender, &Receiver, &nProtocol))
     {
@@ -66,14 +67,14 @@ void CTransportLayer::Process (void)
             {
                 continue;
             }
-
+            // 1-2. トランスポート層の受信処理を行う
             if (((CNetConnection *) m_pConnection[i])->PacketReceived (
                 Buffer, nResultLength, Sender, Receiver, nProtocol) != 0)
             {
                 break;
             }
         }
-
+        // 3. 何らかのエラーあり（自分宛てでない、チェックサム誤りなど）
         if (i >= m_pConnection.GetCount ())
         {
             // send RESET on not consumed TCP segment
@@ -82,6 +83,7 @@ void CTransportLayer::Process (void)
         }
     }
 
+    // 2. ICMP受信処理
     TICMPNotificationType Type;
     u16 nSendPort;
     u16 nReceivePort;
@@ -103,7 +105,7 @@ void CTransportLayer::Process (void)
             }
         }
     }
-
+    // 3. コネクションのイベント処理
     for (unsigned i = 0; i < m_pConnection.GetCount (); i++)
     {
         if (m_pConnection[i] != 0)

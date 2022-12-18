@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 // usbendpoint.h
 //
@@ -103,4 +106,5 @@ private:
 #endif
 };
 
+/** @} */
 #endif

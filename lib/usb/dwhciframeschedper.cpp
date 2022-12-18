@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2022  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -76,7 +76,7 @@ void CDWHCIFrameSchedulerPeriodic::StartSplit (void)
 boolean CDWHCIFrameSchedulerPeriodic::CompleteSplit (void)
 {
 	boolean bResult = FALSE;
-	
+
 	switch (m_nState)
 	{
 	case StateStartSplitComplete:
@@ -109,12 +109,12 @@ boolean CDWHCIFrameSchedulerPeriodic::CompleteSplit (void)
 	case StateCompleteSplitComplete:
 	case StateCompleteSplitFailed:
 		break;
-		
+
 	default:
 		assert (0);
 		break;
 	}
-	
+
 	return bResult;
 }
 
@@ -165,7 +165,7 @@ void CDWHCIFrameSchedulerPeriodic::TransactionComplete (u32 nStatus)
 			assert (0);
 		}
 		break;
-		
+
 	default:
 		assert (0);
 		break;

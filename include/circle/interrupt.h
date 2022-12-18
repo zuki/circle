@@ -53,7 +53,7 @@ public:
     /// @brief 高速割り込みを削除
     void DisconnectFIQ (void);
     /// @brief 割り込みを有効化
-    /// @param nIRQ 割り込み番号
+    /// @param nIRQ 割り込み番号（Circleが決めた一連番号）
     static void EnableIRQ (unsigned nIRQ);
     /// @brief 割り込みを無効化
     /// @param nIRQ 割り込み番号

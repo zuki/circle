@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2018  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -87,7 +87,7 @@ CExceptionHandler *CExceptionHandler::Get (void)
 
 void ExceptionHandler (u64 nException, TAbortFrame *pFrame)
 {
-	// if an exception occurs on FIQ_LEVEL, the system would otherwise hang in the next spin lock
+	// 例外がFIQ_LEVELで起きた場合、こうしないとシステムは次のスピンロックでハングする
 	CInterruptSystem::DisableFIQ ();
 	EnableFIQs ();
 

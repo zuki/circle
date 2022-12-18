@@ -53,8 +53,10 @@ public:
     /// @brief コンストラクタ
     /// @param pInterruptSystem 割り込みシステムへのポインタ
     CTimer (CInterruptSystem *pInterruptSystem);
+
     /// @brief デストラクタ
     ~CTimer (void);
+
     /// @brief 初期化関数
     /// @return 常にTRUE
     boolean Initialize (void);
@@ -63,6 +65,7 @@ public:
     /// \param nMinutesDiff    UTCとの差（分単位）
     /// \return 操作の可否
     boolean SetTimeZone (int nMinutesDiff);
+
     /// \brief タイムゾーン（UTCとの差）を取得する
     /// \return UTCとの差
     int GetTimeZone (void) const;
@@ -72,93 +75,110 @@ public:
     /// \param bLocal  nTimeはタイムゾーンの値か
     /// \return 操作は成功か? bLocal == FALSEで値が非常に小さい場合に失敗する可能性がある
     boolean SetTime (unsigned nTime, boolean bLocal = TRUE);
+
     /// \brief クロックティックを取得する
     /// \return 1 MHzカウンタによる現在のクロックティック。ラップする可能性がある
     static unsigned GetClockTicks (void);
 #define CLOCKHZ    1000000
-    /// \brief システムブート後のティック数を取得する
-    /// \return システムブート後の1/HZ秒。ラップする可能性がある
+
+    /// \brief システム起動後のティック数を取得する
+    /// \return システム起動後の1/HZ秒。ラップする可能性がある
     unsigned GetTicks (void) const;
-    /// \brief システムブート後の秒数（継続時間）を取得する
-    /// \return システムブート後の秒数（継続時間）
+
+    /// \brief システム起動後の秒数（継続時間）を取得する
+    /// \return システム起動後の秒数（継続時間）
     unsigned GetUptime (void) const;
 
-    /// \return Seconds since system boot\n
-    /// or since 1970-01-01 00:00:00 (if time was set)\n
-    /// Current time according to our time zone
+    /// \brief システム時間（秒数）を取得する
+    /// \return （timeが設定されている場合は）1970-01-01 00:00:00以来の秒数\n
+    /// すわわち、指定のタイムゾーンによる現在時\n
+    /// そうでなければ、システム起動後の秒数
     unsigned GetTime (void) const;
-    /// \brief Same function as GetTime()
+
+    /// \brief GetTime()と同じ関数
     unsigned GetLocalTime (void) const    { return GetTime (); }
-    /// \brief Get current local time (see GetTime()) with microseconds part
-    /// \param pSeconds Seconds will be stored here
-    /// \param pMicroSeconds Microseconds will be stored here
-    /// \return TRUE if time is valid
+
+    /// \brief マイクロ秒パートのある現在時（GetTime()を参照）を取得する
+    /// \param pSeconds 秒数が格納される
+    /// \param pMicroSeconds マイクロ秒が格納される
+    /// \return timeがvalidであればTRUE
     boolean GetLocalTime (unsigned *pSeconds, unsigned *pMicroSeconds);
 
-    /// \return Current time (UTC) in seconds since 1970-01-01 00:00:00\n
-    /// may be 0 if time was not set and time zone diff is > 0
+    /// \return 1970-01-01 00:00:00以来の現在時（UTC）を取得する\n
+    /// timeが未設定でtime zone diff > 0の場合は0
     unsigned GetUniversalTime (void) const;
-    /// \brief Get current time (UTC) with microseconds part
-    /// \param pSeconds Seconds will be stored here
-    /// \param pMicroSeconds Microseconds will be stored here
-    /// \return TRUE if time is valid\n
-    /// may be FALSE if time was not set and time zone diff is > 0
+
+    /// \brief マイクロ秒パートのある現在時(UTC)を取得する
+    /// \param pSeconds 秒数が格納される
+    /// \param pMicroSeconds マイクロ秒が格納される
+    /// \return timeがvalidであればTRUE\n
+    /// timeが未設定でtime zone diff > 0の場合はFALSE
     boolean GetUniversalTime (unsigned *pSeconds, unsigned *pMicroSeconds);
 
-    /// \return "[MMM dD ]HH:MM:SS.ss" or 0 if Initialize() was not called yet,\n
-    /// resulting CString object must be deleted by caller\n
-    /// Current time according to our time zone
+    /// \return "[MMM dD ]HH:MM:SS.ss"、初期されていない場合は0\n
+    /// 取得したCStringオブジェクトは呼び出し側で削除する必要がある\n
+    /// 指定のタイムゾーンによる現在時
     CString *GetTimeString (void);
 
-    /// \brief Starts a kernel timer which elapses after a given delay,\n
-    /// a timer handler gets called then
-    /// \param nDelay    Timer elapses after nDelay/HZ seconds from now
-    /// \param pHandler    The handler to be called when the timer elapses
-    /// \param pParam    First user defined parameter to hand over to the handler
-    /// \param pContext    Second user defined parameter to hand over to the handler
-    /// \return Timer handle (cannot be 0)
+    /// \brief 指定した時間後にタイマーが発火し、指定のハンドラを呼び出す\n
+    /// カーネルタイマーをスタートさせる
+    /// \param nDelay    現在からnDelay/HZ秒後にタイマーは発火
+    /// \param pHandler   タイマーが発火された際に呼び出されるハンドラー
+    /// \param pParam    最初にハンドラに渡されるユーザ定義パラメタ
+    /// \param pContext    ２番めにハンドラに渡されるユーザ定義パラメタ
+    /// \return タイマーハンドル（0以外）
     TKernelTimerHandle StartKernelTimer (unsigned nDelay,
                          TKernelTimerHandler *pHandler,
                          void *pParam   = 0,
                          void *pContext = 0);
-    /// \brief Cancel a running kernel timer,\n
-    /// The timer will not elapse any more.
-    /// \param hTimer    Timer handle
+
+    /// \brief 実行中のカーネルタイマーをキャンセルする\n
+    /// タイマーは発火しない
+    /// \param hTimer    タイマーハンドル
     void CancelKernelTimer (TKernelTimerHandle hTimer);
 
-    /// When a CTimer object is available better use this instead of SimpleMsDelay()\n
-    /// \param nMilliSeconds Delay in milliseconds (<= 2000)
+    /// CTimerオブジェクトが利用可能な場合はSimpleMsDelay()よりこちらを使用する\n
+    /// \param nMilliSeconds ミリ秒単位の遅延時間 (<= 2000)
     void MsDelay (unsigned nMilliSeconds)    { SimpleMsDelay (nMilliSeconds); }
-    /// When a CTimer object is available better use this instead of SimpleusDelay()\n
-    /// \param nMicroSeconds Delay in microseconds
+
+    /// CTimerオブジェクトが利用可能な場合はSimpleusDelay()よりこちらを使用する\n
+    /// \param nMicroSeconds マイクロ秒単位の遅延時間
     void usDelay (unsigned nMicroSeconds)    { SimpleusDelay (nMicroSeconds); }
+
 #ifdef CALIBRATE_DELAY
-    /// \param nNanoSeconds Delay in nanoseconds
+    /// \param nNanoSeconds ナノ秒単位の遅延時間
     void nsDelay (unsigned nNanoSeconds)    { DelayLoop (m_nusDelay * nNanoSeconds / 1000); }
 #endif
 
-    /// \return Pointer to the only CTimer object in the system
+    /// \return システムに唯一存在するCTimerオブジェクトへのパインた
     static CTimer *Get (void);
 
-    /// Can be used before CTimer is constructed
-    /// \param nMilliSeconds Delay in milliseconds
+    /// CTimerを構築以前に使用可能
+    /// \param nMilliSeconds ミリ秒単位の遅延時間
     static void SimpleMsDelay (unsigned nMilliSeconds);
-    /// Can be used before CTimer is constructed
-    /// \param nMicroSeconds Delay in microseconds
+
+    /// CTimerを構築以前に使用可能
+    /// \param nMicroSeconds マイクロ秒単位の遅延時間
     static void SimpleusDelay (unsigned nMicroSeconds);
 
-    /// \param pHandler Handler which is called, when SetTime() is invoked to check the time
+    /// \param pHandler SetTime()実行時に呼び出され、時刻を確認するハンドラ
     void RegisterUpdateTimeHandler (TUpdateTimeHandler *pHandler);
 
-    /// \param pHandler Handler which is called on each timer tick (HZ times per second)
+    /// \param pHandler タイマーティック毎（毎秒HZ回）に呼び出されるハンドラ
     void RegisterPeriodicHandler (TPeriodicTimerHandler *pHandler);
 
 private:
+    /// @brief 登録済みのカーネルタイマーを発火させる
     void PollKernelTimers (void);
 
+    /// @brief 物理カウンタ割り込みの実際の割り込みハンドラ
     void InterruptHandler (void);
+
+    /// @brief 物理カウンタ割り込みで登録される割り込みハンドラスタブ
+    /// @param pParam
     static void InterruptHandler (void *pParam);
 
+    /// @brief 遅延時間を補正する
     void TuneMsDelay (void);
 
 public:
@@ -166,32 +186,33 @@ public:
     static unsigned GetDaysOfMonth (unsigned nMonth, unsigned nYear);
 
 private:
-    CInterruptSystem    *m_pInterruptSystem;
+    CInterruptSystem    *m_pInterruptSystem;    ///< 割り込みシステムへのポインタ
 
 #if defined (USE_PHYSICAL_COUNTER) && AARCH == 64
-    u32             m_nClockTicksPerHZTick;
+    u32             m_nClockTicksPerHZTick;     ///< CNTFRQ_EL0 / HZ
 #endif
 
-    volatile unsigned     m_nTicks;
-    volatile unsigned     m_nUptime;
-    volatile unsigned     m_nTime;            // local time
-    CSpinLock         m_TimeSpinLock;
+    volatile unsigned     m_nTicks;     ///< jiffies相当 (HZ tick)
+    volatile unsigned     m_nUptime;    ///< 稼働時間（秒単位）
+    volatile unsigned     m_nTime;      ///< ローカル現在時（秒単位）
 
-    int             m_nMinutesDiff;        // diff to UTC
+    CSpinLock       m_TimeSpinLock;     ///< 上の3つの時間を保護
 
-    CPtrList         m_KernelTimerList;
-    CSpinLock         m_KernelTimerSpinLock;
+    int             m_nMinutesDiff;     ///< UTCとの差異（分単位）
 
-    unsigned         m_nMsDelay;
-    unsigned         m_nusDelay;
+    CPtrList        m_KernelTimerList;  ///< カーネルタイマーリスト
+    CSpinLock       m_KernelTimerSpinLock;  ///< カーネルタイマーリストを保護
 
-    TUpdateTimeHandler    *m_pUpdateTimeHandler;
+    unsigned        m_nMsDelay;         ///< 時計補正データ（ミリ秒）
+    unsigned        m_nusDelay;         ///< 時計補正データ（マイクロ秒）
+
+    TUpdateTimeHandler    *m_pUpdateTimeHandler;    ///< nTime更新ハンドラへのポインタ
 
 #define TIMER_MAX_PERIODIC_HANDLERS    4
-    TPeriodicTimerHandler    *m_pPeriodicHandler[TIMER_MAX_PERIODIC_HANDLERS];
-    volatile unsigned     m_nPeriodicHandlers;
+    TPeriodicTimerHandler    *m_pPeriodicHandler[TIMER_MAX_PERIODIC_HANDLERS];  ///< 周期実行ハンドラ へのポインタ
+    volatile unsigned     m_nPeriodicHandlers;      ///< 周期実行ハンドラindex
 
-    static CTimer *s_pThis;
+    static CTimer *s_pThis;     ///< Singleton Timerオブジェクトへのポインタ
 
     static const unsigned s_nDaysOfMonth[12];
     static const char *s_pMonthName[12];

@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // socket.h
 //
@@ -57,6 +60,7 @@ public:
     /// \param nBackLog Accept()が呼ばれる前に連続して受付可能な最大同時接続数（最大SOCKET_MAX_LISTEN_BACKLOG）
     /// \return ステータス (0 成功, < 0 エラー)
     int Listen (unsigned nBackLog = 4);
+
     /// \brief 接続を受け付ける（TCPのみ、先にListen()を呼び出す必要がある）
     /// \param pForeignIP    リモートホストのIPアドレスはここに返される
     /// \param pForeignPort    リモートポート番号は個々に返される
@@ -131,5 +135,7 @@ private:
     /// @brief listenしているコネクションの配列
     int m_hListenConnection[SOCKET_MAX_LISTEN_BACKLOG];
 };
+
+/** @} */
 
 #endif

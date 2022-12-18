@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // netconnection.h
 //
@@ -108,5 +111,7 @@ protected:
     /// @brief チェックサム計算器
     CChecksumCalculator m_Checksum;
 };
+
+/** @} */
 
 #endif

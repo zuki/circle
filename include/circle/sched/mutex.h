@@ -5,7 +5,7 @@
 // Copyright (C) 2021  R. Stange <rsta2@o2online.de>
 //
 // This class was developed by:
-//	Brad Robinson <contact@toptensoftware.com>
+//    Brad Robinson <contact@toptensoftware.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,23 +28,23 @@
 
 class CTask;
 
-class CMutex	/// Provides a method to provide mutual exclusion (critical sections) across tasks
+class CMutex    /// タスク間の相互排除（クリティカルセクション）を提供する方法を提供する
 {
 public:
-	CMutex (void);
-	~CMutex (void);
+    CMutex (void);
+    ~CMutex (void);
 
-	/// \brief Acquire the mutex; task blocks, if another task already acquired the mutex
-	/// \note This mutex can be acquired multiple times by the same task.
-	void Acquire (void);
+    /// \brief mutexを取得する。他のタスクがすでにmutexを獲得している場合、タスクをブロックする
+    /// \note このミューテックスは同じタスクが複数回取得することが可能
+    void Acquire (void);
 
-	/// \brief Release the mutex; wake another task, which was waiting for the mutex
-	void Release (void);
+    /// \brief mutexを開放する。このmutexを待っている他のタスクを起床させる
+    void Release (void);
 
 private:
-	CTask* m_pOwningTask;
-	int m_iReentrancyCount;
-	CSynchronizationEvent m_event;
+    CTask* m_pOwningTask;       ///< 所有しているタスク
+    int m_iReentrancyCount;     ///< リエントラント回数
+    CSynchronizationEvent m_event;  ///< イベント
 };
 
 #endif

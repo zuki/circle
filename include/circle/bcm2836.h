@@ -21,6 +21,7 @@
 #ifndef _circle_bcm2836_h
 #define _circle_bcm2836_h
 
+// ARM Quad A7 Coreマニュアル: ローカルペリフェラル
 #if RASPPI >= 2
 
 #if RASPPI <= 3

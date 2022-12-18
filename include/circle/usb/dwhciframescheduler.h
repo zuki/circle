@@ -1,3 +1,6 @@
+/** @addtogroup dwhc
+ *  @{
+ */
 //
 // dwhciframescheduler.h
 //
@@ -47,4 +50,5 @@ public:
     virtual boolean IsOddFrame (void) const = 0;
 };
 
+/** @} */
 #endif

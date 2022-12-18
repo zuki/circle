@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // netsocket.h
 //
@@ -118,5 +121,7 @@ private:
     /// @brief ネットサブシステムオブジェクトへのポインタ
     CNetSubSystem *m_pNetSubSystem;
 };
+
+/** @} */
 
 #endif

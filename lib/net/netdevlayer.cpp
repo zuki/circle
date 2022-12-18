@@ -49,11 +49,13 @@ boolean CNetDeviceLayer::Initialize (boolean bWaitForActivate)
     }
 #endif
 
+    // 1. 立ち上がりを待たない場合はすぐにtrueでリターン
     if (!bWaitForActivate)
     {
         return TRUE;
     }
 
+    // 2. 指定のタイプのネットワークデバイスを取得
     assert (m_pDevice == 0);
     m_pDevice = CNetDevice::GetNetDevice (m_DeviceType);
     if (m_pDevice == 0)
@@ -62,10 +64,10 @@ boolean CNetDeviceLayer::Initialize (boolean bWaitForActivate)
 
         return FALSE;
     }
-
+    // 3. PHYタスクを起動
     new CPHYTask (m_pDevice);
 
-    // wait for Ethernet PHY to come up
+    // 4. Ethernet PHYが起動するのを待機
     unsigned nStartTicks = CTimer::Get ()->GetTicks ();
     do
     {
@@ -76,8 +78,9 @@ boolean CNetDeviceLayer::Initialize (boolean bWaitForActivate)
             return TRUE;
         }
     }
-    while (!m_pDevice->IsLinkUp ());
+    while (!m_pDevice->IsLinkUp ());    // usbcdcetherは常にTrue
 
+    // 5. ネットワークデバイスの速度を取得
     TNetDeviceSpeed Speed = m_pDevice->GetLinkSpeed ();
     if (Speed != NetDeviceSpeedUnknown)
     {
@@ -90,6 +93,8 @@ boolean CNetDeviceLayer::Initialize (boolean bWaitForActivate)
 
 void CNetDeviceLayer::Process (void)
 {
+    // 1. Initialize()で立ち上がりを待たなかった場合、
+    //    デバイスを設定してEthernet PHYを起動する
     if (m_pDevice == 0)
     {
         m_pDevice = CNetDevice::GetNetDevice (m_DeviceType);
@@ -101,8 +106,10 @@ void CNetDeviceLayer::Process (void)
         new CPHYTask (m_pDevice);
     }
 
+    // 2. フレーム用のDMAバッファを作成
     DMA_BUFFER (u8, Buffer, FRAME_BUFFER_SIZE);
     unsigned nLength;
+    // 3. フレームを送信する
     while (   m_pDevice->IsSendFrameAdvisable ()
            && (nLength = m_TxQueue.Dequeue (Buffer)) > 0)
     {
@@ -113,7 +120,7 @@ void CNetDeviceLayer::Process (void)
             break;
         }
     }
-
+    // 4. フレームを受信する
     while (m_pDevice->ReceiveFrame (Buffer, &nLength))
     {
         assert (nLength > 0);

@@ -1,9 +1,12 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // udpconnection.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2018  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -45,7 +48,7 @@ public:
 	int Connect (void);
 	int Accept (CIPAddress *pForeignIP, u16 *pForeignPort);
 	int Close (void);
-	
+
 	int Send (const void *pData, unsigned nLength, int nFlags);
 	int Receive (void *pBuffer, int nFlags);
 
@@ -56,7 +59,7 @@ public:
 
 	boolean IsConnected (void) const;
 	boolean IsTerminated (void) const;
-	
+
 	void Process (void);
 
 	// returns: -1: invalid packet, 0: not to me, 1: packet consumed
@@ -78,5 +81,7 @@ private:
 
 	int m_nErrno;				// signalize error to the user
 };
+
+/** @} */
 
 #endif

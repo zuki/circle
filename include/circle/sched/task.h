@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2021  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -28,94 +28,94 @@
 
 enum TTaskState
 {
-	TaskStateNew,
-	TaskStateReady,
-	TaskStateBlocked,
-	TaskStateBlockedWithTimeout,
-	TaskStateSleeping,
-	TaskStateTerminated,
-	TaskStateUnknown
+    TaskStateNew,
+    TaskStateReady,
+    TaskStateBlocked,
+    TaskStateBlockedWithTimeout,
+    TaskStateSleeping,
+    TaskStateTerminated,
+    TaskStateUnknown
 };
 
 class CScheduler;
 
-class CTask	/// Overload this class, define the Run() method, and call new on it to start it.
+class CTask    /// このクラスをオーバロードし、Run()を定義し、そのクラスをnewすると起動する
 {
 public:
-	/// \param nStackSize Stack size for this task (0 used internally for the main task)
-	/// \param bCreateSuspended Set to TRUE, if the task is initially not ready to run
-	CTask (unsigned nStackSize = TASK_STACK_SIZE, boolean bCreateSuspended = FALSE);
+    /// \param nStackSize このタスクのスタックサイズ（メインタスクでは内的に0が使用される）
+    /// \param bCreateSuspended タスクが初期状態で実行可能でない場合、TRUEに設定する
+    CTask (unsigned nStackSize = TASK_STACK_SIZE, boolean bCreateSuspended = FALSE);
 
-	virtual ~CTask (void);
+    virtual ~CTask (void);
 
-	/// \brief Override this method to define the entry point for your class
-	virtual void Run (void);
+    /// \brief このメソッドをオーバーライドして、クラスのエントリポイントを定義する
+    virtual void Run (void);
 
-	/// \brief Starts a task that was created with bCreateSuspended = TRUE\n
-	/// or restarts it after Suspend()
-	void Start (void);
-	/// \brief Suspend task from running until Resume()
-	void Suspend (void);
-	/// \brief Alternative method to (re-)start suspended task
-	void Resume (void)			{ Start (); }
-	/// \return Is task suspended from running?
-	boolean IsSuspended (void) const	{ return m_bSuspended; }
+    /// \brief bCreateSuspended = TRUEで作成されたタスクを起動する。\n
+    /// または、Suspend()した後に再起動する
+    void Start (void);
+    /// \brief Resume()が呼び出されるまでタスクの実行を一時停止する
+    void Suspend (void);
+    /// \brief 一時停止されたタスクを（再）起動する別メソッド
+    void Resume (void)            { Start (); }
+    /// \return タスクは実行を一時停止しているか?
+    boolean IsSuspended (void) const    { return m_bSuspended; }
 
-	/// \brief Terminate the execution of this task
-	/// \note Callable from this task only
-	/// \note The task terminates on return from Run() too.
-	void Terminate (void);
-	/// \brief Wait for the termination of this task
-	/// \note Callable from other task only
-	void WaitForTermination (void);
+    /// \brief このタスクの実行を終了する
+    /// \note このタスクからしか呼び出せない
+    /// \note Run()からのリターンでもタスクは終了する
+    void Terminate (void);
+    /// \brief このタスクの終了を待つ
+    /// \note 他のタスクからしか呼び出せない
+    void WaitForTermination (void);
 
-	/// \brief Set a specific name for this task
-	/// \param pName Name string for this task
-	void SetName (const char *pName);
-	/// \return Pointer to 0-terminated name string ("@this_address" if not explicitly set)
-	const char *GetName (void) const;
+    /// \brief このタスクに指定の名前をセットする
+    /// \param pName このタスクの名前を示す文字列
+    void SetName (const char *pName);
+    /// \return 0終端の文字列へのポインタ（明示的にセットされていない場合は"@this_address"）
+    const char *GetName (void) const;
 
-#define TASK_USER_DATA_KTHREAD		0	// Linux driver emulation
-#define TASK_USER_DATA_ERROR_STACK	1	// Plan 9 driver emulation
-#define TASK_USER_DATA_USER		2	// Free for application usage
-#define TASK_USER_DATA_SLOTS		3	// Number of available slots
-	/// \brief Set a user pointer for this task
-	/// \param pData Any user pointer
-	/// \param nSlot The slot to be set
-	/// \note The slot TASK_USER_DATA_USER is free for application use.
-	void SetUserData (void *pData, unsigned nSlot);
-	/// \brief Get user pointer from slot
-	/// \param nSlot The slot to be read
-	/// \return Any user pointer, previously set with SetUserData()
-	void *GetUserData (unsigned nSlot);
-
-private:
-	TTaskState GetState (void) const	{ return m_State; }
-	void SetState (TTaskState State)	{ m_State = State; }
-
-	unsigned GetWakeTicks (void) const	{ return m_nWakeTicks; }
-	void SetWakeTicks (unsigned nTicks)	{ m_nWakeTicks = nTicks; }
-
-	TTaskRegisters *GetRegs (void)		{ return &m_Regs; }
-
-	friend class CScheduler;
+#define TASK_USER_DATA_KTHREAD          0    // Linuxドライバーのエミュレーション
+#define TASK_USER_DATA_ERROR_STACK      1    // Plan 9ドライバーのエミュレーション
+#define TASK_USER_DATA_USER             2    // アプリケーションで自由に利用可能
+#define TASK_USER_DATA_SLOTS            3    // 利用可能なスロットの数
+    /// \brief このタスクのユーザポインタをセットする
+    /// \param pData 任意のユーザポインタ
+    /// \param nSlot セットするスロット
+    /// \note スロット TASK_USER_DATA_USER はアプリケーションで自由に利用可能
+    void SetUserData (void *pData, unsigned nSlot);
+    /// \brief スロットからユーザポインタを取得する
+    /// \param nSlot 読み込むスロット
+    /// \return 事前にSetUserData()でセットされた任意のユーザポインタ
+    void *GetUserData (unsigned nSlot);
 
 private:
-	void InitializeRegs (void);
+    TTaskState GetState (void) const    { return m_State; }
+    void SetState (TTaskState State)    { m_State = State; }
 
-	static void TaskEntry (void *pParam);
+    unsigned GetWakeTicks (void) const    { return m_nWakeTicks; }
+    void SetWakeTicks (unsigned nTicks)    { m_nWakeTicks = nTicks; }
+
+    TTaskRegisters *GetRegs (void)        { return &m_Regs; }   // Task Context
+
+    friend class CScheduler;
 
 private:
-	volatile TTaskState m_State;
-	boolean		    m_bSuspended;
-	unsigned	    m_nWakeTicks;
-	TTaskRegisters	    m_Regs;
-	unsigned	    m_nStackSize;
-	u8		   *m_pStack;
-	CString		    m_Name;
-	void		   *m_pUserData[TASK_USER_DATA_SLOTS];
-	CSynchronizationEvent m_Event;
-	CTask		   *m_pWaitListNext;	// next in list of tasks waiting on an event
+    void InitializeRegs (void);
+
+    static void TaskEntry (void *pParam);
+
+private:
+    volatile TTaskState m_State;        ///< タスクの状態
+    boolean             m_bSuspended;   ///< 一時停止中
+    unsigned            m_nWakeTicks;   ///< 起床チケット
+    TTaskRegisters      m_Regs;         ///< タスクコンテキスト
+    unsigned            m_nStackSize;   ///< スタックサイズ
+    u8                 *m_pStack;       ///< スタックポインタ
+    CString             m_Name;         ///< タスク名
+    void               *m_pUserData[TASK_USER_DATA_SLOTS];  ///< ユーザデータ
+    CSynchronizationEvent m_Event;      ///< イベント
+    CTask              *m_pWaitListNext;  ///< イベント待ちのタスクリストの次のエントリ
 };
 
 #endif

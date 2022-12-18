@@ -1,9 +1,12 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // tcprejector.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2018  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -59,5 +62,7 @@ public:
 private:
 	boolean SendSegment (unsigned nFlags, u32 nSequenceNumber, u32 nAcknowledgmentNumber = 0);
 };
+
+/** @} */
 
 #endif

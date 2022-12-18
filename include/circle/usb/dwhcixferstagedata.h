@@ -150,6 +150,8 @@ public:
     CUSBDevice *GetDevice (void) const;
     //! フレームスケジューラをget
     CDWHCIFrameScheduler *GetFrameScheduler (void) const;
+    //! デバッグダンプ
+    void DebugStdata(void);
 
 private:
     unsigned        m_nChannel;                 ///< チャネル

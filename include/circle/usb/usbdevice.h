@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 // usbdevice.h
 //
@@ -125,9 +128,9 @@ private:
 
 private:
     CUSBHostController *m_pHost;            /**< ホストコントローラ */
-    CUSBHCIRootPort    *m_pRootPort;        /**< このデバイスが接続されるルートポート */
-    CUSBStandardHub    *m_pHub;             /**< または、このデバイスが接続されるハブ */
-    unsigned            m_nHubPortIndex;    /**< このハブの0ベースのインデックス */
+    CUSBHCIRootPort    *m_pRootPort;        /**< このデバイスが接続されているルートポート (XHCIドライバで使用）*/
+    CUSBStandardHub    *m_pHub;             /**< または、このデバイスが接続されているハブ (XHCIドライバで使用）*/
+    unsigned            m_nHubPortIndex;    /**< このハブの0ベースのインデックス (XHCIドライバで使用）*/
 
     u8                  m_ucAddress;        /**< アドレス */
     TUSBSpeed           m_Speed;            /**< スピード */
@@ -155,4 +158,5 @@ private:
 #endif
 };
 
+/** @} */
 #endif

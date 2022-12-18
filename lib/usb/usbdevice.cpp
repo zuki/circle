@@ -235,7 +235,7 @@ boolean CUSBDevice::Initialize (void)
     }
 
 #ifndef NDEBUG
-    //debug_hexdump (m_pDeviceDesc, sizeof *m_pDeviceDesc, FromDevice);
+    debug_hexdump (m_pDeviceDesc, sizeof *m_pDeviceDesc, FromDevice);
 #endif
 
 #if RASPPI <= 3
@@ -323,7 +323,7 @@ boolean CUSBDevice::Initialize (void)
     }
 
 #ifndef NDEBUG
-    //debug_hexdump (m_pConfigDesc, nTotalLength, FromDevice);
+    debug_hexdump (m_pConfigDesc, nTotalLength, FromDevice);
 #endif
 
     // コンフィグレーションパーサを作成

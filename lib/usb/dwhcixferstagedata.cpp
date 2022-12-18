@@ -105,7 +105,7 @@ CDWHCITransferStageData::CDWHCITransferStageData (unsigned     nChannel,
     }
 
     assert (m_pBufferPointer != 0);                     // バッファポインタはセットされていること
-    assert (((uintptr) m_pBufferPointer & 3) == 0);     // バッファポインタは4バイトあらいんであること
+    assert (((uintptr) m_pBufferPointer & 3) == 0);     // バッファポインタは4バイトアラインであること
 
     if (m_bSplitTransaction)
     {
@@ -531,3 +531,13 @@ CDWHCIFrameScheduler *CDWHCITransferStageData::GetFrameScheduler (void) const
 }
 
 IMPLEMENT_CLASS_ALLOCATOR (CDWHCITransferStageData)
+
+void CDWHCITransferStageData::DebugStdata(void)
+{
+    CLogger::Get ()->Write("stdata", LogNotice, "channel: %d, in: %d, stage: %d",
+        m_nChannel, m_bIn, m_bStatusStage);
+    CLogger::Get ()->Write("stdata", LogNotice, "    state: %d, substate: %d, trstatus: %d",
+        m_nState, m_nSubState, m_nTransactionStatus);
+    CLogger::Get ()->Write("stdata", LogNotice, "    buffp: 0x%p, bpt: %d, ppt: %d, packets: %d\n",
+        m_pBufferPointer, m_nBytesPerTransaction, m_nPacketsPerTransaction, m_nPackets);
+}

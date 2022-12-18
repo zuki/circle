@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // networklayer.h
 //
@@ -159,4 +162,5 @@ private:
     CRouteCache m_RouteCache;
 };
 
+/** @} */
 #endif

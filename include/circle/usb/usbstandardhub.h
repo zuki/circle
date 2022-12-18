@@ -94,7 +94,7 @@ private:
     CUSBDevice *m_pDevice[USB_HUB_MAX_PORTS];
     /// @brief ポートステータス配列
     TUSBPortStatus *m_pStatus[USB_HUB_MAX_PORTS];
-    /// @brief ポット構成済み配列
+    /// @brief ポート構成済み配列
     boolean m_bPortConfigured[USB_HUB_MAX_PORTS];
 
 #if RASPPI >= 4

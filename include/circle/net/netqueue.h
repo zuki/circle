@@ -1,9 +1,12 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // netqueue.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,26 +28,39 @@
 
 struct TNetQueueEntry;
 
+/// @brief netdevlayerの送受信キューのためのクラス
 class CNetQueue
 {
 public:
-	CNetQueue (void);
-	~CNetQueue (void);
+    CNetQueue (void);
+    ~CNetQueue (void);
 
-	boolean IsEmpty (void) const;
-	
-	void Flush (void);
-	
-	void Enqueue (const void *pBuffer, unsigned nLength, void *pParam = 0);
+    /// @brief キューは空か
+    /// @return からの場合はTRUE
+    boolean IsEmpty (void) const;
 
-	// returns length (0 if queue is empty)
-	unsigned Dequeue (void *pBuffer, void **ppParam = 0);
+    /// @brief キューをフラッシュ（クリア）する
+    void Flush (void);
+
+    /// @brief エントリをエンキュー
+    /// @param pBuffer エントリデータ
+    /// @param nLength エントリデータ長
+    /// @param pParam エントリパラメタ
+    void Enqueue (const void *pBuffer, unsigned nLength, void *pParam = 0);
+
+    /// @brief エントリをデキュー
+    /// @param pBuffer デキューしたエントリを格納するバッファ
+    /// @param ppParam デキューしたエントリのパラメタを格納
+    /// @return デキューしたエントリのデータ長（キューが空の場合は0）
+    unsigned Dequeue (void *pBuffer, void **ppParam = 0);
 
 private:
-	volatile TNetQueueEntry *m_pFirst;
-	volatile TNetQueueEntry *m_pLast;
+    volatile TNetQueueEntry *m_pFirst;  ///< 先頭のエントリ
+    volatile TNetQueueEntry *m_pLast;   ///< 最後のエントリ
 
-	CSpinLock m_SpinLock;
+    CSpinLock m_SpinLock;               ///< キューを保護するロック
 };
+
+/** @} */
 
 #endif

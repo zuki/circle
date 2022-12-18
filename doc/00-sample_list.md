@@ -5,8 +5,8 @@
 | 01-gpiosimple | シンプルなGPIOの使用例。Act LEDを点滅させる |
 | 02-screenpixel | スクリーンにピクセルをセットする |
 | [03-screentext](doc/03-screentext.md) | テキストをスクリーンに書き出す。debug_hexdump()とアサートの使用法を示す |
-| 04-timer | タイマーによる割り込み。例外ハンドラのデモ |
-| 05-usbsimple | ルートハブのUSBデバイスディスクリプタを表示する |
+| [04-timer](doc/04-timer.md) | タイマーによる割り込み。例外ハンドラのデモ |
+| [05-usbsimple](doc/05-usbsimple.md) | ルートハブのUSBデバイスディスクリプタを表示する |
 | 06-ethernet | Ehternetからブロードキャストを受信する |
 | [07-usbstorage](doc/07-usbstorage.md) | MBR（マスターブートレコード）からパーティションテーブルを表示する |
 | 08-usbkeyboard | **[PnP]** タイプした文字スクリーンにエコーする（またはキーボードrawモード） |
@@ -40,8 +40,8 @@
 | 37-showgamepad | **[PnP]** 定型化されたゲームパッドと接続されたUSBゲームパッドの状態をスクリーンに示す |
 | 38-bootloader | ウェブフロントエンドを持つHTTPとTFTPベースのブートローダ |
 | [39-umsdplugging](doc/39-umsdplugging.md) | **[PnP]** USBフラッシュメモリを脱着してディレクトリをリスト |
-| 40-irqlatency | **[PnP]** IRQレイテンシーの最大測定値を表示する |
+| [40-irqlatency](doc/40-irqlatency.md) | **[PnP]** IRQレイテンシーの最大測定値を表示する |
 | 41-screenanimations | フリッカーやスクリーンテアリングのない2Dグラフィックのスクリーン表示デモ |
 | 42-i2sinput | I2SからPWMサウンドデータコンバータとデジタルサウンドレコーダ |
 
-**注**: [PnP] のマークが付いているさんップルはUSBプラグアンドプレイが有効になっています。
+**注**: [PnP] のマークが付いているサンプルはUSBプラグアンドプレイが有効になっています。

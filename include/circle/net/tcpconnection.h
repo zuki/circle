@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // tcpconnection.h
 //
@@ -268,5 +271,7 @@ private:
     /// @brief コネクション数
     static unsigned s_nConnections;
 };
+
+/** @} */
 
 #endif

@@ -1,3 +1,6 @@
+/** @addtogroup dwhc
+ *  @{
+ */
 //
 // dwhcicompletionqueue.h
 //
@@ -52,4 +55,5 @@ private:
 
 #endif
 
+/** @} */
 #endif

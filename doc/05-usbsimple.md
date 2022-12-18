@@ -151,3 +151,53 @@ logger: Circle 44.5 started on Raspberry Pi 3 Model B+ (AArch64)
 00:00:04.87 kernel: DA40: 12 01 00 02 09 00 02 40-24 04 14 25 B3 0B 00 00
 00:00:04.87 kernel: DA50: 00 01 25 B8 40 00 98 3F-0A 28 54 4F 00 00 00 00
 ```
+
+## ディスクリプタをダンプ出力
+
+```
+logger: Circle 44.5 started on Raspberry Pi 3 Model B+ (AArch64)
+00:00:00.66 timer: SpeedFactor is 1.51
+00:00:01.47 usbdev: Dumping 0x12 bytes starting at 0x60BE40
+00:00:01.47 usbdev: 1.48 usbdev: BE50: 00 01 25 B8 F5 75 55 55-35 56 55 55 D4 5D
+00:00:01.53 usbdev: Dumping 0x29 bytes starting at 0x60BEC0
+00:00:01.54 usbdev: BEC0: 09 02 29 00 01 01 00 E0-01 09 04 00 00 01 09 00
+00:00:01.54 usbdev: BED0: 01 00 07 05 81 03 01 00-0C 09 04 00 01 01 09 00
+00:00:01.55 usbdev: BEE0: 02 00 07 05 81 03 01 00-0C B4 37 00 20 35 35 20
+00:00:01.56 usbdev0-1: Device ven424-2514, dev9-0-2 found
+00:00:01.56 usbdev0-1: Interface int9-0-1 found
+00:00:01.57 usbdev0-1: Function is not supported
+00:00:01.57 usbdev0-1: Interface int9-0-2 found
+00:00:01.58 usbdev0-1: Using device/interface int9-0-2
+00:00:02.24 usbdev: Dumping 0x12 bytes starting at 0x60EA80
+00:00:02.25 usbdev: EA80: 12 01 00 02 09 00 02 40-24 04 14 25 B3 0B 00 00
+00:00:02.25 usbdev: EA90: 00 01 25 B8 63 65 20 69-6E 74 39 2D 30 2D 32 00
+00:00:02.31 usbdev: Dumping 0x29 bytes starting at 0x60FC80
+00:00:02.32 usbdev: FC80: 09 02 29 00 01 01 00 E0-01 09 04 00 00 01 09 00
+00:00:02.32 usbdev: FC90: 01 00 07 05 81 03 01 00-0C 09 04 00 01 01 09 00
+00:00:02.33 usbdev: FCA0: 02 00 07 05 81 03 01 00-0C B4 37 00 20 32 44 20
+00:00:02.33 usbdev0-1: Device ven424-2514, dev9-0-2 found
+00:00:02.34 usbdev0-1: Interface int9-0-1 found
+00:00:02.34 usbdev0-1: Function is not supported
+00:00:02.35 usbdev0-1: Interface int9-0-2 found
+00:00:02.35 usbdev0-1: Using device/interface int9-0-2
+00:00:03.02 usbdev: Dumping 0x12 bytes starting at 0x612980
+00:00:03.03 usbdev: 2980: 12 01 10 02 FF 00 FF 40-24 04 00 78 00 03 00 00
+00:00:03.03 usbdev: 2990: 00 01 07 A8 31 3A 20 49-6E 74 65 72 66 61 63 65
+00:00:03.09 usbdev: Dumping 0x27 bytes starting at 0x612A80
+00:00:03.09 usbdev: 2A80: 09 02 27 00 01 01 00 E0-01 09 04 00 00 03 FF 00
+00:00:03.10 usbdev: 2A90: FF 00 07 05 81 02 00 02-00 07 05 02 02 00 02 00
+00:00:03.11 usbdev: 2AA0: 07 05 83 03 10 00 04 E9-32 20 36 36 20 36 31 20
+00:00:03.11 usbdev0-1: Device ven424-7800 found
+00:00:03.12 usbdev0-1: Using device/interface ven424-7800
+00:00:03.26 lan7800: MAC address is B8:27:EB:AB:E8:48
+00:00:03.40 usbhub: Port 1: Device ven424-7800 configured
+00:00:03.41 usbhub: Port 1: Device ven424-2514, dev9-0-2 configured
+00:00:03.42 dwroot: Device configured
+00:00:03.42 kernel: Compile time: Nov 27 2022 16:43:57
+00:00:03.42 kernel: USB hub: Vendor 0x0424, Product 0x2514
+00:00:03.43 kernel: Dumping device descriptor
+00:00:03.43 kernel: Dumping 0x12 bytes starting at 0x29DA40
+00:00:03.44 kernel: DA40: 12 01 00 02 09 00 02 40-24 04 14 25 B3 0B 00 00
+00:00:03.44 kernel: DA50: 00 01 25 B8 00 00 00 00-0D 00 00 00 00 00 00 00
+```
+

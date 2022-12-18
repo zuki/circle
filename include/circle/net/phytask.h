@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // phytask.h
 //
@@ -34,5 +37,7 @@ public:
 private:
 	CNetDevice *m_pDevice;
 };
+
+/** @} */
 
 #endif

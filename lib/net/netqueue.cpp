@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2017  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -22,129 +22,132 @@
 #include <circle/util.h>
 #include <assert.h>
 
+/// @brief netdevlayerの送受信キューエントリのための構造体
 struct TNetQueueEntry
 {
-	volatile TNetQueueEntry *pPrev;
-	volatile TNetQueueEntry *pNext;
-	unsigned		 nLength;
-	unsigned char		 Buffer[FRAME_BUFFER_SIZE];
-	void			*pParam;
+    volatile TNetQueueEntry *pPrev;     // 双方向リンク
+    volatile TNetQueueEntry *pNext;
+    unsigned            nLength;
+    unsigned char       Buffer[FRAME_BUFFER_SIZE];
+    void               *pParam;
 };
 
 CNetQueue::CNetQueue (void)
-:	m_pFirst (0),
-	m_pLast (0),
-	m_SpinLock (TASK_LEVEL)
+:   m_pFirst (0),
+    m_pLast (0),
+    m_SpinLock (TASK_LEVEL)
 {
 }
 
 CNetQueue::~CNetQueue (void)
 {
-	Flush ();
+    Flush ();
 }
 
 boolean CNetQueue::IsEmpty (void) const
 {
-	return m_pFirst == 0 ? TRUE : FALSE;
+    return m_pFirst == 0 ? TRUE : FALSE;
 }
 
 void CNetQueue::Flush (void)
 {
-	while (m_pFirst != 0)
-	{
-		m_SpinLock.Acquire ();
+    while (m_pFirst != 0)
+    {
+        m_SpinLock.Acquire ();
 
-		volatile TNetQueueEntry *pEntry = m_pFirst;
-		assert (pEntry != 0);
+        volatile TNetQueueEntry *pEntry = m_pFirst;
+        assert (pEntry != 0);
 
-		m_pFirst = pEntry->pNext;
-		if (m_pFirst != 0)
-		{
-			m_pFirst->pPrev = 0;
-		}
-		else
-		{
-			assert (m_pLast == pEntry);
-			m_pLast = 0;
-		}
+        m_pFirst = pEntry->pNext;
+        if (m_pFirst != 0)
+        {
+            m_pFirst->pPrev = 0;
+        }
+        else
+        {
+            assert (m_pLast == pEntry);
+            m_pLast = 0;
+        }
 
-		m_SpinLock.Release ();
+        m_SpinLock.Release ();
 
-		delete pEntry;
-	}
+        delete pEntry;
+    }
 }
-	
+
 void CNetQueue::Enqueue (const void *pBuffer, unsigned nLength, void *pParam)
 {
-	TNetQueueEntry *pEntry = new TNetQueueEntry;
-	assert (pEntry != 0);
+    TNetQueueEntry *pEntry = new TNetQueueEntry;
+    assert (pEntry != 0);
 
-	assert (nLength > 0);
-	assert (nLength <= FRAME_BUFFER_SIZE);
-	pEntry->nLength = nLength;
+    assert (nLength > 0);
+    assert (nLength <= FRAME_BUFFER_SIZE);
+    pEntry->nLength = nLength;
 
-	assert (pBuffer != 0);
-	memcpy (pEntry->Buffer, pBuffer, nLength);
+    assert (pBuffer != 0);
+    memcpy (pEntry->Buffer, pBuffer, nLength);
 
-	pEntry->pParam = pParam;
+    pEntry->pParam = pParam;
 
-	m_SpinLock.Acquire ();
+    m_SpinLock.Acquire ();
 
-	pEntry->pPrev = m_pLast;
-	pEntry->pNext = 0;
+    // 最後に追加(queueだから)
+    pEntry->pPrev = m_pLast;
+    pEntry->pNext = 0;
 
-	if (m_pFirst == 0)
-	{
-		m_pFirst = pEntry;
-	}
-	else
-	{
-		assert (m_pLast != 0);
-		assert (m_pLast->pNext == 0);
-		m_pLast->pNext = pEntry;
-	}
-	m_pLast = pEntry;
+    if (m_pFirst == 0)
+    {
+        m_pFirst = pEntry;
+    }
+    else
+    {
+        assert (m_pLast != 0);
+        assert (m_pLast->pNext == 0);
+        m_pLast->pNext = pEntry;
+    }
+    m_pLast = pEntry;
 
-	m_SpinLock.Release ();
+    m_SpinLock.Release ();
 }
 
 unsigned CNetQueue::Dequeue (void *pBuffer, void **ppParam)
 {
-	unsigned nResult = 0;
-	
-	if (m_pFirst != 0)
-	{
-		m_SpinLock.Acquire ();
+    unsigned nResult = 0;
 
-		volatile TNetQueueEntry *pEntry = m_pFirst;
-		assert (pEntry != 0);
+    if (m_pFirst != 0)
+    {
+        m_SpinLock.Acquire ();
 
-		m_pFirst = pEntry->pNext;
-		if (m_pFirst != 0)
-		{
-			m_pFirst->pPrev = 0;
-		}
-		else
-		{
-			assert (m_pLast == pEntry);
-			m_pLast = 0;
-		}
+        // 先頭のエントリを返す(queueだから)
+        volatile TNetQueueEntry *pEntry = m_pFirst;
+        assert (pEntry != 0);
 
-		m_SpinLock.Release ();
+        m_pFirst = pEntry->pNext;
+        if (m_pFirst != 0)
+        {
+            m_pFirst->pPrev = 0;
+        }
+        else
+        {
+            assert (m_pLast == pEntry);
+            m_pLast = 0;
+        }
 
-		nResult = pEntry->nLength;
-		assert (nResult > 0);
-		assert (nResult <= FRAME_BUFFER_SIZE);
+        m_SpinLock.Release ();
 
-		memcpy (pBuffer, (const void *) pEntry->Buffer, nResult);
+        nResult = pEntry->nLength;
+        assert (nResult > 0);
+        assert (nResult <= FRAME_BUFFER_SIZE);
 
-		if (ppParam != 0)
-		{
-			*ppParam = pEntry->pParam;
-		}
+        memcpy (pBuffer, (const void *) pEntry->Buffer, nResult);
 
-		delete pEntry;
-	}
+        if (ppParam != 0)
+        {
+            *ppParam = pEntry->pParam;
+        }
 
-	return nResult;
+        delete pEntry;
+    }
+
+    return nResult;
 }

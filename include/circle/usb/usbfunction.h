@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 // usbfunction.h
 //
@@ -114,8 +117,9 @@ private:
     CUSBDevice              *m_pDevice;
     /// @brief コンフィグレーションパーサ
     CUSBConfigurationParser *m_pConfigParser;
-    /// @brief いんたエースディスクリプタ
+    /// @brief インタフェースディスクリプタ
     TUSBInterfaceDescriptor *m_pInterfaceDesc;
 };
 
+/** @} */
 #endif

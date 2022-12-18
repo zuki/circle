@@ -53,7 +53,7 @@
 #endif
 
 // HEAP_DEFAULT_MALLOCは、malloc()とcalloc()で使用されるヒープを定義します。
-// 書斎はHEAP_DEFAULT_NEWの説明を参照してください。おの設定を変更することは
+// 詳細はHEAP_DEFAULT_NEWの説明を参照してください。おの設定を変更することは
 // 推奨しません。malloc()を使ってDMA用に低位メモリの割当を要求する
 // デバイスドライバが存在するためです。この設定が重要なのはRaspberry
 // Pi 4だけです。
@@ -132,10 +132,10 @@
 
 #if RASPPI >= 2
 
-// USE_RPI_STUB_AT enables the debugging support for rpi_stub and
-// defines the address where rpi_stub is loaded. See doc/debug.txt
-// for details! Kernel images built with this option defined do
-// normally not run without rpi_stub loaded.
+// USE_RPI_STUB_ATは、rpi_stubによるデバッグサポートを有効にし、
+// rpi_stubがロードされるアドレスを定義します。詳細は doc/debug.txtを
+// 参照してください。通常、このオプションを定義してビルドしたカーネル
+// イメージはrpi_stubがロードされていない状態では実行されません。
 
 //#define USE_RPI_STUB_AT 	0x1F000000
 
@@ -147,17 +147,19 @@
 // 使用しなくてもバス時間を計算するのでシステムがスローダウンする
 // 可能性があるためです。
 
-//#define ARM_ALLOW_MULTI_CORE
+#ifndef ARM_ALLOW_MULTI_CORE
+#define ARM_ALLOW_MULTI_CORE
+#endif
 
 #endif
 
-// USE_PHYSICAL_COUNTER enables the use of the CPU internal physical
-// counter, which is only available on the Raspberry Pi 2, 3 and 4. Reading
-// this counter is much faster than reading the BCM2835 system timer
-// counter (which is used without this option). It reduces the I/O load
-// too. For some QEMU versions this is the only supported timer option,
-// for other older QEMU versions it does not work. On the Raspberry Pi 4
-// setting this option is required.
+// USE_PHYSICAL_COUNTERは、CPU内部物理カウンタの使用を有効にします。
+// これはRaspberry Pi 2, 3, 4でしか利用できません。このカウンターの
+// 読み出しはBCM2835のシステムタイマーカウンタ（このオプションが指定され
+// ない場合に使用されるカウンタ）の読み出しよりもはるかに高速です。
+// また、I/Oの負荷も軽減されます。QEMUにはこのタイマーしかサポートして
+// いないバージョンもありますが、古いバージョンでは動作しません。
+// Raspberry Pi 4の設定ではこのオプションが必要です。
 
 #ifndef NO_PHYSICAL_COUNTER
 #define USE_PHYSICAL_COUNTER
@@ -188,10 +190,11 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-// REALTIME optimizes the IRQ latency of the system, which could be
-// useful for time-critical applications. This will be accomplished
-// by disabling some features (e.g. USB low-/full-speed device support).
-// See doc/realtime.txt for details!
+// REALTIMEはシステムのIRQレイテンシーを最適化します。タイム
+// クリティカルなアプリケーションに有用である可能性があります。
+// これはいくつかの機能 (LS/FS USBデバイスのサポートなど) を
+// 無効にすることで実現されます。
+// 詳しくは doc/realtime.txt を参照してください。
 
 //#define REALTIME
 
@@ -203,9 +206,9 @@
 // このオプションはいかなる場合でも設定しなければなりません。この
 // オプションはRaspberry Pi 4には影響ありません。
 
-#ifndef NO_USB_SOF_INTR
-#define USE_USB_SOF_INTR
-#endif
+//#ifndef NO_USB_SOF_INTR
+//#define USE_USB_SOF_INTR
+//#endif
 
 // USE_USB_FIQは、USBコントローラからのタイムクリティカルな割り込み
 // （毎秒8000回発生）をFIQで処理することでUSBのタイミングをより正確に

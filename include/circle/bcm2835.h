@@ -20,6 +20,8 @@
 #ifndef _circle_bcm2835_h
 #define _circle_bcm2835_h
 
+// BCM2835 ARPペリフェラルマニュアル
+
 #include <circle/sysconfig.h>
 
 #if RASPPI == 1
@@ -201,7 +203,7 @@
 #define ARM_CM_PASSWD           (0x5A << 24)
 
 //
-// USBホスト今トーラ
+// USBホストコントローラ
 //
 #define ARM_USB_BASE            (ARM_IO_BASE + 0x980000)
 

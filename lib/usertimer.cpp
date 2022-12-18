@@ -25,83 +25,85 @@
 #include <assert.h>
 
 CUserTimer::CUserTimer (CInterruptSystem *pInterruptSystem,
-			TUserTimerHandler *pHandler, void *pParam,
-			boolean bUseFIQ)
-:	m_pInterruptSystem (pInterruptSystem),
-	m_pHandler (pHandler),
-	m_pParam (pParam),
-	m_bUseFIQ (bUseFIQ),
-	m_bInitialized (FALSE)
+            TUserTimerHandler *pHandler, void *pParam,
+            boolean bUseFIQ)
+:    m_pInterruptSystem (pInterruptSystem),
+    m_pHandler (pHandler),
+    m_pParam (pParam),
+    m_bUseFIQ (bUseFIQ),
+    m_bInitialized (FALSE)
 {
 }
 
 CUserTimer::~CUserTimer (void)
 {
-	if (m_bInitialized)
-	{
-		Stop ();
-	}
+    if (m_bInitialized)
+    {
+        Stop ();
+    }
 
-	m_pInterruptSystem = 0;
+    m_pInterruptSystem = 0;
 }
 
 boolean CUserTimer::Initialize (void)
 {
-	assert (!m_bInitialized);
-	m_bInitialized = TRUE;		// asserted in Start()
+    assert (!m_bInitialized);
+    m_bInitialized = TRUE;        // asserted in Start()
 
-	Start (3600 * USER_CLOCKHZ);
+    Start (3600 * USER_CLOCKHZ);
 
-	assert (m_pInterruptSystem != 0);
-	if (!m_bUseFIQ)
-	{
-		m_pInterruptSystem->ConnectIRQ (ARM_IRQ_TIMER1, InterruptHandler, this);
-	}
-	else
-	{
-		m_pInterruptSystem->ConnectFIQ (ARM_FIQ_TIMER1, InterruptHandler, this);
-	}
+    assert (m_pInterruptSystem != 0);
+    if (!m_bUseFIQ)
+    {
+        m_pInterruptSystem->ConnectIRQ (ARM_IRQ_TIMER1, InterruptHandler, this);
+    }
+    else
+    {
+        m_pInterruptSystem->ConnectFIQ (ARM_FIQ_TIMER1, InterruptHandler, this);
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 void CUserTimer::Stop (void)
 {
-	assert (m_bInitialized);
+    assert (m_bInitialized);
 
-	if (!m_bUseFIQ)
-	{
-		m_pInterruptSystem->DisconnectIRQ (ARM_IRQ_TIMER1);
-	}
-	else
-	{
-		m_pInterruptSystem->DisconnectFIQ ();
-	}
+    if (!m_bUseFIQ)
+    {
+        m_pInterruptSystem->DisconnectIRQ (ARM_IRQ_TIMER1);
+    }
+    else
+    {
+        m_pInterruptSystem->DisconnectFIQ ();
+    }
 
-	m_bInitialized = FALSE;
+    m_bInitialized = FALSE;
 }
 
 void CUserTimer::Start (unsigned nDelayMicros)
 {
-	assert (m_bInitialized);
+    assert (m_bInitialized);
 
-	PeripheralEntry ();
+    PeripheralEntry ();
 
-	assert (nDelayMicros > 1);
-	write32 (ARM_SYSTIMER_C1, read32 (ARM_SYSTIMER_CLO) + nDelayMicros);
+    assert (nDelayMicros > 1);
+    // システムタイマーは1MHz(1 ミリ秒 / 1 tick)
+    write32 (ARM_SYSTIMER_C1, read32 (ARM_SYSTIMER_CLO) + nDelayMicros);
 
-	PeripheralExit ();
+    PeripheralExit ();
 }
 
 void CUserTimer::InterruptHandler (void *pParam)
 {
-	CUserTimer *pThis = reinterpret_cast<CUserTimer *> (pParam);
-	assert (pThis != 0);
+    CUserTimer *pThis = reinterpret_cast<CUserTimer *> (pParam);
+    assert (pThis != 0);
 
-	PeripheralEntry ();
-	write32 (ARM_SYSTIMER_CS, 1 << 1);
-	PeripheralExit ();
+    PeripheralEntry ();
+    // system timer 1のmatchフラグをクリア
+    write32 (ARM_SYSTIMER_CS, 1 << 1);
+    PeripheralExit ();
 
-	assert (pThis->m_pHandler != 0);
-	(*pThis->m_pHandler) (pThis, pThis->m_pParam);
+    assert (pThis->m_pHandler != 0);
+    (*pThis->m_pHandler) (pThis, pThis->m_pParam);
 }

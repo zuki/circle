@@ -1,3 +1,8 @@
+/** @defgroup lan7800 LAN7800ドライバクラス
+ *  @ingroup net usb
+ *  @{
+*/
+
 //
 // lan7800.h
 //
@@ -130,5 +135,7 @@ private:
     /// @brief MACアドレス
     CMACAddress m_MACAddress;
 };
+
+/** @} */
 
 #endif

@@ -1,3 +1,6 @@
+/** @addtogroup net_core
+ *  @{
+ */
 //
 // linklayer.h
 //
@@ -124,5 +127,7 @@ private:
     /// @brief Rawプロトコルタイプ
     u16             m_nRawProtocolType;
 };
+
+/** @} */
 
 #endif

@@ -1,3 +1,6 @@
+/** @addtogroup usb_core
+ *  @{
+ */
 //
 // usbdevicefactory.h
 //
@@ -61,4 +64,5 @@ private:
     static boolean FindDeviceID (CString *pName, const TUSBDeviceID *pIDTable);
 };
 
+/** @} */
 #endif

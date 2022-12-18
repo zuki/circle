@@ -2,12 +2,12 @@
 // multicore.cpp
 //
 // Some information in this file is taken from Linux and is:
-//	Copyright (C) Broadcom
-//	Licensed under GPL2
+//    Copyright (C) Broadcom
+//    Licensed under GPL2
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2015-2022  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -36,215 +36,228 @@
 
 static const char FromMultiCore[] = "mcore";
 
+/// @brief マルチサポートオブジェクト（シングルトン）
 CMultiCoreSupport *CMultiCoreSupport::s_pThis = 0;
 
+/// @brief コンストラクタ. シングルトンにオブジェクトをセット
+/// @param pMemorySystem メモリシステムオブジェクト
 CMultiCoreSupport::CMultiCoreSupport (CMemorySystem *pMemorySystem)
-:	m_pMemorySystem (pMemorySystem)
+:    m_pMemorySystem (pMemorySystem)
 {
-	assert (s_pThis == 0);
-	s_pThis = this;
+    assert (s_pThis == 0);
+    s_pThis = this;
 }
 
 CMultiCoreSupport::~CMultiCoreSupport (void)
 {
-	m_pMemorySystem = 0;
+    m_pMemorySystem = 0;
 
-	s_pThis = 0;
+    s_pThis = 0;
 }
 
+/// @brief 初期化関数
+/// @return 処理の成否を返す
 boolean CMultiCoreSupport::Initialize (void)
 {
 #if RASPPI <= 3
-	// Route IRQ and FIQ to core 0
-	u32 nRouting = read32 (ARM_LOCAL_GPU_INT_ROUTING);
-	nRouting &= ~0x0F;
-	write32 (ARM_LOCAL_GPU_INT_ROUTING, nRouting);
-
-	write32 (ARM_LOCAL_MAILBOX_INT_CONTROL0, 1);		// enable IPI on core 0
+    // 1. IRQとFIQをコア0にルーティング
+    u32 nRouting = read32 (ARM_LOCAL_GPU_INT_ROUTING);
+    nRouting &= ~0x0F;      // [3:2] = 0, [1:0] = 0: IRQとFIQをコア0にルーティング
+    write32 (ARM_LOCAL_GPU_INT_ROUTING, nRouting);
+    // 2. コア0でmailbox-0のIRQ割り込みを有効に
+    write32 (ARM_LOCAL_MAILBOX_INT_CONTROL0, 1);
 #endif
 
-	CleanDataCache ();	// write out all data to be accessible by secondary cores
+    CleanDataCache ();    // セカンダリコアからアクセスできるように全データを書き出す
 
-	for (unsigned nCore = 1; nCore < CORES; nCore++)
-	{
+    for (unsigned nCore = 1; nCore < CORES; nCore++)
+    {
 #if AARCH == 32
-		u32 nMailBoxClear = ARM_LOCAL_MAILBOX3_CLR0 + 0x10 * nCore;
+        u32 nMailBoxClear = ARM_LOCAL_MAILBOX3_CLR0 + 0x10 * nCore;
 
-		DataSyncBarrier ();
+        DataSyncBarrier ();
 #else
-		TSpinTable *pSpinTable = (TSpinTable *) ARM_SPIN_TABLE_BASE;
+        TSpinTable *pSpinTable = (TSpinTable *) ARM_SPIN_TABLE_BASE;    // 0x000000D8
 #endif
 
-		unsigned nTimeout = 100;
+        unsigned nTimeout = 100;
 #if AARCH == 32
-		while (read32 (nMailBoxClear) != 0)
+        while (read32 (nMailBoxClear) != 0)
 #else
-		while (pSpinTable->SpinCore[nCore] != 0)
+        while (pSpinTable->SpinCore[nCore] != 0)
 #endif
-		{
-			if (--nTimeout == 0)
-			{
-				CLogger::Get ()->Write (FromMultiCore, LogError, "CPU core %u does not respond", nCore);
+        {
+            if (--nTimeout == 0)
+            {
+                CLogger::Get ()->Write (FromMultiCore, LogError, "CPU core %u does not respond", nCore);
 
-				return FALSE;
-			}
+                return FALSE;
+            }
 
-			CTimer::SimpleMsDelay (1);
-		}
+            CTimer::SimpleMsDelay (1);
+        }
 
 #if AARCH == 32
-		write32 (ARM_LOCAL_MAILBOX3_SET0 + 0x10 * nCore, (u32) &_start_secondary);
+        write32 (ARM_LOCAL_MAILBOX3_SET0 + 0x10 * nCore, (u32) &_start_secondary);
 #else
-		pSpinTable->SpinCore[nCore] = (uintptr) &_start_secondary;
-		// TODO: CleanDataCacheRange ((u64) pSpinTable, sizeof *pSpinTable);
-		CleanDataCache ();
+        pSpinTable->SpinCore[nCore] = (uintptr) &_start_secondary;
+        // TODO: CleanDataCacheRange ((u64) pSpinTable, sizeof *pSpinTable);
+        CleanDataCache ();
 #endif
 
-		nTimeout = 500;
-		do
-		{
-			asm volatile ("sev");
+        nTimeout = 500;
+        do
+        {
+            asm volatile ("sev");
 
-			if (--nTimeout == 0)
-			{
-				CLogger::Get ()->Write (FromMultiCore, LogError, "CPU core %u did not start", nCore);
+            if (--nTimeout == 0)
+            {
+                CLogger::Get ()->Write (FromMultiCore, LogError, "CPU core %u did not start", nCore);
 
-				return FALSE;
-			}
+                return FALSE;
+            }
 
-			CTimer::SimpleMsDelay (1);
+            CTimer::SimpleMsDelay (1);
 
-			DataMemBarrier ();
-		}
+            DataMemBarrier ();
+        }
 #if AARCH == 32
-		while (read32 (nMailBoxClear) != 0);
+        while (read32 (nMailBoxClear) != 0);
 #else
-		while (pSpinTable->SpinCore[nCore] != 0);
+        while (pSpinTable->SpinCore[nCore] != 0);
 #endif
-	}
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 void CMultiCoreSupport::IPIHandler (unsigned nCore, unsigned nIPI)
 {
-	assert (nCore < CORES);
-	assert (nIPI <= IPI_MAX);
+    assert (nCore < CORES);
+    assert (nIPI <= IPI_MAX);
 
-	if (nIPI == IPI_HALT_CORE)
-	{
-		CLogger::Get ()->Write (FromMultiCore, LogDebug, "CPU core %u will halt now", nCore);
+    // 処理内容が対象のコアを停止するだった場合
+    if (nIPI == IPI_HALT_CORE)
+    {
+        CLogger::Get ()->Write (FromMultiCore, LogDebug, "CPU core %u will halt now", nCore);
 
-		halt ();
-	}
+        halt ();
+    }
 }
 
 void CMultiCoreSupport::SendIPI (unsigned nCore, unsigned nIPI)
 {
-	assert (nCore < CORES);
-	assert (nIPI <= IPI_MAX);
+    assert (nCore < CORES);
+    assert (nIPI <= IPI_MAX);
 
 #if RASPPI <= 3
-	write32 (ARM_LOCAL_MAILBOX0_SET0 + 0x10 * nCore, 1 << nIPI);
+    write32 (ARM_LOCAL_MAILBOX0_SET0 + 0x10 * nCore, 1 << nIPI);
 #else
-	CInterruptSystem::SendIPI (nCore, nIPI);
+    CInterruptSystem::SendIPI (nCore, nIPI);
 #endif
 }
 
 void CMultiCoreSupport::HaltAll (void)
 {
-	for (unsigned nCore = 0; nCore < CORES; nCore++)
-	{
-		if (ThisCore () != nCore)
-		{
-			SendIPI (nCore, IPI_HALT_CORE);
-		}
-	}
-	
-	halt ();
+    for (unsigned nCore = 0; nCore < CORES; nCore++)
+    {
+        if (ThisCore () != nCore)
+        {
+            SendIPI (nCore, IPI_HALT_CORE);
+        }
+    }
+
+    halt ();
 }
 
 #if RASPPI <= 3
 
 boolean CMultiCoreSupport::LocalInterruptHandler (void)
 {
-	if (s_pThis == 0)
-	{
-		return FALSE;
-	}
+    if (s_pThis == 0)
+    {
+        return FALSE;
+    }
 
-	unsigned nCore = ThisCore ();
-	if (!(read32 (ARM_LOCAL_IRQ_PENDING0 + 4 * nCore) & 0x10))
-	{
-		return FALSE;
-	}
+    unsigned nCore = ThisCore ();
+    // 各コアのGPU割り込みでなければ何もしない）
+    if (!(read32 (ARM_LOCAL_IRQ_PENDING0 + 4 * nCore) & 0x10))
+    {
+        return FALSE;
+    }
 
-	uintptr nMailBoxClear = ARM_LOCAL_MAILBOX0_CLR0 + 0x10 * nCore;
-	u32 nIPIMask = read32 (nMailBoxClear);
-	if (nIPIMask == 0)
-	{
-		return FALSE;
-	}
+    uintptr nMailBoxClear = ARM_LOCAL_MAILBOX0_CLR0 + 0x10 * nCore;
+    // メールボック0が0なら何もしない
+    u32 nIPIMask = read32 (nMailBoxClear);
+    if (nIPIMask == 0)
+    {
+        return FALSE;
+    }
 
-	unsigned nIPI;
-	for (nIPI = 0; !(nIPIMask & 1); nIPI++)
-	{
-		nIPIMask >>= 1;
-	}
+    // IPI（割り込み内容）を特定する
+    unsigned nIPI;
+    for (nIPI = 0; !(nIPIMask & 1); nIPI++)
+    {
+        nIPIMask >>= 1;
+    }
+    // 特定されたビットをクリアする
+    write32 (nMailBoxClear, 1 << nIPI);
+    DataSyncBarrier ();
+    // nCoreにnIPIを送る
+    s_pThis->IPIHandler (nCore, nIPI);
 
-	write32 (nMailBoxClear, 1 << nIPI);
-	DataSyncBarrier ();
-
-	s_pThis->IPIHandler (nCore, nIPI);
-
-	return TRUE;
+    return TRUE;
 }
 
 #else
 
 void CMultiCoreSupport::LocalInterruptHandler (unsigned nFromCore, unsigned nIPI)
 {
-	if (s_pThis != 0)
-	{
-		s_pThis->IPIHandler (ThisCore (), nIPI);
-	}
+    if (s_pThis != 0)
+    {
+        s_pThis->IPIHandler (ThisCore (), nIPI);
+    }
 }
 
 #endif
 
+/// @brief 2次コアのmainルーチンの処理部
 void CMultiCoreSupport::EntrySecondary (void)
 {
-	assert (s_pThis != 0);
+    assert (s_pThis != 0);
 
-	assert (s_pThis->m_pMemorySystem != 0);
-	s_pThis->m_pMemorySystem->InitializeSecondary ();
-	
-	unsigned nCore = ThisCore ();
+    assert (s_pThis->m_pMemorySystem != 0);
+    s_pThis->m_pMemorySystem->InitializeSecondary ();
+
+    unsigned nCore = ThisCore ();
 #if AARCH == 32
-	write32 (ARM_LOCAL_MAILBOX3_CLR0 + 0x10 * nCore, 0);
+    write32 (ARM_LOCAL_MAILBOX3_CLR0 + 0x10 * nCore, 0);
 #else
-	TSpinTable *pSpinTable = (TSpinTable *) ARM_SPIN_TABLE_BASE;
-	pSpinTable->SpinCore[nCore] = 0;
-	DataSyncBarrier ();
+    TSpinTable *pSpinTable = (TSpinTable *) ARM_SPIN_TABLE_BASE;
+    pSpinTable->SpinCore[nCore] = 0;
+    DataSyncBarrier ();
 #endif
 
 #if RASPPI <= 3
-	write32 (ARM_LOCAL_MAILBOX_INT_CONTROL0 + 4 * nCore, 1);
+    /* メールボックスnのIRQを有効にする */
+    write32 (ARM_LOCAL_MAILBOX_INT_CONTROL0 + 4 * nCore, 1);
 #else
-	CInterruptSystem::InitializeSecondary ();
+    CInterruptSystem::InitializeSecondary ();
 #endif
-	EnableIRQs ();
+    EnableIRQs ();
 
-	CLogger::Get ()->Write (FromMultiCore, LogDebug, "CPU core %u started", nCore);
+    CLogger::Get ()->Write (FromMultiCore, LogDebug, "CPU core %u started", nCore);
 
-	s_pThis->Run (nCore);
+    s_pThis->Run (nCore);
 
-	CLogger::Get ()->Write (FromMultiCore, LogDebug, "CPU core %u will halt now", nCore);
+    CLogger::Get ()->Write (FromMultiCore, LogDebug, "CPU core %u will halt now", nCore);
 }
 
+/// @brief 2次コア(AP)のmainルーチン
+/// @param
 void main_secondary (void)
 {
-	CMultiCoreSupport::EntrySecondary ();
+    CMultiCoreSupport::EntrySecondary ();
 }
 
 #endif

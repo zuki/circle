@@ -452,17 +452,18 @@ boolean CLAN7800Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
     assert (pBuffer != 0);
     CUSBRequest URB (m_pEndpointBulkIn, pBuffer, FRAME_BUFFER_SIZE);
 
+    // 1. Bulkin実行
     if (!GetHost ()->SubmitBlockingRequest (&URB))
     {
         return FALSE;
     }
-
+    // 2. 受信は成功か?(ヘッダー長で判定）
     u32 nResultLength = URB.GetResultLength ();
     if (nResultLength < RX_HEADER_SIZE)
     {
         return FALSE;
     }
-
+    // 3. RXコマンドAから受信エラーの有無を判定
     u32 nRxStatus = *(u32 *) pBuffer;    // RX command A
     if (nRxStatus & RX_CMD_A_RED)
     {
@@ -470,7 +471,7 @@ boolean CLAN7800Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
 
         return FALSE;
     }
-
+    // 4. RXコマンドAからフレーム長を取得
     u32 nFrameLength = nRxStatus & RX_CMD_A_LEN_MASK;
     assert (nFrameLength == nResultLength-RX_HEADER_SIZE);
     assert (nFrameLength > 4);
@@ -481,7 +482,7 @@ boolean CLAN7800Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
     nFrameLength -= 4;    // FCSは無視する
 
     //CLogger::Get ()->Write (FromLAN7800, LogDebug, "Frame received (status 0x%X)", nRxStatus);
-
+    // 5. バッファにフレームデータをコピー
     memcpy (pBuffer, (u8 *) pBuffer + RX_HEADER_SIZE, nFrameLength); // RX コマンド A..Cを上書き
 
     assert (pResultLength != 0);
@@ -493,11 +494,12 @@ boolean CLAN7800Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
 boolean CLAN7800Device::IsLinkUp (void)
 {
     u16 usPHYModeStatus;
+    // 1. Ethernet PHY Mode Status Register を読み込む
     if (!PHYRead (0x01, &usPHYModeStatus))
     {
         return FALSE;
     }
-
+    // 2. bit [2]: Link Status (1 = link is up)
     return usPHYModeStatus & (1 << 2) ? TRUE : FALSE;
 }
 

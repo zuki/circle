@@ -26,7 +26,7 @@
 #include <circle/types.h>
 #include <assert.h>
 
-// 以下のマクロはクラスにクラス固有のアロケータを定休する場合に使用する
+// 以下のマクロはクラスにクラス固有のアロケータを定義する場合に使用する
 
 // クラス定義の最後に指定する
 #define DECLARE_CLASS_ALLOCATOR                 \

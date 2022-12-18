@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@
 #include "kernel.h"
 #include <circle/net/ntpdaemon.h>
 #include <circle/string.h>
+#include <circle/logger.h>
 
 // Network configuration
 #define USE_DHCP
@@ -33,7 +34,7 @@ static const u8 DNSServer[]      = {192, 168, 0, 1};
 
 // Time configuration
 static const char NTPServer[]    = "pool.ntp.org";
-static const int nTimeZone       = 0*60;		// minutes diff to UTC
+static const int nTimeZone       = 9*60;		// minutes diff to UTC
 
 static const char FromKernel[] = "kernel";
 
@@ -103,7 +104,8 @@ boolean CKernel::Initialize (void)
 
 TShutdownMode CKernel::Run (void)
 {
-	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+	//m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+    CLogger::Get ()->Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
 
 	while (!m_Net.IsRunning ())			// wait for network to appear
 	{

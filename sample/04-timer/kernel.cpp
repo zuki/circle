@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2018  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -99,7 +99,7 @@ TShutdownMode CKernel::Run (void)
 
 void CKernel::TimerHandler (TKernelTimerHandle hTimer, void *pParam, void *pContext)
 {
-#if 1
+#if 0
 	// jump to an invalid address (execution is only allowed below _etext, see circle.ld)
 	void (*pInvalid) (void) = (void (*) (void)) 0x500000;
 

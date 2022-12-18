@@ -28,8 +28,9 @@
 #else
 
 // IRQs
-#define ARM_IRQS_PER_REG	32
-#define ARM_IRQS_BASIC_REG	8
+#define ARM_IRQS_PER_REG	32      // GPU IRQ1, 2
+#define ARM_IRQS_BASIC_REG	8       // ARM固有割り込み
+                                    // ローカルコアの割り込みソース
 #if RASPPI >= 2
 #define ARM_IRQS_LOCAL_REG	12
 #else
@@ -37,10 +38,11 @@
 #endif
 
 #define ARM_IRQ1_BASE		0
-#define ARM_IRQ2_BASE		(ARM_IRQ1_BASE + ARM_IRQS_PER_REG)
-#define ARM_IRQBASIC_BASE	(ARM_IRQ2_BASE + ARM_IRQS_PER_REG)
-#define ARM_IRQLOCAL_BASE	(ARM_IRQBASIC_BASE + ARM_IRQS_BASIC_REG)
+#define ARM_IRQ2_BASE		(ARM_IRQ1_BASE + ARM_IRQS_PER_REG)          // 32
+#define ARM_IRQBASIC_BASE	(ARM_IRQ2_BASE + ARM_IRQS_PER_REG)          // 64
+#define ARM_IRQLOCAL_BASE	(ARM_IRQBASIC_BASE + ARM_IRQS_BASIC_REG)    // 72
 
+// BCM2835 ARM Periferalマニュアル: 7.5 ARMペリフェラル割込み表
 #define ARM_IRQ_TIMER0		(ARM_IRQ1_BASE + 0)
 #define ARM_IRQ_TIMER1		(ARM_IRQ1_BASE + 1)
 #define ARM_IRQ_TIMER2		(ARM_IRQ1_BASE + 2)
@@ -116,6 +118,7 @@
 #define ARM_IRQ_ILLEGAL_TYPE0	(ARM_IRQBASIC_BASE + 6)
 #define ARM_IRQ_ILLEGAL_TYPE1	(ARM_IRQBASIC_BASE + 7)
 
+// ARM Quad A7 Coreマニュアル: 4.10 コア割り込みソースレジスタのビットフィールド定義: 現時点ではARM_IRQLOCAL0_CNTPNSだけ実装している
 #if RASPPI >= 2
 #define ARM_IRQLOCAL0_CNTPS	(ARM_IRQLOCAL_BASE + 0)
 #define ARM_IRQLOCAL0_CNTPNS	(ARM_IRQLOCAL_BASE + 1)
@@ -131,6 +134,7 @@
 #define ARM_IRQLOCAL0_LOCALTIMER (ARM_IRQLOCAL_BASE + 11)
 #endif
 
+// 84 = 32 * 2 + 8 + 12
 #define IRQ_LINES		(ARM_IRQS_PER_REG * 2 + ARM_IRQS_BASIC_REG + ARM_IRQS_LOCAL_REG)
 
 // FIQs
