@@ -66,8 +66,8 @@ CUSBFunction *CUSBDeviceFactory::GetDevice (CUSBFunction *pParent, CString *pNam
 
     CUSBFunction *pResult = 0;
     // USBハブ
-    if (   pName->Compare ("int9-0-0") == 0
-        || pName->Compare ("int9-0-2") == 0)
+    if (   pName->Compare ("int9-0-0") == 0         // FS Hub
+        || pName->Compare ("int9-0-2") == 0)        // HS Hub with mTTs
     {
         pResult = new CUSBStandardHub (pParent);
     }
