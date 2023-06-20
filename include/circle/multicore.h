@@ -28,8 +28,8 @@
 #include <circle/types.h>
 
 // inter-processor interrupt (IPI): プロセッサ間割り込み
-#define IPI_HALT_CORE   0       // halt target core
-#define IPI_USER        10      // first user defineable IPI
+#define IPI_HALT_CORE   0       // 対象のコアを停止させる
+#define IPI_USER        10      // ユーザが定義可能な最初のIPI番号
 #if RASPPI <= 3
 #define IPI_MAX         31
 #else
@@ -50,10 +50,10 @@ public:
 
     virtual void Run (unsigned nCore) = 0;
 
-    virtual void IPIHandler (unsigned nCore, unsigned nIPI);    // handles IPI on this core
+    virtual void IPIHandler (unsigned nCore, unsigned nIPI);    // このコアでIPIを処理する
 
 public:
-    static void SendIPI (unsigned nCore, unsigned nIPI);        // send IPI to core
+    static void SendIPI (unsigned nCore, unsigned nIPI);        // 指定のコアにIPIを送信する
     static void HaltAll (void);                    // halt all cores
 
 #if RASPPI <= 3

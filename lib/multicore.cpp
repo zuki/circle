@@ -64,7 +64,7 @@ boolean CMultiCoreSupport::Initialize (void)
     u32 nRouting = read32 (ARM_LOCAL_GPU_INT_ROUTING);
     nRouting &= ~0x0F;      // [3:2] = 0, [1:0] = 0: IRQとFIQをコア0にルーティング
     write32 (ARM_LOCAL_GPU_INT_ROUTING, nRouting);
-    // 2. コア0でmailbox-0のIRQ割り込みを有効に
+    // 2. コア0のmailbox-0のIRQ割り込みを有効にする
     write32 (ARM_LOCAL_MAILBOX_INT_CONTROL0, 1);
 #endif
 
@@ -72,6 +72,8 @@ boolean CMultiCoreSupport::Initialize (void)
 
     for (unsigned nCore = 1; nCore < CORES; nCore++)
     {
+// 各コアの処理開始アドレスがAARCH32では各コアのmailbox-3 経由で
+// AARCH64ではspinアドレス経由で渡される
 #if AARCH == 32
         u32 nMailBoxClear = ARM_LOCAL_MAILBOX3_CLR0 + 0x10 * nCore;
 
@@ -81,6 +83,7 @@ boolean CMultiCoreSupport::Initialize (void)
 #endif
 
         unsigned nTimeout = 100;
+// 開始アドレスが0になるまで待つ
 #if AARCH == 32
         while (read32 (nMailBoxClear) != 0)
 #else
@@ -97,6 +100,8 @@ boolean CMultiCoreSupport::Initialize (void)
             CTimer::SimpleMsDelay (1);
         }
 
+// 開始アドレスを設定する
+// (_start_secondary: EL1に移行し、スタックを初期化してsysinit_secondaryに分岐する)
 #if AARCH == 32
         write32 (ARM_LOCAL_MAILBOX3_SET0 + 0x10 * nCore, (u32) &_start_secondary);
 #else
@@ -105,6 +110,7 @@ boolean CMultiCoreSupport::Initialize (void)
         CleanDataCache ();
 #endif
 
+// コアを起床させる（起床したらspinアドレスは再度０になる: どこで?)
         nTimeout = 500;
         do
         {
@@ -151,6 +157,7 @@ void CMultiCoreSupport::SendIPI (unsigned nCore, unsigned nIPI)
     assert (nIPI <= IPI_MAX);
 
 #if RASPPI <= 3
+    // コアのメールボックス０に書き込む
     write32 (ARM_LOCAL_MAILBOX0_SET0 + 0x10 * nCore, 1 << nIPI);
 #else
     CInterruptSystem::SendIPI (nCore, nIPI);
@@ -180,14 +187,15 @@ boolean CMultiCoreSupport::LocalInterruptHandler (void)
     }
 
     unsigned nCore = ThisCore ();
-    // 各コアのGPU割り込みでなければ何もしない）
+    // 各コアはメールボックス０割り込みでなければ何もしない
     if (!(read32 (ARM_LOCAL_IRQ_PENDING0 + 4 * nCore) & 0x10))
     {
         return FALSE;
     }
 
+    // nMailBoxClear: 各コアのメールボック０ Read/Clearレジスタ
     uintptr nMailBoxClear = ARM_LOCAL_MAILBOX0_CLR0 + 0x10 * nCore;
-    // メールボック0が0なら何もしない
+    // メールボック0の内容が0なら何もしない
     u32 nIPIMask = read32 (nMailBoxClear);
     if (nIPIMask == 0)
     {
@@ -200,7 +208,7 @@ boolean CMultiCoreSupport::LocalInterruptHandler (void)
     {
         nIPIMask >>= 1;
     }
-    // 特定されたビットをクリアする
+    // メールボックス０をクリアする
     write32 (nMailBoxClear, 1 << nIPI);
     DataSyncBarrier ();
     // nCoreにnIPIを送る
@@ -247,9 +255,9 @@ void CMultiCoreSupport::EntrySecondary (void)
     EnableIRQs ();
 
     CLogger::Get ()->Write (FromMultiCore, LogDebug, "CPU core %u started", nCore);
-
+    // このクラスを継承したクラスが定義しているRun()メソッドを実行する
     s_pThis->Run (nCore);
-
+    // ²次コアはこの後 sysinti()で halt() される
     CLogger::Get ()->Write (FromMultiCore, LogDebug, "CPU core %u will halt now", nCore);
 }
 

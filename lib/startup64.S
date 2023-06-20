@@ -99,7 +99,7 @@ _start:                         /* 通常、ブート後はarmstub8からEL2で�
 
     /* マルチコアを使用する場合 */
 #ifdef ARM_ALLOW_MULTI_CORE
-
+    /* 二次コアの開始ルーチン */
     .globl    _start_secondary
 _start_secondary:               /* 通常、ブート後はarmstub8からEL2で入る */
 

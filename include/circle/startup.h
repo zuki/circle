@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -56,14 +56,16 @@ struct TSpinTable
 }
 PACKED;
 
+// 各コアのスピンアドレスの先頭（各アドレスは8バイト長）
 #define ARM_SPIN_TABLE_BASE	0x000000D8
 
 #endif
 
-#endif
+#endif  // if AARCH == 64
 
-#endif
+#endif  // ifdef ARM_ALLOW_MULTI_CORE
 
+// デバイスツリーの先頭アドレスを設定するアドレス
 #define ARM_DTB_PTR32		(*(u32 *) 0xF8)
 
 #ifdef __cplusplus
