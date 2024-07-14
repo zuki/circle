@@ -68,22 +68,25 @@ boolean CMultiCoreSupport::Initialize (void)
     write32 (ARM_LOCAL_MAILBOX_INT_CONTROL0, 1);
 #endif
 
-    CleanDataCache ();    // セカンダリコアからアクセスできるように全データを書き出す
+    // 2. セカンダリコアからアクセスできるように全データを書き出す
+    CleanDataCache ();
 
+    // 3. 各コアを起床させる
     for (unsigned nCore = 1; nCore < CORES; nCore++)
     {
-// 各コアの処理開始アドレスがAARCH32では各コアのmailbox-3 経由で
-// AARCH64ではspinアドレス経由で渡される
+        // 各コアの処理開始アドレスがAARCH32では各コアのmailbox-3 経由で
+        // AARCH64ではspinアドレス経由で渡される
 #if AARCH == 32
         u32 nMailBoxClear = ARM_LOCAL_MAILBOX3_CLR0 + 0x10 * nCore;
 
         DataSyncBarrier ();
 #else
-        TSpinTable *pSpinTable = (TSpinTable *) ARM_SPIN_TABLE_BASE;    // 0x000000D8
+        // 3.1 スピニングの基底アドレス: 0xD8
+        TSpinTable *pSpinTable = (TSpinTable *) ARM_SPIN_TABLE_BASE;
 #endif
 
         unsigned nTimeout = 100;
-// 開始アドレスが0になるまで待つ
+        // 3.2 スピニングアドレスが0になるまで待つ
 #if AARCH == 32
         while (read32 (nMailBoxClear) != 0)
 #else
@@ -100,20 +103,21 @@ boolean CMultiCoreSupport::Initialize (void)
             CTimer::SimpleMsDelay (1);
         }
 
-// 開始アドレスを設定する
-// (_start_secondary: EL1に移行し、スタックを初期化してsysinit_secondaryに分岐する)
+        // (_start_secondary: EL1に移行し、スタックを初期化してsysinit_secondaryに分岐する)
 #if AARCH == 32
         write32 (ARM_LOCAL_MAILBOX3_SET0 + 0x10 * nCore, (u32) &_start_secondary);
 #else
+        // 3.3 各コアのスピニングアドレスに_start_secondary()のアドレスをセット
         pSpinTable->SpinCore[nCore] = (uintptr) &_start_secondary;
         // TODO: CleanDataCacheRange ((u64) pSpinTable, sizeof *pSpinTable);
+        // 3.4 データキャッシュをクリア
         CleanDataCache ();
 #endif
 
-// コアを起床させる（起床したらspinアドレスは再度０になる: どこで?)
         nTimeout = 500;
         do
         {
+            // 3.4 コアを起床させる
             asm volatile ("sev");
 
             if (--nTimeout == 0)
@@ -130,6 +134,7 @@ boolean CMultiCoreSupport::Initialize (void)
 #if AARCH == 32
         while (read32 (nMailBoxClear) != 0);
 #else
+        // 3.5 コアが起床するのを待つ（start_secondary()でスピニングアドレスは再度0に設定される)
         while (pSpinTable->SpinCore[nCore] != 0);
 #endif
     }

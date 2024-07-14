@@ -58,10 +58,11 @@ void EnterCritical (unsigned nTargetLevel)
     unsigned nCore = nMPIDR & (CORES-1);
     // 2. DAIF取得
     u32 nFlags;
+    // bit[9:6] = DAIF
     asm volatile ("mrs %0, daif" : "=r" (nFlags));
 
     // すでにFIQレベルにある場合、ここではIRQ_LEVELには戻らない
-    assert (nTargetLevel == FIQ_LEVEL || !(nFlags & 0x40));
+    assert (nTargetLevel == FIQ_LEVEL || !(nFlags & 0x40));     // !0x40 = Fがマスクされていない
     // 3. IRQとFIQを無効にする
     asm volatile ("msr DAIFSet, #3");
 
@@ -138,14 +139,14 @@ void LeaveCritical (void)
 #endif
 
 //
-// Cache maintenance operations for ARMv8-A
+// ARMv8-Aのキャッシュ管理操作
 //
-// NOTE: The following functions should hold all variables in CPU registers. Currently this will be
-//     ensured using the maximum optimation (see circle/synchronize64.h).
+// 注: 以下の関数はすべての変数をCPUレジスタに保持しなければならない。
+//     現在のところ、これは最大限の最適化でも保証される (see circle/synchronize64.h).
 //
-//     The following numbers can be determined (dynamically) using CTR_EL0, CSSELR_EL1, CCSIDR_EL1
-//     and CLIDR_EL1. As long we use the Cortex-A53/A72 implementation in the BCM2837/BCM2711 these
-//     static values will work:
+//     以下の数値は、CTR_EL0、CSSELR_EL1、CCSIDR_EL1、CLIDR_EL1を使って（動的に）
+//     決定できる。BCM2837/BCM2711のCortex-A53/A72実装を使用する限り、これらの
+//     静的な値は機能する:
 //
 
 #if RASPPI == 3
