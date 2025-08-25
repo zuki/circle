@@ -44,9 +44,12 @@ struct TDMA4ControlBlock
 }
 PACKED;
 
-/// \note Do not explicitly use this class! Use the class CDMAChannel instead
-///       with nChannel set to DMA_CHANNEL_EXTENDED!
-
+/**
+ * @class CDMA4Channel
+ * @brief DMA4 ”大きなアドレス” コントローラに対応する.
+ * @note このクラスは直接使用しない。代わりにDMA_CHANNEL_EXTENDED に
+ *       nChannel をセットした CDMAChannel クラスを使用する。
+ */
 class CDMA4Channel	/// Platform DMA4 "large address" controller support
 {
 public:

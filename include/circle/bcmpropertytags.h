@@ -358,7 +358,7 @@ struct TPropertyTagCommandLine
 PACKED;
 
 /**
- * @class
+ * @class CBcmPropertyTags
  * @brief Mailbox属性タグを表すクラス
  */
 class CBcmPropertyTags

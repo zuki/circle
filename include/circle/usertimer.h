@@ -54,7 +54,7 @@ public:
 #define USER_CLOCKHZ    1000000U
 
 private:
-    /// \breief 割り込みハンドラ
+    /// \brief 割り込みハンドラ
     /// \param ユーザタイマーハンドラへ渡されたパラメタ（CUserTimerへのポインタ）
     static void InterruptHandler (void *pParam);
 
