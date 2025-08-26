@@ -2,8 +2,8 @@
 // usbstandardhub.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -205,7 +205,7 @@ boolean CUSBStandardHub::ReScanDevices (void)
     return EnumeratePorts ();
 }
 
-boolean CUSBStandardHub::RemoveDevice (unsigned nPortIndex)
+boolean CUSBStandardHub::RemoveDeviceAt (unsigned nPortIndex)
 {
     if (!DisablePort (nPortIndex))
     {
@@ -622,16 +622,66 @@ void CUSBStandardHub::HandlePortStatusChange (void)
                 //CLogger::Get ()->Write (FromHub, LogDebug,
                 //            "Device disconnected (port %u)", nPort+1);
 
-                if (m_pDevice[nPort] != 0)
-                {
-                    RemoveDevice (nPort);
-                }
-            }
-        }
-    }
-    // ステータス変更リクエストを再開
-    if (!StartStatusChangeRequest ())
-    {
-        CLogger::Get ()->Write (FromHub, LogError, "Cannot restart request");
-    }
+		if (usChangeStatus & C_PORT_ENABLE__MASK)
+		{
+			if (GetHost ()->ControlMessage (GetEndpoint0 (),
+				REQUEST_OUT | REQUEST_CLASS | REQUEST_TO_OTHER,
+				CLEAR_FEATURE, C_PORT_ENABLE, nPort+1, 0, 0) < 0)
+			{
+				CLogger::Get ()->Write (FromHub, LogPanic,
+							"Cannot clear C_PORT_ENABLE (port %u)",
+							nPort+1);
+			}
+		}
+
+		if (usChangeStatus & C_PORT_RESET__MASK)
+		{
+			if (GetHost ()->ControlMessage (GetEndpoint0 (),
+				REQUEST_OUT | REQUEST_CLASS | REQUEST_TO_OTHER,
+				CLEAR_FEATURE, C_PORT_RESET, nPort+1, 0, 0) < 0)
+			{
+				CLogger::Get ()->Write (FromHub, LogPanic,
+							"Cannot clear C_PORT_RESET (port %u)",
+							nPort+1);
+			}
+		}
+
+		if (usChangeStatus & C_PORT_CONNECTION__MASK)
+		{
+			if (GetHost ()->ControlMessage (GetEndpoint0 (),
+				REQUEST_OUT | REQUEST_CLASS | REQUEST_TO_OTHER,
+				CLEAR_FEATURE, C_PORT_CONNECTION, nPort+1, 0, 0) < 0)
+			{
+				CLogger::Get ()->Write (FromHub, LogPanic,
+							"Cannot clear C_PORT_CONNECTION (port %u)",
+							nPort+1);
+			}
+
+			if (m_pStatus[nPort]->wPortStatus & PORT_CONNECTION__MASK)
+			{
+				//CLogger::Get ()->Write (FromHub, LogDebug,
+				//			"Device connected (port %u)", nPort+1);
+
+				if (m_pDevice[nPort] == 0)
+				{
+					ReScanDevices ();
+				}
+			}
+			else
+			{
+				//CLogger::Get ()->Write (FromHub, LogDebug,
+				//			"Device disconnected (port %u)", nPort+1);
+
+				if (m_pDevice[nPort] != 0)
+				{
+					RemoveDeviceAt (nPort);
+				}
+			}
+		}
+	}
+
+	if (!StartStatusChangeRequest ())
+	{
+		CLogger::Get ()->Write (FromHub, LogError, "Cannot restart request");
+	}
 }

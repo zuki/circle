@@ -2,8 +2,8 @@
 // ipaddress.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2016  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2024  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -22,18 +22,14 @@
 #include <assert.h>
 
 CIPAddress::CIPAddress (void)
-#ifndef NDEBUG
-:    m_bValid (FALSE)
-#endif
+:	m_bValid (FALSE)
 {
 }
 
 CIPAddress::CIPAddress (u32 nAddress)
 {
-    m_nAddress = nAddress;
-#ifndef NDEBUG
-    m_bValid = TRUE;
-#endif
+	m_nAddress = nAddress;
+	m_bValid = TRUE;
 }
 
 CIPAddress::CIPAddress (const u8 *pAddress)
@@ -43,18 +39,14 @@ CIPAddress::CIPAddress (const u8 *pAddress)
 
 CIPAddress::CIPAddress (const CIPAddress &rAddress)
 {
-    assert (rAddress.m_bValid);
-    m_nAddress = rAddress.m_nAddress;
-#ifndef NDEBUG
-    m_bValid = TRUE;
-#endif
+	assert (rAddress.m_bValid);
+	m_nAddress = rAddress.m_nAddress;
+	m_bValid = TRUE;
 }
 
 CIPAddress::~CIPAddress (void)
 {
-#ifndef NDEBUG
-    m_bValid = FALSE;
-#endif
+	m_bValid = FALSE;
 }
 
 boolean CIPAddress::operator== (const CIPAddress &rAddress2) const
@@ -97,45 +89,35 @@ boolean CIPAddress::operator!= (u32 nAddress2) const
 
 CIPAddress &CIPAddress::operator= (u32 nAddress)
 {
-    m_nAddress = nAddress;
-#ifndef NDEBUG
-    m_bValid = TRUE;
-#endif
-    return *this;
+	m_nAddress = nAddress;
+	m_bValid = TRUE;
+	return *this;
 }
 
 void CIPAddress::Set (u32 nAddress)
 {
-    m_nAddress = nAddress;
-#ifndef NDEBUG
-    m_bValid = TRUE;
-#endif
+	m_nAddress = nAddress;
+	m_bValid = TRUE;
 }
 
 void CIPAddress::Set (const u8 *pAddress)
 {
-    assert (pAddress != 0);
-    memcpy (&m_nAddress, pAddress, IP_ADDRESS_SIZE);
-#ifndef NDEBUG
-    m_bValid = TRUE;
-#endif
+	assert (pAddress != 0);
+	memcpy (&m_nAddress, pAddress, IP_ADDRESS_SIZE);
+	m_bValid = TRUE;
 }
 
 void CIPAddress::Set (const CIPAddress &rAddress)
 {
-    assert (rAddress.m_bValid);
-    m_nAddress = rAddress.m_nAddress;
-#ifndef NDEBUG
-    m_bValid = TRUE;
-#endif
+	assert (rAddress.m_bValid);
+	m_nAddress = rAddress.m_nAddress;
+	m_bValid = TRUE;
 }
 
 void CIPAddress::SetBroadcast (void)
 {
-    m_nAddress = 0xFFFFFFFF;
-#ifndef NDEBUG
-    m_bValid = TRUE;
-#endif
+	m_nAddress = 0xFFFFFFFF;
+	m_bValid = TRUE;
 }
 
 CIPAddress::operator u32 (void) const
@@ -157,6 +139,11 @@ void CIPAddress::CopyTo (u8 *pBuffer) const
     memcpy (pBuffer, &m_nAddress, IP_ADDRESS_SIZE);
 }
 
+boolean CIPAddress::IsSet (void) const
+{
+	return m_bValid;
+}
+
 boolean CIPAddress::IsNull (void) const
 {
     assert (m_bValid);
@@ -167,6 +154,13 @@ boolean CIPAddress::IsBroadcast (void) const
 {
     assert (m_bValid);
     return m_nAddress == 0xFFFFFFFF;
+}
+
+boolean CIPAddress::IsMulticast (void) const
+{
+	assert (m_bValid);
+	u8 uchAddress0 = m_nAddress & 0xFF;
+	return 224 <= uchAddress0 && uchAddress0 <= 239;
 }
 
 unsigned CIPAddress::GetSize (void) const

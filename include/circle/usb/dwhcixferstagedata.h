@@ -86,8 +86,6 @@ public:
     void SetSubState (unsigned nSubState);
     //! サブステータスのget
     unsigned GetSubState (void) const;
-    //! スプリットサイクル開始
-    boolean BeginSplitCycle (void);
 
     // トランザクションパラメタのgetter
 
@@ -97,6 +95,7 @@ public:
     u8 GetDeviceAddress (void) const;
     //! 周期か
     boolean IsPeriodic (void) const;
+    boolean IsIsochronous (void) const;
     //! エンドポイントタイプをget
     u8 GetEndpointType (void) const;
     //! エンドポイント番号をget
@@ -150,8 +149,6 @@ public:
     CUSBDevice *GetDevice (void) const;
     //! フレームスケジューラをget
     CDWHCIFrameScheduler *GetFrameScheduler (void) const;
-    //! デバッグダンプ
-    void DebugStdata(void);
 
 private:
     unsigned        m_nChannel;                 ///< チャネル
@@ -173,6 +170,7 @@ private:
     u32             m_nBytesPerTransaction;     ///< トランザクションあたりのバイト数
     unsigned        m_nPacketsPerTransaction;   ///< トランザクションあたりのパケット数
     u32             m_nTotalBytesTransfered;    ///< 総転送バイト
+	unsigned	    m_nIsoPackets;
 
     unsigned        m_nState;                   ///< 状態
     unsigned        m_nSubState;                ///< 副状態

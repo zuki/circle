@@ -5,7 +5,7 @@
 // netsocket.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2018  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2018-2025  R. Stange <rsta2@gmx.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -108,9 +108,20 @@ public:
     /// \return ステータス (0 成功, < 0 エラー)
     virtual int SetOptionBroadcast (boolean bAllowed) { return -1; }
 
+	/// \brief Add to IP multicast host group (on UDP socket only)
+	/// \param rGroupAddress Group address to be added
+	/// \return Status (0 success, < 0 on error)
+	/// \note Only one host group is allowed per socket.
+	virtual int SetOptionAddMembership (const CIPAddress &rGroupAddress) { return -1; }
+
+	/// \brief Drop from IP multicast host group (on UDP socket only)
+	/// \param rGroupAddress Group address to be dropped
+	/// \return Status (0 success, < 0 on error)
+	virtual int SetOptionDropMembership (const CIPAddress &rGroupAddress) { return -1; }
+
     /// \brief 接続したリモートホストのIPアドレスを取得する
     /// \return IPアドレスへのポインタ（4バイト、接続されていない場合はポインタ0）
-    virtual const u8 *GetForeignIP (void) const = 0;
+	virtual const u8 *GetForeignIP (void) const = 0;
 
 protected:
     /// @brief ネットサブシステムを取得する

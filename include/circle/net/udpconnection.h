@@ -5,8 +5,8 @@
 // udpconnection.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2018  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -37,7 +37,7 @@ class CUDPConnection : public CNetConnection
 public:
 	CUDPConnection (CNetConfig	*pNetConfig,
 			CNetworkLayer	*pNetworkLayer,
-			CIPAddress	&rForeignIP,
+			const CIPAddress &rForeignIP,
 			u16		 nForeignPort,
 			u16		 nOwnPort);
 	CUDPConnection (CNetConfig	*pNetConfig,
@@ -52,10 +52,14 @@ public:
 	int Send (const void *pData, unsigned nLength, int nFlags);
 	int Receive (void *pBuffer, int nFlags);
 
-	int SendTo (const void *pData, unsigned nLength, int nFlags, CIPAddress	&rForeignIP, u16 nForeignPort);
+	int SendTo (const void *pData, unsigned nLength, int nFlags,
+		    const CIPAddress &rForeignIP, u16 nForeignPort);
 	int ReceiveFrom (void *pBuffer, int nFlags, CIPAddress *pForeignIP, u16 *pForeignPort);
 
 	int SetOptionBroadcast (boolean bAllowed);
+
+	int SetOptionAddMembership (const CIPAddress &rGroupAddress);
+	int SetOptionDropMembership (const CIPAddress &rGroupAddress);
 
 	boolean IsConnected (void) const;
 	boolean IsTerminated (void) const;
@@ -78,6 +82,7 @@ private:
 	CNetQueue m_RxQueue;
 	CSynchronizationEvent m_Event;
 	boolean m_bBroadcastsAllowed;
+	CIPAddress *m_pHostGroup;
 
 	int m_nErrno;				// signalize error to the user
 };

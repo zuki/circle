@@ -5,8 +5,8 @@
 // socket.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -54,7 +54,7 @@ public:
     /// \param rForeignIP 接続するホストのIPアドレス
     /// \param nForeignPort 接続するポート番号
     /// \return ステータス (0 成功, < 0 エラー)
-    int Connect (CIPAddress &rForeignIP, u16 nForeignPort);
+    int Connect (const CIPAddress &rForeignIP, u16 nForeignPort);
 
     /// \brief 接続されるのを待つ（TCPのみ、先にBlind()を呼び出す必要がある）
     /// \param nBackLog Accept()が呼ばれる前に連続して受付可能な最大同時接続数（最大SOCKET_MAX_LISTEN_BACKLOG）
@@ -109,6 +109,17 @@ public:
     /// \return ステータス (0 成功, < 0 エラー)
     int SetOptionBroadcast (boolean bAllowed);
 
+    // \brief Add to IP multicast host group (on UDP socket only)
+	/// \param rGroupAddress Group address to be added
+	/// \return Status (0 success, < 0 on error)
+	/// \note Only one host group is allowed per socket.
+	int SetOptionAddMembership (const CIPAddress &rGroupAddress);
+
+	/// \brief Drop from IP multicast host group (on UDP socket only)
+	/// \param rGroupAddress Group address to be dropped
+	/// \return Status (0 success, < 0 on error)
+	int SetOptionDropMembership (const CIPAddress &rGroupAddress);
+    
     /// \brief 接続したリモートホストのIPアドレスを取得する
     /// \return IPアドレスへのポインタ（4バイト、接続されていない場合はポインタ0）
     const u8 *GetForeignIP (void) const;

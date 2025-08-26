@@ -5,8 +5,8 @@
 // linklayer.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -31,6 +31,8 @@
 #include <circle/net/netqueue.h>
 #include <circle/macros.h>
 #include <circle/types.h>
+
+#define MAX_MULTICAST_GROUPS	8
 
 /// @brief Ethernetヘッダを表す構造体
 struct TEthernetHeader
@@ -102,7 +104,14 @@ public:
     /// @return すでにRaw受信タイプが設定されていた場合はFALSE
     boolean EnableReceiveRaw (u16 nProtocolType);
 
+	boolean IsRunning (void) const;
+
+	boolean JoinLocalGroup (const CIPAddress &rGroupAddress);
+	boolean LeaveLocalGroup (const CIPAddress &rGroupAddress);
+
 private:
+    boolean UpdateMulticastFilter (void);
+
     /// @brief 送信が失敗したことをネットワーク層に通知する
     /// @param pReturnedFrame 返されたIPパケット
     /// @param nLength データ長
@@ -126,6 +135,11 @@ private:
     CNetQueue       m_RawRxQueue;
     /// @brief Rawプロトコルタイプ
     u16             m_nRawProtocolType;
+    static const unsigned MaxGroups = MAX_MULTICAST_GROUPS;
+	/// @brief マルチキャストグループ
+	CMACAddress m_MulticastGroup[MaxGroups];
+	/// @brief マルチキャスト使用カウンタ
+	unsigned m_nMulticastUseCounter[MaxGroups];
 };
 
 /** @} */

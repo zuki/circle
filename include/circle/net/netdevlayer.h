@@ -5,8 +5,13 @@
 // netdevlayer.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
+<<<<<<< HEAD
 // Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
 //
+=======
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
+>>>>>>> master
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -27,6 +32,7 @@
 #include <circle/netdevice.h>
 #include <circle/net/netqueue.h>
 #include <circle/bcm54213.h>
+#include <circle/macb.h>
 #include <circle/types.h>
 
 /// @brief 物理層（ネットワークデバイス）を表すクラス
@@ -68,6 +74,9 @@ public:
     /// @return 可能であればTRUE
     boolean IsRunning (void) const;
 
+	// terminated with 00:00:00:00:00:00
+	boolean SetMulticastFilter (const u8 Groups[][MAC_ADDRESS_SIZE]);
+
 private:
     /// @brief デバイスタイプ
     TNetDeviceType m_DeviceType;
@@ -80,8 +89,10 @@ private:
     /// @brief 受信キュー
     CNetQueue m_RxQueue;
 
-#if RASPPI >= 4
-    CBcm54213Device m_Bcm54213;
+#if RASPPI == 4
+	CBcm54213Device m_Bcm54213;
+#elif RASPPI >= 5
+	CMACBDevice m_MACB;
 #endif
 };
 

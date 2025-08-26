@@ -2,8 +2,8 @@
 // usbrequest.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2022  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -36,6 +36,7 @@ typedef void TURBCompletionRoutine (CUSBRequest *pURB, void *pParam, void *pCont
 class CUSBRequest
 {
 public:
+    static const unsigned MaxIsoPackets = 32;
     /**
      * コンストラクタ
      * @param pEndpoint エンドポイントへのポインタ
@@ -102,6 +103,11 @@ public:
      */
     u32 GetBufLen (void) const;
 
+    // isochronous transfers are delimited in packets
+	void AddIsoPacket (u16 usPacketSize);
+	unsigned GetNumIsoPackets (void) const;
+	u16 GetIsoPacketSize (unsigned nPacketIndex) const;
+    
     /**
      * 完了時CBをセット
      * @param pRoutine コールバック関数
@@ -135,6 +141,9 @@ private:
     int             m_bStatus;                      /**< ステータス */
     u32             m_nResultLen;                   /**< 実際の長さ */
     TUSBError       m_USBError;                     /**< エラー */
+
+    unsigned    m_nNumIsoPackets;
+	u16	    m_usIsoPacketSize[MaxIsoPackets];
 
     TURBCompletionRoutine *m_pCompletionRoutine;    /**< 完了時cbルーチン */
     void *m_pCompletionParam;                       /**< cbルーチン引数 */

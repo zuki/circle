@@ -2,8 +2,8 @@
 /// \file serial.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -44,14 +44,41 @@
 /// GPIO32/33とGPIO36/37はシステムオプションSERIAL_GPIO_SELECTで選択できる。\n
 /// GPIO0/1は通常、ID EEPROM用に予約されている。\n
 /// ハンドシェークライン CTS と RTS はサポートされていない。
+///
+/// nDevice | TXD    | RXD    | Support
+/// :-----: | :----: | :----: | :------
+/// 0       | GPIO14 | GPIO15 | Raspberry Pi 5 only
+/// 1       | GPIO0  | GPIO1  | Raspberry Pi 5 only
+/// 2       | GPIO4  | GPIO5  | Raspberry Pi 5 only
+/// 3       | GPIO8  | GPIO9  | Raspberry Pi 5 only
+/// 4       | GPIO12 | GPIO13 | Raspberry Pi 5 only
+/// 5       | GPIO36 | GPIO37 | None
+/// 6       |        |        | None
+/// 7       |        |        | None
+/// 8       |        |        | None
+/// 9       |        |        | None
+/// 10      | UART   | UART   | Raspberry Pi 5 only
+/// UART is the dedicated 3-pin JST UART connector.
 
 #if RASPPI < 4
     #define SERIAL_DEVICES      1
+#elif RASPPI == 4
+	#define SERIAL_DEVICES		6
 #else
-    #define SERIAL_DEVICES      6
+	#define SERIAL_DEVICES		11
 #endif
 
-#define SERIAL_BUF_SIZE         2048                // 2のべき乗である必要ある
+#ifndef SERIAL_DEVICE_DEFAULT
+#if RASPPI <= 4
+	#define SERIAL_DEVICE_DEFAULT	0
+#else
+	#define SERIAL_DEVICE_DEFAULT	10
+#endif
+#endif
+
+#ifndef SERIAL_BUF_SIZE
+#define SERIAL_BUF_SIZE		    2048			// 2のべき乗である必要ある
+#endif
 #define SERIAL_BUF_MASK         (SERIAL_BUF_SIZE-1)
 
 // シリアルオプション
@@ -72,6 +99,8 @@ public:
         ParityNone,
         ParityOdd,
         ParityEven,
+        ParitySpace,		///< parity bit is 0
+		ParityMark,		///< parity bit is 1
         ParityUnknown
     };
 
@@ -118,6 +147,25 @@ public:
     /// \param nOptions Serial シリアルオプションマスク（シリアルオプションを参照）
     void SetOptions (unsigned nOptions);
 
+    /// \brief Modifiy the partity setting
+	/// \param Parity Parity setting
+	/// \note This will disable the UART for a small time.
+	void SetParity (TParity Parity);
+
+	/// \return Is the transmitter busy, transmitting characters?
+	boolean IsTransmitting (void) const;
+
+	/// \param uchChar Character code
+	/// \param nStatus SERIAL_ERROR_* code as a negative value, or 0 (no error)
+	/// \param pParam User parameter
+	typedef void TCharReceivedHandler (u8 uchChar, int nStatus, void *pParam);
+
+    /// \param pHandler Handler which is called, when a character has been received
+	/// \param pParam User parameter, which is handed over to the handler
+	/// \note Read() does not work, when this handler is registered.
+	/// \note Does only work with interrupt driver.
+	void RegisterCharReceivedHandler (TCharReceivedHandler *pHandler, void *pParam);
+
     typedef void TMagicReceivedHandler (void);
     /// \brief マジック文字列とそのハンドラを登録する
     /// \param pMagic 受信データ内で検索する文字列\n
@@ -162,9 +210,9 @@ private:
     uintptr  m_nBaseAddress;
     boolean  m_bValid;
 
-#if SERIAL_GPIO_SELECT == 14
-    CGPIOPin m_GPIO32;
-    CGPIOPin m_GPIO33;
+#if SERIAL_GPIO_SELECT == 14 && RASPPI <= 4
+	CGPIOPin m_GPIO32;
+	CGPIOPin m_GPIO33;
 #endif
     CGPIOPin m_TxDPin;
     CGPIOPin m_RxDPin;
@@ -180,9 +228,12 @@ private:
 
     unsigned m_nOptions;
 
-    const char *m_pMagic;
-    const char *m_pMagicPtr;
-    TMagicReceivedHandler *m_pMagicReceivedHandler;
+	TCharReceivedHandler *m_pCharReceivedHandler;
+	void *m_pParam;
+
+	const char *m_pMagic;
+	const char *m_pMagicPtr;
+	TMagicReceivedHandler *m_pMagicReceivedHandler;
 
     CSpinLock m_SpinLock;
     CSpinLock m_LineSpinLock;

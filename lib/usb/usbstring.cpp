@@ -2,8 +2,8 @@
 // usbstring.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2017  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2022  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -120,8 +120,22 @@ boolean CUSBString::GetFromDescriptor (u8 ucID, u16 usLanguageID)
     assert ((m_pUSBString->bLength & 1) == 0);
     size_t nLength = (m_pUSBString->bLength-2) / 2;
 
-    assert (nLength <= (255-2) / 2);
-    char Buffer[nLength+1];
+	assert (nLength <= (255-2) / 2);
+	char Buffer[nLength+1];
+	
+	for (unsigned i = 0; i < nLength; i++)
+	{
+		u16 usChar = m_pUSBString->bString[i];
+		if (   usChar != 0
+		    && (   usChar < ' '
+		        || usChar > '~'))
+		{
+			usChar = '_';
+		}
+		
+		Buffer[i] = (char) usChar;
+	}
+	Buffer[nLength] = '\0';
 
     for (unsigned i = 0; i < nLength; i++)
     {

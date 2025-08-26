@@ -2,8 +2,8 @@
 // bcmpropertytags.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -27,6 +27,51 @@
 // MailBoxタグ
 
 #define PROPTAG_END                     0x00000000
+#define PROPTAG_GET_FIRMWARE_REVISION	0x00000001
+#define PROPTAG_SET_CURSOR_INFO		0x00008010
+#define PROPTAG_SET_CURSOR_STATE	0x00008011
+#define PROPTAG_GET_BOARD_MODEL		0x00010001
+#define PROPTAG_GET_BOARD_REVISION	0x00010002
+#define PROPTAG_GET_MAC_ADDRESS		0x00010003
+#define PROPTAG_GET_BOARD_SERIAL	0x00010004
+#define PROPTAG_GET_ARM_MEMORY		0x00010005
+#define PROPTAG_GET_VC_MEMORY		0x00010006
+#define PROPTAG_SET_POWER_STATE		0x00028001
+#define PROPTAG_GET_CLOCK_RATE		0x00030002
+#define PROPTAG_GET_MAX_CLOCK_RATE	0x00030004
+#define PROPTAG_GET_TEMPERATURE		0x00030006
+#define PROPTAG_GET_MIN_CLOCK_RATE	0x00030007
+#define PROPTAG_GET_TURBO		0x00030009
+#define PROPTAG_GET_MAX_TEMPERATURE	0x0003000A
+#define PROPTAG_GET_EDID_BLOCK		0x00030020
+#define PROPTAG_GET_THROTTLED		0x00030046
+#define PROPTAG_GET_CLOCK_RATE_MEASURED	0x00030047
+#define PROPTAG_NOTIFY_XHCI_RESET	0x00030058
+#define PROPTAG_GET_RTC_REG		0x00030087
+#define PROPTAG_SET_CLOCK_RATE		0x00038002
+#define PROPTAG_SET_TURBO		0x00038009
+#define PROPTAG_SET_DOMAIN_STATE	0x00038030
+#define PROPTAG_SET_SET_GPIO_STATE	0x00038041
+#define PROPTAG_SET_SDHOST_CLOCK	0x00038042
+#define PROPTAG_SET_RTC_REG		0x00038087
+#define PROPTAG_ALLOCATE_BUFFER		0x00040001
+#define PROPTAG_GET_DISPLAY_DIMENSIONS	0x00040003
+#define PROPTAG_GET_PITCH		0x00040008
+#define PROPTAG_GET_TOUCHBUF		0x0004000F
+#define PROPTAG_GET_GPIO_VIRTBUF	0x00040010
+#define PROPTAG_GET_NUM_DISPLAYS	0x00040013
+#define PROPTAG_SET_PHYS_WIDTH_HEIGHT	0x00048003
+#define PROPTAG_SET_VIRT_WIDTH_HEIGHT	0x00048004
+#define PROPTAG_SET_DEPTH		0x00048005
+#define PROPTAG_SET_VIRTUAL_OFFSET	0x00048009
+#define PROPTAG_SET_PALETTE		0x0004800B
+#define PROPTAG_WAIT_FOR_VSYNC		0x0004800E
+#define PROPTAG_SET_BACKLIGHT		0x0004800F
+#define PROPTAG_SET_DISPLAY_NUM		0x00048013
+#define PROPTAG_SET_TOUCHBUF		0x0004801F
+#define PROPTAG_SET_GPIO_VIRTBUF	0x00048020
+#define PROPTAG_GET_COMMAND_LINE	0x00050001
+#define PROPTAG_GET_DMA_CHANNELS	0x00060001
 
 #define PROPTAG_GET_FIRMWARE_REVISION   0x00000001
 #define PROPTAG_SET_CURSOR_INFO         0x00008010
@@ -196,6 +241,18 @@ struct TPropertyTagPowerState
 }
 PACKED;
 
+struct TPropertyTagDomainState
+{
+	TPropertyTag	Tag;
+	u32		nDomainId;
+	#define DOMAIN_ID_UNICAM0	13
+	#define DOMAIN_ID_UNICAM1	14
+	u32		nOn;
+	#define DOMAIN_STATE_OFF	0
+	#define DOMAIN_STATE_ON		1
+}
+PACKED;
+
 /**
  * @struct TPropertyTagClockRate
  * @brief クロックレートの取得を行う属性タグを表す構造体
@@ -283,6 +340,23 @@ struct TPropertyTagSetClockRate
     u32             nRate;              // Hz
     u32             nSkipSettingTurbo;
     #define SKIP_SETTING_TURBO      1   // when setting ARM clock
+}
+PACKED;
+
+struct TPropertyTagRTCRegister
+{
+	TPropertyTag	Tag;
+	u32		nRegNum;
+	#define RTC_REGISTER_TIME		0	// seconds since 1970-01-01 00:00:00 UTC
+	#define RTC_REGISTER_ALARM		1
+	#define RTC_REGISTER_ALARM_PENDING	2
+	#define RTC_REGISTER_ALARM_ENABLE	3
+	#define RTC_REGISTER_BBAT_CHG_VOLTS	4	// micro-volts
+	#define RTC_REGISTER_BBAT_CHG_VOLTS_MIN	5
+	#define RTC_REGISTER_BBAT_CHG_VOLTS_MAX	6
+	#define RTC_REGISTER_BBAT_VOLTS		7
+	#define RTC_REGISTER_COUNT		8
+	u32		nValue;
 }
 PACKED;
 

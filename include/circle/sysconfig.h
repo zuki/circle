@@ -4,8 +4,8 @@
 // Configurable system options
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2022  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2025  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -36,6 +36,13 @@
 
 #ifndef KERNEL_MAX_SIZE
 #define KERNEL_MAX_SIZE		(2 * MEGABYTE)
+#endif
+
+// KERNEL_STACK_SIZE is the size of the stack set on startup for the
+// main thread.  This must be a multiple of 16 KByte.
+
+#ifndef KERNEL_STACK_SIZE
+#define KERNEL_STACK_SIZE	0x20000
 #endif
 
 // HEAP_DEFAULT_NEWは、メモリタイプが明示的に指定されない場合に、
@@ -126,7 +133,7 @@
 
 ///////////////////////////////////////////////////////////////////////
 //
-// Raspberry Pi 2, 3 and 4
+// Raspberry Pi 2, 3, 4 and 5
 //
 ///////////////////////////////////////////////////////////////////////
 
@@ -167,7 +174,7 @@
 
 #endif
 
-#if RASPPI >= 4
+#if RASPPI == 4
 
 // USE_XHCI_INTERNAL enables the xHCI controller, which is integrated
 // into the BCM2711 SoC. The Raspberry Pi 4 provides two independent
@@ -181,6 +188,18 @@
 // config.txt file too!
 
 //#define USE_XHCI_INTERNAL
+
+#endif
+
+#if RASPPI >= 5
+
+// The left PWM audio output pin is by default GPIO12. The following
+// define moves it to GPIO18. For Raspberry Pi 5 only.
+//#define USE_GPIO18_FOR_LEFT_PWM
+
+// The right PWM audio output pin is by default GPIO13. The following
+// define moves it to GPIO19. For Raspberry Pi 5 only.
+//#define USE_GPIO19_FOR_RIGHT_PWM
 
 #endif
 
@@ -232,8 +251,10 @@
 // over 2 are normally not useful, because the system bus gets congested
 // with it.
 
+#ifndef NO_SCREEN_DMA_BURST_LENGTH
 #ifndef SCREEN_DMA_BURST_LENGTH
 #define SCREEN_DMA_BURST_LENGTH	2
+#endif
 #endif
 
 // CALIBRATE_DELAY activates the calibration of the delay loop. Because
@@ -283,12 +304,57 @@
 #ifndef DEFAULT_KEYMAP
 
 #define DEFAULT_KEYMAP		"DE"
+//#define DEFAULT_KEYMAP		"DV"	// Dvorak layout
 //#define DEFAULT_KEYMAP		"ES"
 //#define DEFAULT_KEYMAP		"FR"
 //#define DEFAULT_KEYMAP		"IT"
 //#define DEFAULT_KEYMAP		"UK"
 //#define DEFAULT_KEYMAP		"US"
 
+#endif
+
+///////////////////////////////////////////////////////////////////////
+//
+// USB gadgets
+//
+///////////////////////////////////////////////////////////////////////
+
+// USB_GADGET_VENDOR_ID is the Vendor ID, which is used for your USB
+// gadgets. Normally new USB Vendor IDs will be assigned by the USB-IF
+// (https://usb.org/getting-vendor-id). For tests a unique free Vendor
+// ID may be used. A list of known Vendor IDs can be found here:
+// http://www.linux-usb.org/usb-ids.html. You must not use the same
+// Vendor/Device ID combination for USB devices with different
+// configurations. Especially on Windows hosts this may lead to
+// malfunction. The default Vendor ID 0x0000 given here, is not a valid
+// ID and will be rejected by the Circle USB gadget driver. You have to
+// define a new one.
+
+#ifndef USB_GADGET_VENDOR_ID
+#define USB_GADGET_VENDOR_ID		0x0000
+#endif
+
+// USB_GADGET_DEVICE_ID_BASE is the base value for the assignment of
+// USB Device IDs for USB gadgets in Circle. Used Device IDs start with
+// USB_GADGET_DEVICE_ID_BASE and end with USB_GADGET_DEVICE_ID_BASE+N-1
+// where N is the number of supported USB gadget devices in Circle.
+// Be sure that there is no collision with other USB devices with the
+// same USB Vendor ID!
+
+#ifndef USB_GADGET_DEVICE_ID_BASE
+#define USB_GADGET_DEVICE_ID_BASE	0x8001
+#endif
+
+#ifndef USB_GADGET_DEVICE_ID_MIDI
+#define USB_GADGET_DEVICE_ID_MIDI	USB_GADGET_DEVICE_ID_BASE
+#endif
+
+#ifndef USB_GADGET_DEVICE_ID_SERIAL_CDC
+#define USB_GADGET_DEVICE_ID_SERIAL_CDC	(USB_GADGET_DEVICE_ID_BASE+1)
+#endif
+
+#ifndef USB_GADGET_DEVICE_ID_MSD
+#define USB_GADGET_DEVICE_ID_MSD	(USB_GADGET_DEVICE_ID_BASE+2)
 #endif
 
 ///////////////////////////////////////////////////////////////////////
@@ -308,6 +374,14 @@
 // あります。
 
 #define SCREEN_HEADLESS
+
+// USE_LOG_COLORS enables the use of different ANSI colors for different
+// severities in the system log (bright red for LogPanic, bright magenta
+// for LogError, bright yellow for LogWarning, bright white for LogNotice
+// and LogDebug). All log messages are bright white, when this option is
+// disabled, except LogPanic, which is bright red too.
+
+//#define USE_LOG_COLORS
 
 // SERIAL_GPIO_SELECT selects the TXD GPIO pin used for the serial
 // device (UART0). The RXD pin is (SERIAL_GPIO_SELECT+1). Modifying
@@ -380,6 +454,49 @@
 // 動作させるCircleイメージでは定義してはいけません。
 
 //#define USE_QEMU_USB_FIX
+
+// USE_NAK_USB_FIX enables a fix for SetCompleteOnNAK() in no-hub
+// configurations on Raspberry Pi 1-3. It must be defined, when an USB
+// device, which uses Bulk transfers to poll an endpoint has another USB
+// interface with more endpoints, and this USB device is directly
+// connected to the root port (without a hub in-between).
+
+//#define USE_NAK_USB_FIX
+
+///////////////////////////////////////////////////////////////////////
+
+// GNU-C 12.x uses floating point registers for optimization. This may
+// occur anywhere in the code, even in IRQ and FIQ handlers.
+
+#if RASPPI >= 2 && __GNUC__ >= 12
+
+#ifndef SAVE_VFP_REGS_ON_IRQ
+#define SAVE_VFP_REGS_ON_IRQ
+#endif
+
+#ifndef SAVE_VFP_REGS_ON_FIQ
+#define SAVE_VFP_REGS_ON_FIQ
+#endif
+
+// save all VFP regs in exceptionstub.S
+#ifndef __FAST_MATH__
+#define __FAST_MATH__
+#endif
+
+#endif
+
+
+// Sets the name of the "main()" entry point function that will be
+// called by circle after system initialization has completed.
+//
+// 	extern int MAINPROC (void);
+//
+// Can be used by wrapper libraries that need to inject their
+// own startup/shutdown code before calling their client's main().
+
+#ifndef MAINPROC
+#define MAINPROC main
+#endif
 
 ///////////////////////////////////////////////////////////////////////
 

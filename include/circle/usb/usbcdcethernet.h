@@ -5,8 +5,8 @@
 // usbcdcethernet.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2017-2019  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2017-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -57,13 +57,20 @@ public:
     /// @return 操作の成否
     boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength);
 
+	boolean SetMulticastFilter (const u8 Groups[][MAC_ADDRESS_SIZE]);
+
 private:
+    u8 GetMACAddressStringIndex (void);	// returns 0 on error
     /// @brief MACアドレスの初期化
     /// @param iMACAddress MACアドレス
     /// @return 操作の成否
     boolean InitMACAddress (u8 iMACAddress);
 
 private:
+    u8 m_uchControlInterface;
+	u8 m_iMACAddress;
+	boolean m_bInterfaceOK;
+    
     /// @brief バルク転送入力用パイプ
     CUSBEndpoint   *m_pEndpointBulkIn;
     /// @brief バルク転送出力用パイプ

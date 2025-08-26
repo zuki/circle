@@ -2,8 +2,8 @@
 // usbconfigparser.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2025  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -33,7 +33,13 @@ CUSBConfigurationParser::CUSBConfigurationParser (const void *pBuffer, unsigned 
     m_pCurrentDescriptor (0),
     m_pErrorPosition (m_pBuffer)
 {
-    assert (m_pBuffer != 0);
+	assert (m_pBuffer != 0);
+	
+	if (   m_nBufLen < 4		// wTotalLength must exist
+	    || m_nBufLen > 1024)	// best guess
+	{
+		return;
+	}
 
     if (   m_nBufLen < 4        // wTotalLengthがあること
         || m_nBufLen > 512)     // best guess
@@ -48,18 +54,26 @@ CUSBConfigurationParser::CUSBConfigurationParser (const void *pBuffer, unsigned 
         return;
     }
 
-    if (m_pBuffer->Configuration.wTotalLength < nBufLen)
-    {
-        m_pEndPosition = SKIP_BYTES (m_pBuffer, m_pBuffer->Configuration.wTotalLength);
-    }
+	const TUSBDescriptor *pCurrentPosition = m_pBuffer;
+	u8 ucLastDescType = 0;
+	boolean bInAudio10Interface = FALSE;
+	while (SKIP_BYTES (pCurrentPosition, 2) < m_pEndPosition)
+	{
+		u8 ucDescLen  = pCurrentPosition->Header.bLength;
+		u8 ucDescType = pCurrentPosition->Header.bDescriptorType;
 
-    const TUSBDescriptor *pCurrentPosition = m_pBuffer;
-    u8 ucLastDescType = 0;
-    boolean bInAudioInterface = FALSE;
-    while (SKIP_BYTES (pCurrentPosition, 2) < m_pEndPosition)
-    {
-        u8 ucDescLen  = pCurrentPosition->Header.bLength;
-        u8 ucDescType = pCurrentPosition->Header.bDescriptorType;
+		if (ucDescLen == 0)
+		{
+			m_pEndPosition = pCurrentPosition;
+			break;
+		}
+
+		TUSBDescriptor *pDescEnd = SKIP_BYTES (pCurrentPosition, ucDescLen);
+		if (pDescEnd > m_pEndPosition)
+		{
+			m_pErrorPosition = pCurrentPosition;
+			return;
+		}
 
         TUSBDescriptor *pDescEnd = SKIP_BYTES (pCurrentPosition, ucDescLen);
         if (pDescEnd > m_pEndPosition)
@@ -68,28 +82,32 @@ CUSBConfigurationParser::CUSBConfigurationParser (const void *pBuffer, unsigned 
             return;
         }
 
-        u8 ucExpectedLen = 0;
-        u8 ucAlternateLen = 0;
-        switch (ucDescType)
-        {
-        case DESCRIPTOR_CONFIGURATION:
-            if (ucLastDescType != 0)
-            {
-                m_pErrorPosition = pCurrentPosition;
-                return;
-            }
-            ucExpectedLen = sizeof (TUSBConfigurationDescriptor);
-            break;
+		case DESCRIPTOR_INTERFACE:
+			if (ucLastDescType == 0)
+			{
+				m_pErrorPosition = pCurrentPosition;
+				return;
+			}
+			ucExpectedLen = sizeof (TUSBInterfaceDescriptor);
+			// Audio class 1.0
+			bInAudio10Interface =    pCurrentPosition->Interface.bInterfaceClass == 0x01
+					      && pCurrentPosition->Interface.bInterfaceProtocol != 0x20;
+			break;
 
-        case DESCRIPTOR_INTERFACE:
-            if (ucLastDescType == 0)
-            {
-                m_pErrorPosition = pCurrentPosition;
-                return;
-            }
-            ucExpectedLen = sizeof (TUSBInterfaceDescriptor);
-            bInAudioInterface = pCurrentPosition->Interface.bInterfaceClass == 0x01; // Audio class
-            break;
+		case DESCRIPTOR_ENDPOINT:
+			if (   ucLastDescType == 0
+			    || ucLastDescType == DESCRIPTOR_CONFIGURATION)
+			{
+				m_pErrorPosition = pCurrentPosition;
+				return;
+			}
+			ucExpectedLen = sizeof (TUSBEndpointDescriptor);
+			if (bInAudio10Interface)
+			{
+				// Audio class 1.0 EP descriptors have additional fields.
+				ucAlternateLen = sizeof (TUSBAudioEndpointDescriptor);
+			}
+			break;
 
         case DESCRIPTOR_ENDPOINT:
             if (   ucLastDescType == 0

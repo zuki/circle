@@ -5,8 +5,8 @@
 // tcpconnection.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -74,7 +74,7 @@ public:
     /// @param nOwnPort 自ポート
     CTCPConnection (CNetConfig *pNetConfig,
             CNetworkLayer      *pNetworkLayer,
-            CIPAddress         &rForeignIP,
+            const CIPAddress   &rForeignIP,
             u16                 nForeignPort,
             u16                 nOwnPort);
     /// @brief コンストラクタ（パッシブOPEN）
@@ -86,6 +86,9 @@ public:
             u16                 nOwnPort);
     /// @brief デストラクタ
     ~CTCPConnection (void);
+
+    const char *GetStateName (void) const;
+
     /// @brief コネクションを確立する
     /// @return エラーの場合は < 0
     int Connect (void);
@@ -131,6 +134,10 @@ public:
     /// @brief 未実装
     /// @return 常に0
     int SetOptionBroadcast (boolean bAllowed);
+
+    int SetOptionAddMembership (const CIPAddress &rGroupAddress);
+	int SetOptionDropMembership (const CIPAddress &rGroupAddress);
+    
     /// @brief コネクション済みか
     /// @return コネクション済みの場合はTRUE
     boolean IsConnected (void) const;
@@ -270,6 +277,7 @@ private:
     CRetransmissionTimeoutCalculator m_RTOCalculator;
     /// @brief コネクション数
     static unsigned s_nConnections;
+    static const char *s_pStateName[];
 };
 
 /** @} */

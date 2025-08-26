@@ -2,7 +2,7 @@
 // usbdevicefactory.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2022  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include <circle/usb/usbdevicefactory.h>
 #include <circle/usb/usbhid.h>
 #include <circle/synchronize.h>
+#include <circle/sysconfig.h>
 #include <circle/koptions.h>
 #include <circle/logger.h>
 #include <assert.h>
@@ -27,6 +28,7 @@
 // for factory
 #include <circle/usb/usbstandardhub.h>
 #include <circle/usb/usbmassdevice.h>
+#include <circle/usb/usbfloppydevice.h>
 #include <circle/usb/usbkeyboard.h>
 #include <circle/usb/usbmouse.h>
 #include <circle/usb/usbgamepadstandard.h>
@@ -39,11 +41,13 @@
 #include <circle/usb/smsc951x.h>
 #include <circle/usb/lan7800.h>
 #include <circle/usb/usbbluetooth.h>
-#include <circle/usb/usbmidi.h>
+#include <circle/usb/usbmidihost.h>
+#include <circle/usb/usbaudiocontrol.h>
+#include <circle/usb/usbaudiostreaming.h>
 #include <circle/usb/usbcdcethernet.h>
 #include <circle/usb/usbserialcdc.h>
 #include <circle/usb/usbserialch341.h>
-#include <circle/usb/usbserialcp2102.h>
+#include <circle/usb/usbserialcp210x.h>
 #include <circle/usb/usbserialpl2303.h>
 #include <circle/usb/usbserialft231x.h>
 #include <circle/usb/usbtouchscreen.h>
@@ -82,10 +86,27 @@ CUSBFunction *CUSBDeviceFactory::GetDevice (CUSBFunction *pParent, CString *pNam
         CString *pVendor = pParent->GetDevice ()->GetName (DeviceNameVendor);
         assert (pVendor != 0);
 
-        if (pVendor->Compare ("ven3f0-1198") != 0)    // HP USB 1000dpi Laser Mouse
-        {
-            pResult = new CUSBKeyboardDevice (pParent);
-        }
+	if (   pName->Compare ("int9-0-0") == 0
+	    || pName->Compare ("int9-0-2") == 0)
+	{
+		pResult = new CUSBStandardHub (pParent);
+	}
+#ifndef EXCLUDE_USB_STORAGE
+	else if (pName->Compare ("int8-6-50") == 0)
+	{
+		pResult = new CUSBBulkOnlyMassStorageDevice (pParent);
+	}
+	else if (   pName->Compare ("int8-4-0") == 0
+		 || pName->Compare ("int8-4-1") == 0)
+	{
+		pResult = new CUSBFloppyDiskDevice (pParent);
+	}
+#endif
+#ifndef EXCLUDE_USB_KEYB
+	else if (pName->Compare ("int3-1-1") == 0)
+	{
+		CString *pVendor = pParent->GetDevice ()->GetName (DeviceNameVendor);
+		assert (pVendor != 0);
 
         delete pVendor;
     }
@@ -100,10 +121,21 @@ CUSBFunction *CUSBDeviceFactory::GetDevice (CUSBFunction *pParent, CString *pNam
         CString *pVendor = pParent->GetDevice ()->GetName (DeviceNameVendor);
         assert (pVendor != 0);
 
-        if (pVendor->Compare ("ven5ac-21e") != 0)    // Apple Aluminum Mini Keyboard
-        {
-            pResult = GetGenericHIDDevice (pParent);
-        }
+		delete pVendor;
+	}
+#endif
+#ifndef EXCLUDE_USB_MOUSE
+	else if (pName->Compare ("int3-1-2") == 0)
+	{
+		pResult = new CUSBMouseDevice (pParent);
+	}
+#endif
+	else if (   pName->Compare ("int3-0-0") == 0
+		 || pName->Compare ("int3-0-2") == 0
+		 || pName->Compare ("int3-1-0") == 0)
+	{
+		CString *pVendor = pParent->GetDevice ()->GetName (DeviceNameVendor);
+		assert (pVendor != 0);
 
         delete pVendor;
     }
@@ -196,10 +228,111 @@ CUSBFunction *CUSBDeviceFactory::GetDevice (CUSBFunction *pParent, CString *pNam
     }
     // new devices follow
 
-    if (pResult != 0)
-    {
-        pResult->GetDevice ()->LogWrite (LogNotice, "Using device/interface %s", (const char *) *pName);
-    }
+		delete pVendor;
+	}
+#ifndef EXCLUDE_USB_GAMEPAD
+	else if (pName->Compare ("ven54c-268") == 0)
+	{
+		pResult = new CUSBGamePadPS3Device (pParent);
+	}
+	else if (   pName->Compare ("ven54c-5c4") == 0
+		 || pName->Compare ("ven54c-9cc") == 0)
+	{
+		pResult = new CUSBGamePadPS4Device (pParent);
+	}
+	else if (   pName->Compare ("ven45e-28e") == 0
+		 || pName->Compare ("ven45e-28f") == 0)
+	{
+		pResult = new CUSBGamePadXbox360Device (pParent);
+	}
+	else if (   pName->Compare ("ven45e-2d1") == 0		// XBox One Controller
+		 || pName->Compare ("ven45e-2dd") == 0		// XBox One Controller (FW 2015)
+		 || pName->Compare ("ven45e-2e3") == 0		// XBox One Elite Controller
+		 || pName->Compare ("ven45e-2ea") == 0		// XBox One S Controller
+		 || pName->Compare ("ven45e-b12") == 0)		// XBox Series X Controller
+	{
+		pResult = new CUSBGamePadXboxOneDevice (pParent);
+	}
+	else if (pName->Compare ("ven57e-2009") == 0)
+	{
+		pResult = new CUSBGamePadSwitchProDevice (pParent);
+	}
+#endif
+#ifndef EXCLUDE_USB_PRINTER
+	else if (   pName->Compare ("int7-1-1") == 0
+		 || pName->Compare ("int7-1-2") == 0)
+	{
+		pResult = new CUSBPrinterDevice (pParent);
+	}
+#endif
+#ifndef EXCLUDE_USB_NET
+	else if (pName->Compare ("ven424-ec00") == 0)
+	{
+		pResult = new CSMSC951xDevice (pParent);
+	}
+	else if (pName->Compare ("ven424-7800") == 0)
+	{
+		pResult = new CLAN7800Device (pParent);
+	}
+#endif
+#ifndef EXCLUDE_USB_BLUETOOTH
+	else if (   pName->Compare ("inte0-1-1") == 0
+		 || pName->Compare ("ven50d-65a") == 0)		// Belkin F8T065BF Mini Bluetooth 4.0 Adapter
+	{
+		pResult = new CUSBBluetoothDevice (pParent);
+	}
+#endif
+#ifndef EXCLUDE_USB_MIDI
+	else if (   pName->Compare ("int1-3-0") == 0
+		 || pName->Compare ("ven582-12a") == 0)		// Roland UM-ONE MIDI interface
+	{
+		pResult = new CUSBMIDIHostDevice (pParent);
+	}
+#endif
+#ifndef EXCLUDE_USB_AUDIO
+#if RASPPI >= 4
+	else if (   pName->Compare ("int1-1-0") == 0
+		 || pName->Compare ("int1-1-20") == 0)
+	{
+		pResult = new CUSBAudioControlDevice (pParent);
+	}
+	else if (   pName->Compare ("int1-2-0") == 0
+		 || pName->Compare ("int1-2-20") == 0)
+	{
+		pResult = new CUSBAudioStreamingDevice (pParent);
+	}
+#endif
+#endif
+#ifndef EXCLUDE_USB_NET
+	else if (pName->Compare ("int2-6-0") == 0)
+	{
+		pResult = new CUSBCDCEthernetDevice (pParent);
+	}
+#endif
+#ifndef EXCLUDE_USB_SERIAL
+	else if (   pName->Compare ("int2-2-0") == 0
+		 || pName->Compare ("int2-2-1") == 0)
+	{
+		pResult = new CUSBSerialCDCDevice (pParent);
+	}
+	else if (FindDeviceID (pName, CUSBSerialCH341Device::GetDeviceIDTable ()))
+	{
+		pResult = new CUSBSerialCH341Device (pParent);
+	}
+	else if (FindDeviceID (pName, CUSBSerialCP210xDevice::GetDeviceIDTable ()))
+	{
+		pResult = new CUSBSerialCP210xDevice (pParent);
+	}
+	else if (FindDeviceID (pName, CUSBSerialPL2303Device::GetDeviceIDTable ()))
+	{
+		pResult = new CUSBSerialPL2303Device (pParent);
+	}
+	else if (FindDeviceID (pName, CUSBSerialFT231XDevice::GetDeviceIDTable ()))
+	{
+		pResult = new CUSBSerialFT231XDevice (pParent);
+	}
+#endif
+	// new devices follow
 
     delete pName;
 
@@ -208,10 +341,10 @@ CUSBFunction *CUSBDeviceFactory::GetDevice (CUSBFunction *pParent, CString *pNam
 
 CUSBFunction *CUSBDeviceFactory::GetGenericHIDDevice (CUSBFunction *pParent)
 {
-    // ここで親オブジェクトをコピーしておく必要がある。なぜならHID
-    // レポートディスクリプタを使ってしまうからである。これは後で
-    // HID Use Pageの特定のドライバクラスにより再度リクエストされる
-    CUSBFunction TempFunction (pParent);
+#ifndef EXCLUDE_USB_TOUCHSCREEN
+	// Must copy parent function here, because we consume the HID report descriptor,
+	// which is requested again later by the HID Use Page specific driver class.
+	CUSBFunction TempFunction (pParent);
 
     // HIDディスクリプタを取得する
     TUSBHIDDescriptor *pHIDDesc =
@@ -279,14 +412,19 @@ CUSBFunction *CUSBDeviceFactory::GetGenericHIDDevice (CUSBFunction *pParent)
 
         ucItem &= 0xFC;
 
-        if (   ucItem == 0x04        // Usage Page (Digitizer)
-            && nArg == 0x0D)
-        {
-            return new CUSBTouchScreenDevice (pParent);
-        }
-    }
+		if (   ucItem == 0x04		// Usage Page (Digitizer)
+		    && nArg == 0x0D)
+		{
+			return new CUSBTouchScreenDevice (pParent);
+		}
+	}
+#endif
 
-    return new CUSBGamePadStandardDevice (pParent);
+#ifndef EXCLUDE_USB_GAMEPAD
+	return new CUSBGamePadStandardDevice (pParent);
+#else
+	return 0;
+#endif
 }
 
 boolean CUSBDeviceFactory::FindDeviceID (CString *pName, const TUSBDeviceID *pIDTable)

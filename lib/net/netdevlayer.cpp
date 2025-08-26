@@ -2,8 +2,8 @@
 // netdevlayer.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -42,11 +42,16 @@ CNetDeviceLayer::~CNetDeviceLayer (void)
 
 boolean CNetDeviceLayer::Initialize (boolean bWaitForActivate)
 {
-#if RASPPI >= 4
-    if (!m_Bcm54213.Initialize ())
-    {
-        return FALSE;
-    }
+#if RASPPI == 4
+	if (!m_Bcm54213.Initialize ())
+	{
+		return FALSE;
+	}
+#elif RASPPI >= 5
+	if (!m_MACB.Initialize ())
+	{
+		return FALSE;
+	}
 #endif
 
     // 1. 立ち上がりを待たない場合はすぐにtrueでリターン
@@ -159,5 +164,11 @@ boolean CNetDeviceLayer::Receive (void *pBuffer, unsigned *pResultLength)
 
 boolean CNetDeviceLayer::IsRunning (void) const
 {
-    return m_pDevice != 0;
+	return m_pDevice != 0 && m_pDevice->IsLinkUp ();
+}
+
+boolean CNetDeviceLayer::SetMulticastFilter (const u8 Groups[][MAC_ADDRESS_SIZE])
+{
+	assert (m_pDevice != 0);
+	return m_pDevice->SetMulticastFilter (Groups);
 }

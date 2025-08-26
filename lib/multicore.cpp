@@ -6,8 +6,8 @@
 //    Licensed under GPL2
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2022  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2023  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +31,7 @@
 #include <circle/timer.h>
 #include <circle/logger.h>
 #include <circle/memio.h>
-#include <circle/synchronize.h>
+#include <circle/spinlock.h>
 #include <assert.h>
 
 static const char FromMultiCore[] = "mcore";
@@ -44,8 +44,15 @@ CMultiCoreSupport *CMultiCoreSupport::s_pThis = 0;
 CMultiCoreSupport::CMultiCoreSupport (CMemorySystem *pMemorySystem)
 :    m_pMemorySystem (pMemorySystem)
 {
-    assert (s_pThis == 0);
-    s_pThis = this;
+	assert (s_pThis == 0);
+	s_pThis = this;
+
+#if RASPPI >= 5
+	for (unsigned nCore = 1; nCore < CORES; nCore++)
+	{
+		m_bCoreStarted[nCore] = FALSE;
+	}
+#endif
 }
 
 CMultiCoreSupport::~CMultiCoreSupport (void)
@@ -55,8 +62,8 @@ CMultiCoreSupport::~CMultiCoreSupport (void)
     s_pThis = 0;
 }
 
-/// @brief 初期化関数
-/// @return 処理の成否を返す
+#if RASPPI <= 4
+
 boolean CMultiCoreSupport::Initialize (void)
 {
 #if RASPPI <= 3
@@ -68,8 +75,9 @@ boolean CMultiCoreSupport::Initialize (void)
     write32 (ARM_LOCAL_MAILBOX_INT_CONTROL0, 1);
 #endif
 
-    // 2. セカンダリコアからアクセスできるように全データを書き出す
-    CleanDataCache ();
+	CSpinLock::Enable ();
+
+	CleanDataCache ();	// write out all data to be accessible by secondary cores
 
     // 3. 各コアを起床させる
     for (unsigned nCore = 1; nCore < CORES; nCore++)
@@ -81,8 +89,7 @@ boolean CMultiCoreSupport::Initialize (void)
 
         DataSyncBarrier ();
 #else
-        // 3.1 スピニングの基底アドレス: 0xD8
-        TSpinTable *pSpinTable = (TSpinTable *) ARM_SPIN_TABLE_BASE;
+		TSpinTable * volatile pSpinTable = (TSpinTable * volatile) ARM_SPIN_TABLE_BASE;
 #endif
 
         unsigned nTimeout = 100;
@@ -141,6 +148,76 @@ boolean CMultiCoreSupport::Initialize (void)
 
     return TRUE;
 }
+
+#else	// #if RASPPI <= 4
+
+boolean CMultiCoreSupport::Initialize (void)
+{
+	CSpinLock::Enable ();
+
+	CleanDataCache ();	// write out all data to be accessible by secondary cores
+
+	// start all secondary cores
+	for (unsigned nCore = 1; nCore < CORES; nCore++)
+	{
+		// call PSCI function CPU_ON
+		// see: ARM Power State Coordination Interface (DEN 0022D, section 5.1.4),
+		//	SMC CALLING CONVENTION (DEN 0028B, section 2.7)
+		s32 nReturnCode;
+		asm volatile
+		(
+			"mov	x0, %1\n"
+			"mov	x1, %2\n"
+			"mov	x2, %3\n"
+			"mov	x3, %4\n"
+			"smc	#0\n"
+			"mov	%w0, w0\n"
+
+			: "=r" (nReturnCode)
+
+			: "r" (0xC4000003UL),			// function code CPU_ON
+			  "r" ((u64) nCore << 8),		// target core
+			  "r" ((u64) &_start_secondary),	// entry point
+			  "i" (0)				// context (unused)
+
+			: "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9",
+			  "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17"
+		);
+
+		if (nReturnCode != 0)
+		{
+			CLogger::Get ()->Write (FromMultiCore, LogError, "CPU core %u did not start (%d)",
+						nCore, nReturnCode);
+
+			return FALSE;
+		}
+	}
+
+	// check, that the secondary cores responded
+	for (unsigned nCore = 1; nCore < CORES; nCore++)
+	{
+		unsigned nTimeout = 500;
+		do
+		{
+			if (--nTimeout == 0)
+			{
+				CLogger::Get ()->Write (FromMultiCore, LogError,
+							"CPU core %u did not start", nCore);
+
+				return FALSE;
+			}
+
+			CTimer::SimpleMsDelay (1);
+
+			DataMemBarrier ();
+		}
+		while (!m_bCoreStarted[nCore]);
+	}
+
+	return TRUE;
+}
+
+#endif
 
 void CMultiCoreSupport::IPIHandler (unsigned nCore, unsigned nIPI)
 {
@@ -237,18 +314,20 @@ void CMultiCoreSupport::LocalInterruptHandler (unsigned nFromCore, unsigned nIPI
 /// @brief 2次コアのmainルーチンの処理部
 void CMultiCoreSupport::EntrySecondary (void)
 {
-    assert (s_pThis != 0);
-
-    assert (s_pThis->m_pMemorySystem != 0);
-    s_pThis->m_pMemorySystem->InitializeSecondary ();
-
-    unsigned nCore = ThisCore ();
+	s_pThis->m_pMemorySystem->InitializeSecondary ();
+	
+	unsigned nCore = ThisCore ();
 #if AARCH == 32
-    write32 (ARM_LOCAL_MAILBOX3_CLR0 + 0x10 * nCore, 0);
+	write32 (ARM_LOCAL_MAILBOX3_CLR0 + 0x10 * nCore, 0);
+#elif RASPPI <= 4
+	TSpinTable * volatile pSpinTable = (TSpinTable * volatile) ARM_SPIN_TABLE_BASE;
+	pSpinTable->SpinCore[nCore] = 0;
+	DataSyncBarrier ();
 #else
-    TSpinTable *pSpinTable = (TSpinTable *) ARM_SPIN_TABLE_BASE;
-    pSpinTable->SpinCore[nCore] = 0;
-    DataSyncBarrier ();
+	CTimer::SimpleMsDelay (20);
+
+	s_pThis->m_bCoreStarted[nCore] = TRUE;
+	DataSyncBarrier ();
 #endif
 
 #if RASPPI <= 3

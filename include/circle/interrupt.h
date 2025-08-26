@@ -2,8 +2,8 @@
 // interrupt.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2023  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -34,6 +34,8 @@ public:
     CInterruptSystem (void);
     /// @brief デストラクタ
     ~CInterruptSystem (void);
+    /// @brief 明示的に呼び出し可能なデストラクタ
+    void Destructor (void);
     /// @brief 初期関数
     /// @return 常にTRUE
     boolean Initialize (void);

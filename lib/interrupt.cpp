@@ -2,8 +2,8 @@
 // interrupt.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2023  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -55,18 +55,32 @@ CInterruptSystem *CInterruptSystem::s_pThis = 0;
 
 CInterruptSystem::CInterruptSystem (void)
 {
-    for (unsigned nIRQ = 0; nIRQ < IRQ_LINES; nIRQ++) // IRQ_LINES=84
-    {
-        m_apIRQHandler[nIRQ] = 0;
-        m_pParam[nIRQ] = 0;
-    }
+	if (s_pThis != 0)
+	{
+		return;
+	}
+	s_pThis = this;
 
-    s_pThis = this;
+	for (unsigned nIRQ = 0; nIRQ < IRQ_LINES; nIRQ++)
+	{
+		m_apIRQHandler[nIRQ] = 0;
+		m_pParam[nIRQ] = 0;
+	}
 }
 
 CInterruptSystem::~CInterruptSystem (void)
 {
-    DisableIRQs ();
+	Destructor ();
+}
+
+void CInterruptSystem::Destructor (void)
+{
+	if (s_pThis != this)
+	{
+		return;
+	}
+
+	DisableIRQs ();
 
     PeripheralEntry ();
 
@@ -89,9 +103,14 @@ CInterruptSystem::~CInterruptSystem (void)
 
 boolean CInterruptSystem::Initialize (void)
 {
+	if (s_pThis != this)
+	{
+		return TRUE;
+	}
+
 #if AARCH == 32
-    TExceptionTable *pTable = (TExceptionTable *) ARM_EXCEPTION_TABLE_BASE;
-    pTable->IRQ = ARM_OPCODE_BRANCH (ARM_DISTANCE (pTable->IRQ, IRQStub));
+	TExceptionTable * volatile pTable = (TExceptionTable * volatile) ARM_EXCEPTION_TABLE_BASE;
+	pTable->IRQ = ARM_OPCODE_BRANCH (ARM_DISTANCE (pTable->IRQ, IRQStub));
 #ifndef USE_RPI_STUB_AT
     pTable->FIQ = ARM_OPCODE_BRANCH (ARM_DISTANCE (pTable->FIQ, FIQStub));
 #endif
@@ -124,19 +143,33 @@ boolean CInterruptSystem::Initialize (void)
 
 void CInterruptSystem::ConnectIRQ (unsigned nIRQ, TIRQHandler *pHandler, void *pParam)
 {
-    assert (nIRQ < IRQ_LINES);
-    assert (m_apIRQHandler[nIRQ] == 0);
-    // ハンドラと引数をセット
-    m_apIRQHandler[nIRQ] = pHandler;
-    m_pParam[nIRQ] = pParam;
-    // 指定の番号の割り込みを有効に
-    EnableIRQ (nIRQ);
+	if (s_pThis != this)
+	{
+		s_pThis->ConnectIRQ (nIRQ, pHandler, pParam);
+
+		return;
+	}
+
+	assert (nIRQ < IRQ_LINES);
+	assert (m_apIRQHandler[nIRQ] == 0);
+
+	m_apIRQHandler[nIRQ] = pHandler;
+	m_pParam[nIRQ] = pParam;
+
+	EnableIRQ (nIRQ);
 }
 
 void CInterruptSystem::DisconnectIRQ (unsigned nIRQ)
 {
-    assert (nIRQ < IRQ_LINES);
-    assert (m_apIRQHandler[nIRQ] != 0);
+	if (s_pThis != this)
+	{
+		s_pThis->DisconnectIRQ (nIRQ);
+
+		return;
+	}
+
+	assert (nIRQ < IRQ_LINES);
+	assert (m_apIRQHandler[nIRQ] != 0);
 
     DisableIRQ (nIRQ);
 
@@ -146,6 +179,13 @@ void CInterruptSystem::DisconnectIRQ (unsigned nIRQ)
 
 void CInterruptSystem::ConnectFIQ (unsigned nFIQ, TFIQHandler *pHandler, void *pParam)
 {
+	if (s_pThis != this)
+	{
+		s_pThis->ConnectFIQ (nFIQ, pHandler, pParam);
+
+		return;
+	}
+
 #ifdef USE_RPI_STUB_AT
     assert (0);
 #endif
@@ -161,7 +201,14 @@ void CInterruptSystem::ConnectFIQ (unsigned nFIQ, TFIQHandler *pHandler, void *p
 
 void CInterruptSystem::DisconnectFIQ (void)
 {
-    assert (FIQData.pHandler != 0);
+	if (s_pThis != this)
+	{
+		s_pThis->DisconnectFIQ ();
+
+		return;
+	}
+
+	assert (FIQData.pHandler != 0);
 
     DisableFIQ ();
 

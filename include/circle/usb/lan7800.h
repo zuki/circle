@@ -7,7 +7,7 @@
 // lan7800.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2018-2019  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2018-2025  R. Stange <rsta2@gmx.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,7 +77,10 @@ public:
     /// @return リンクスピード
     TNetDeviceSpeed GetLinkSpeed (void);
 
+	boolean SetMulticastFilter (const u8 Groups[][MAC_ADDRESS_SIZE]);
+
 private:
+    void SetAddressFilter (int index, const u8 addr[MAC_ADDRESS_SIZE]);
     /// @brief MACアドレスを初期化する
     /// @return 失敗したらFALSE
     boolean InitMACAddress (void);
@@ -134,6 +137,7 @@ private:
     CUSBEndpoint *m_pEndpointBulkOut;
     /// @brief MACアドレス
     CMACAddress m_MACAddress;
+    u32 m_FilterTable[33][2];
 };
 
 /** @} */

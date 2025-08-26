@@ -2,8 +2,8 @@
 // timer.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -75,7 +75,7 @@ CTimer::~CTimer (void)
 #if AARCH == 32
     asm volatile ("mcr p15, 0, %0, c14, c2, 1" :: "r" (0));
 #else
-    asm volatile ("msr CNTP_CTL_EL0, %0" :: "r" (0));
+	asm volatile ("msr CNTP_CTL_EL0, %0" :: "r" (0UL));
 #endif
 
     m_pInterruptSystem->DisconnectIRQ (ARM_IRQLOCAL0_CNTPNS);
@@ -135,7 +135,7 @@ boolean CTimer::Initialize (void)
     asm volatile ("mrs %0, CNTPCT_EL0" : "=r" (nCNTPCT));   // get 64-bit physical count value
     asm volatile ("msr CNTP_CVAL_EL0, %0" :: "r" (nCNTPCT + m_nClockTicksPerHZTick)); // 現時点から1/HZ後
 
-    asm volatile ("msr CNTP_CTL_EL0, %0" :: "r" (1));       // Physical Timer enable
+	asm volatile ("msr CNTP_CTL_EL0, %0" :: "r" (1UL));
 #endif
 #endif
 
@@ -250,6 +250,44 @@ unsigned CTimer::GetClockTicks (void)
 #endif
 }
 
+u64 CTimer::GetClockTicks64 (void)
+{
+#ifndef USE_PHYSICAL_COUNTER
+	PeripheralEntry ();
+
+	u32 hi = read32 (ARM_SYSTIMER_CHI);
+	u32 lo = read32 (ARM_SYSTIMER_CLO);
+
+	// double check hi value didn't change when retrieving lo...
+	if (hi != read32 (ARM_SYSTIMER_CHI)) {
+		hi = read32 (ARM_SYSTIMER_CHI);
+		lo = read32 (ARM_SYSTIMER_CLO);
+	}
+
+	PeripheralExit ();
+
+	return static_cast<u64> (hi) << 32 | lo;
+#else
+#if AARCH == 32
+	InstructionSyncBarrier ();
+
+	u32 nCNTPCTLow, nCNTPCTHigh;
+	asm volatile ("mrrc p15, 0, %0, %1, c14" : "=r" (nCNTPCTLow), "=r" (nCNTPCTHigh));
+
+	return static_cast<u64> (nCNTPCTHigh) << 32 | nCNTPCTLow;
+#else
+	InstructionSyncBarrier ();
+
+	u64 nCNTPCT;
+	asm volatile ("mrs %0, CNTPCT_EL0" : "=r" (nCNTPCT));
+	u64 nCNTFRQ;
+	asm volatile ("mrs %0, CNTFRQ_EL0" : "=r" (nCNTFRQ));
+
+	return nCNTPCT * CLOCKHZ / nCNTFRQ;
+#endif
+#endif
+}
+
 unsigned CTimer::GetTicks (void) const
 {
     return m_nTicks;
@@ -258,6 +296,24 @@ unsigned CTimer::GetTicks (void) const
 unsigned CTimer::GetUptime (void) const
 {
     return m_nUptime;
+}
+
+boolean CTimer::GetUptime (unsigned *pSeconds, unsigned *pMicroSeconds)
+{
+	m_TimeSpinLock.Acquire ();
+
+	unsigned nTime = m_nUptime;
+	unsigned nTicks = m_nTicks;
+
+	m_TimeSpinLock.Release ();
+
+	assert (pSeconds != 0);
+	*pSeconds = nTime;
+
+	assert (pMicroSeconds != 0);
+	*pMicroSeconds = nTicks % HZ * (1000000 / HZ);
+
+	return TRUE;
 }
 
 unsigned CTimer::GetTime (void) const
@@ -470,12 +526,12 @@ void CTimer::PollKernelTimers (void)
 {
     m_KernelTimerSpinLock.Acquire ();
 
-    TPtrListElement *pElement = m_KernelTimerList.GetFirst ();
-    while (pElement != 0)
-    {
-        TKernelTimer *pTimer = (TKernelTimer *) m_KernelTimerList.GetPtr (pElement);
-        assert (pTimer != 0);
-        assert (pTimer->m_nMagic == KERNEL_TIMER_MAGIC);
+	TPtrListElement *pElement;
+	while ((pElement = m_KernelTimerList.GetFirst ()) != 0)
+	{
+		TKernelTimer *pTimer = (TKernelTimer *) m_KernelTimerList.GetPtr (pElement);
+		assert (pTimer != 0);
+		assert (pTimer->m_nMagic == KERNEL_TIMER_MAGIC);
 
         // リストはハッカ時刻ごとに並んでいるので対象となるタイマーの
         // 発火時刻が現時刻より後であれば、発火すべきタイマーは存在
@@ -485,10 +541,7 @@ void CTimer::PollKernelTimers (void)
             break;
         }
 
-        TPtrListElement *pNextElement = m_KernelTimerList.GetNext (pElement);
-        // 発火するタイマーをリストから削除
-        m_KernelTimerList.Remove (pElement);
-        pElement = pNextElement;
+		m_KernelTimerList.Remove (pElement);
 
         m_KernelTimerSpinLock.Release ();
 

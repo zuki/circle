@@ -122,6 +122,36 @@ CString &CString::operator = (CString &&rrString)
 	return *this;
 }
 
+CString &CString::operator += (const char chChar)
+{
+	Append (chChar);
+
+	return *this;
+}
+
+CString &CString::operator += (const char *pString)
+{
+	Append (pString);
+
+	return *this;
+}
+
+CString &CString::operator += (const CString &rString)
+{
+	Append (rString.c_str());
+
+	return *this;
+}
+
+const char* CString::c_str (void) const
+{
+	if (m_pBuffer == 0)
+	{
+		return "";
+	}
+	return m_pBuffer;
+}
+
 size_t CString::GetLength (void) const
 {
 	if (m_pBuffer == 0)
@@ -131,7 +161,14 @@ size_t CString::GetLength (void) const
 	
 	return strlen (m_pBuffer);
 }
+void CString::Append (const char chChar)
+{
+	char chrs[2];
 
+	chrs[0] = chChar;
+	chrs[1] = 0;
+	Append( chrs );
+}
 void CString::Append (const char *pString)
 {
 	m_nSize = 1;		// for terminating '\0'
@@ -711,7 +748,7 @@ char *CString::ftoa (char *pDest, double fNumber, unsigned nPrecision)
 		fNumber = -fNumber;
 	}
 
-	if (fNumber > (unsigned long) -1)
+	if (fNumber > (double) (unsigned long) -1)
 	{
 		strcpy (p, "overflow");
 

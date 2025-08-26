@@ -8,8 +8,8 @@
 // netsubsystem.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2024  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -78,12 +78,19 @@ public:
     /// @brief リンク層のオブジェクトを取得
     /// @return ・リンク層のオブジェクトへのポインタ
     CLinkLayer *GetLinkLayer (void);
+    /// @brief ネットワーク層のオブジェクトを取得
+    /// @return ネットワーク層のオブジェクトへのポインタ
+    CNetworkLayer *GetNetworkLayer (void);
     /// @brief トランスポート層のオブジェクトを取得
     /// @return トランスポート層のオブジェクトへのポインタ
     CTransportLayer *GetTransportLayer (void);
     /// @brief DHCPを使うのであればDHCPはバインドされているか
     /// @return バインドの有無
     boolean IsRunning (void) const;
+    /// @brief ホスト名を取得する
+    /// @return ホスト名
+    const char *GetHostname (void) const;
+    
     /// @brief 自オブジェクトを取得する
     /// @return 自オブジェクトへのポインタ
     static CNetSubSystem *Get (void);

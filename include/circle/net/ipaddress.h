@@ -5,8 +5,8 @@
 // ipaddress.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2016  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2024  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -92,12 +92,18 @@ public:
     /// @brief アドレスをコピーする
     /// @param pBuffer コピー先のバッファ
     void CopyTo (u8 *pBuffer) const;
+    /// @brief アドレスがセットされているか
+    /// @return セットされていればTRUE、そうでなければFALSE
+    boolean IsSet (void) const;
     /// @brief ヌルアドレスか
     /// @return ヌルアドレスならTRUE、そうでなければFALSE
     boolean IsNull (void) const;
     /// @brief ブロードキャストアドレスか
     /// @return ブロードキャストアドレスならTRUE、そうでなければFALSE
     boolean IsBroadcast (void) const;
+    /// @brief マルチキャストアドレスか
+    /// @return マルチキャストアドレスならTRUE、そうでなければFALSE
+    boolean IsMulticast (void) const;
     /// @brief IPアドレスの長さを取得する
     /// @return IPアドレスの長さ
     unsigned GetSize (void) const;
@@ -111,10 +117,9 @@ public:
     boolean OnSameNetwork (const CIPAddress &rAddress2, const u8 *pNetMask) const;
 
 private:
-#ifndef NDEBUG
     /// @brief 正しいアドレスか
     boolean m_bValid;
-#endif
+
     /// @brief アドレス値
     u32 m_nAddress;
 };

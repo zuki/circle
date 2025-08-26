@@ -2,8 +2,8 @@
 // usbfunction.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -160,20 +160,22 @@ void CUSBFunction::ConfigurationError (const char *pSource) const
     m_pConfigParser->Error (pSource);
 }
 
-boolean CUSBFunction::SelectInterfaceByClass (u8 uchClass, u8 uchSubClass, u8 uchProtocol)
+boolean CUSBFunction::SelectInterfaceByClass (u8 uchClass, u8 uchSubClass, u8 uchProtocol,
+					      unsigned nMinEndpoints)
 {
     assert (m_pInterfaceDesc != 0);
     assert (m_pConfigParser != 0);
     assert (m_pDevice != 0);
 
-    do
-    {
-        if (   m_pInterfaceDesc->bInterfaceClass    == uchClass
-            && m_pInterfaceDesc->bInterfaceSubClass == uchSubClass
-            && m_pInterfaceDesc->bInterfaceProtocol == uchProtocol)
-        {
-            return TRUE;
-        }
+	do
+	{
+		if (   m_pInterfaceDesc->bInterfaceClass    == uchClass
+		    && m_pInterfaceDesc->bInterfaceSubClass == uchSubClass
+		    && m_pInterfaceDesc->bInterfaceProtocol == uchProtocol
+		    && m_pInterfaceDesc->bNumEndpoints      >= nMinEndpoints)
+		{
+			return TRUE;
+		}
 
         // skip to next interface in interface enumeration in class CDevice
         m_pDevice->GetDescriptor (DESCRIPTOR_INTERFACE);
@@ -206,4 +208,10 @@ u8 CUSBFunction::GetInterfaceProtocol (void) const
 {
     assert (m_pInterfaceDesc != 0);
     return m_pInterfaceDesc->bInterfaceProtocol;
+}
+
+const TUSBInterfaceDescriptor *CUSBFunction::GetInterfaceDescriptor (void) const
+{
+	assert (m_pInterfaceDesc != 0);
+	return m_pInterfaceDesc;
 }

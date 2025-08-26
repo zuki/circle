@@ -2,8 +2,8 @@
 /// \file timer.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -75,6 +75,9 @@ public:
     /// \param bLocal  nTimeはタイムゾーンの値か
     /// \return 操作は成功か? bLocal == FALSEで値が非常に小さい場合に失敗する可能性がある
     boolean SetTime (unsigned nTime, boolean bLocal = TRUE);
+	
+    /// \return Current clock ticks of an 1 MHz counter, may wrap
+	static unsigned GetClockTicks (void);
 
     /// \brief クロックティックを取得する
     /// \return 1 MHzカウンタによる現在のクロックティック。ラップする可能性がある
@@ -88,6 +91,12 @@ public:
     /// \brief システム起動後の秒数（継続時間）を取得する
     /// \return システム起動後の秒数（継続時間）
     unsigned GetUptime (void) const;
+
+    /// \brief Get time, past since system boot (continous) with microseconds part
+	/// \param pSeconds Seconds will be stored here
+	/// \param pMicroSeconds Microseconds will be stored here
+	/// \return TRUE if time is valid
+	boolean GetUptime (unsigned *pSeconds, unsigned *pMicroSeconds);
 
     /// \brief システム時間（秒数）を取得する
     /// \return （timeが設定されている場合は）1970-01-01 00:00:00以来の秒数\n

@@ -2,7 +2,7 @@
  * startup64.S
  *
  * Circle - A C++ bare metal environment for Raspberry Pi
- * Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
+ * Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
  *
  * This file contains (sligthly modified) code taken from U-Boot:
  *    armv8_switch_to_el1_m macro
@@ -71,7 +71,7 @@
 
     .endm
 
-    .sect    .init
+	.section .init
 
     .globl    _start
 _start:                         /* 通常、ブート後はarmstub8からEL2で入る */
@@ -106,9 +106,11 @@ _start_secondary:               /* 通常、ブート後はarmstub8からEL2で�
     mrs    x2, mpidr_el1        /* CPU IDを取得する */
     and    x2, x2, #CORES-1
 
-    mrs    x0, CurrentEL        /* すでにEl1tモードであるかチェック */
-    cmp    x0, #4               /*     El1tモードなら1fへ飛ぶ */
-    beq    1f
+	mrs	x2, mpidr_el1		/* read affinity */
+#if RASPPI >= 5
+	lsr	x2, x2, #8		/* CPU ID is in Aff1 in Cortex-A76 */
+#endif
+	and	x2, x2, #CORES-1	/* get CPU ID */
 
     mov    x1, #EXCEPTION_STACK_SIZE    /* 例外スタックのオフセットを計算 */
     mul    x1, x1, x2

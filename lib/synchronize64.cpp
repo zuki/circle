@@ -2,8 +2,8 @@
 // synchronize64.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2023  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,8 +25,8 @@
 
 unsigned CurrentExecutionLevel (void)
 {
-    u32 nFlags;
-    asm volatile ("mrs %0, daif" : "=r" (nFlags));
+	u64 nFlags;
+	asm volatile ("mrs %0, daif" : "=r" (nFlags));
 
     if (nFlags & 0x40)
     {
@@ -45,26 +45,22 @@ unsigned CurrentExecutionLevel (void)
 // マルチコアをサポートする場合はクリティカルレベルの入れ子を保存する配列をコア毎に持つ
 
 static volatile unsigned s_nCriticalLevel[CORES] = {0};
-static volatile u32 s_nFlags[CORES][MAX_CRITICAL_LEVEL];
+static volatile u64 s_nFlags[CORES][MAX_CRITICAL_LEVEL];
 
 // 対象レベルがタスクレベルでない場合はクリティカルレベルを入れ子にできる
 void EnterCritical (unsigned nTargetLevel)
 {
     assert (nTargetLevel == IRQ_LEVEL || nTargetLevel == FIQ_LEVEL);
 
-    // 1. コアIDを取得
-    u64 nMPIDR;
-    asm volatile ("mrs %0, mpidr_el1" : "=r" (nMPIDR));
-    unsigned nCore = nMPIDR & (CORES-1);
-    // 2. DAIF取得
-    u32 nFlags;
-    // bit[9:6] = DAIF
-    asm volatile ("mrs %0, daif" : "=r" (nFlags));
+	u64 nMPIDR;
+	asm volatile ("mrs %0, mpidr_el1" : "=r" (nMPIDR));
+#if RASPPI >= 5
+	nMPIDR >>= 8;
+#endif
+	unsigned nCore = nMPIDR & (CORES-1);
 
-    // すでにFIQレベルにある場合、ここではIRQ_LEVELには戻らない
-    assert (nTargetLevel == FIQ_LEVEL || !(nFlags & 0x40));     // !0x40 = Fがマスクされていない
-    // 3. IRQとFIQを無効にする
-    asm volatile ("msr DAIFSet, #3");
+	u64 nFlags;
+	asm volatile ("mrs %0, daif" : "=r" (nFlags));
 
     assert (s_nCriticalLevel[nCore] < MAX_CRITICAL_LEVEL);
     // 4. IRQとFIQを無効にする前の状態を保存する
@@ -81,32 +77,35 @@ void EnterCritical (unsigned nTargetLevel)
 
 void LeaveCritical (void)
 {
-    // 1. コアIDを取得
-    u64 nMPIDR;
-    asm volatile ("mrs %0, mpidr_el1" : "=r" (nMPIDR));
-    unsigned nCore = nMPIDR & (CORES-1);
-    // 2. データメモリバリア
-    DataMemBarrier ();
-    // 3. FIQを無効に
-    DisableFIQs ();
-    // 4. IRQとFIQを無効にする前の状態を復元する
-    assert (s_nCriticalLevel[nCore] > 0);
-    u32 nFlags = s_nFlags[nCore][--s_nCriticalLevel[nCore]];
-    asm volatile ("msr daif, %0" :: "r" (nFlags));
+	u64 nMPIDR;
+	asm volatile ("mrs %0, mpidr_el1" : "=r" (nMPIDR));
+#if RASPPI >= 5
+	nMPIDR >>= 8;
+#endif
+	unsigned nCore = nMPIDR & (CORES-1);
+
+	DataMemBarrier ();
+
+	DisableFIQs ();
+
+	assert (s_nCriticalLevel[nCore] > 0);
+	u64 nFlags = s_nFlags[nCore][--s_nCriticalLevel[nCore]];
+
+	asm volatile ("msr daif, %0" :: "r" (nFlags));
 }
 
 #else
 // シングルコアの場合はクリティカルレベルの入れ子を保存する配列は1つだけ
 
 static volatile unsigned s_nCriticalLevel = 0;
-static volatile u32 s_nFlags[MAX_CRITICAL_LEVEL];
+static volatile u64 s_nFlags[MAX_CRITICAL_LEVEL];
 
 void EnterCritical (unsigned nTargetLevel)
 {
     assert (nTargetLevel == IRQ_LEVEL || nTargetLevel == FIQ_LEVEL);
 
-    u32 nFlags;
-    asm volatile ("mrs %0, daif" : "=r" (nFlags));
+	u64 nFlags;
+	asm volatile ("mrs %0, daif" : "=r" (nFlags));
 
     // if we are already on FIQ_LEVEL, we must not go back to IRQ_LEVEL here
     assert (nTargetLevel == FIQ_LEVEL || !(nFlags & 0x40));
@@ -130,8 +129,8 @@ void LeaveCritical (void)
 
     DisableFIQs ();
 
-    assert (s_nCriticalLevel > 0);
-    u32 nFlags = s_nFlags[--s_nCriticalLevel];
+	assert (s_nCriticalLevel > 0);
+	u64 nFlags = s_nFlags[--s_nCriticalLevel];
 
     asm volatile ("msr daif, %0" :: "r" (nFlags));
 }
@@ -144,9 +143,9 @@ void LeaveCritical (void)
 // 注: 以下の関数はすべての変数をCPUレジスタに保持しなければならない。
 //     現在のところ、これは最大限の最適化でも保証される (see circle/synchronize64.h).
 //
-//     以下の数値は、CTR_EL0、CSSELR_EL1、CCSIDR_EL1、CLIDR_EL1を使って（動的に）
-//     決定できる。BCM2837/BCM2711のCortex-A53/A72実装を使用する限り、これらの
-//     静的な値は機能する:
+//	 The following numbers can be determined (dynamically) using CTR_EL0, CSSELR_EL1, CCSIDR_EL1
+//	 and CLIDR_EL1. As long we use the Cortex-A53/A72/A76 implementation in the BCM2837/2711/2712
+//	 these static values will work:
 //
 
 #if RASPPI == 3
@@ -165,7 +164,7 @@ void LeaveCritical (void)
 #define L2_CACHE_LINE_LENGTH        64
     #define L2_SETWAY_SET_SHIFT        6    // Log2(L2_CACHE_LINE_LENGTH)
 
-#else
+#elif RASPPI == 4
 
 #define SETWAY_LEVEL_SHIFT        1
 
@@ -180,6 +179,28 @@ void LeaveCritical (void)
     #define L2_SETWAY_WAY_SHIFT        28    // 32-Log2(L2_CACHE_WAYS)
 #define L2_CACHE_LINE_LENGTH        64
     #define L2_SETWAY_SET_SHIFT        6    // Log2(L2_CACHE_LINE_LENGTH)
+
+#else
+
+#define SETWAY_LEVEL_SHIFT		1
+
+#define L1_DATA_CACHE_SETS		256
+#define L1_DATA_CACHE_WAYS		4
+	#define L1_SETWAY_WAY_SHIFT		30	// 32-Log2(L1_DATA_CACHE_WAYS)
+#define L1_DATA_CACHE_LINE_LENGTH	64
+	#define L1_SETWAY_SET_SHIFT		6	// Log2(L1_DATA_CACHE_LINE_LENGTH)
+
+#define L2_CACHE_SETS			1024
+#define L2_CACHE_WAYS			8
+	#define L2_SETWAY_WAY_SHIFT		29	// 32-Log2(L2_CACHE_WAYS)
+#define L2_CACHE_LINE_LENGTH		64
+	#define L2_SETWAY_SET_SHIFT		6	// Log2(L2_CACHE_LINE_LENGTH)
+
+#define L3_CACHE_SETS			2048
+#define L3_CACHE_WAYS			16
+	#define L3_SETWAY_WAY_SHIFT		28	// 32-Log2(L2_CACHE_WAYS)
+#define L3_CACHE_LINE_LENGTH		64
+	#define L3_SETWAY_SET_SHIFT		6	// Log2(L2_CACHE_LINE_LENGTH)
 
 #endif
 
@@ -211,7 +232,22 @@ void InvalidateDataCache (void)
         }
     }
 
-    DataSyncBarrier ();
+#ifdef L3_CACHE_SETS
+	// invalidate L3 unified cache
+	for (unsigned nSet = 0; nSet < L3_CACHE_SETS; nSet++)
+	{
+		for (unsigned nWay = 0; nWay < L3_CACHE_WAYS; nWay++)
+		{
+			u64 nSetWayLevel =   nWay << L3_SETWAY_WAY_SHIFT
+					   | nSet << L3_SETWAY_SET_SHIFT
+					   | 1 << SETWAY_LEVEL_SHIFT;
+
+			asm volatile ("dc isw, %0" : : "r" (nSetWayLevel) : "memory");
+		}
+	}
+#endif
+
+	DataSyncBarrier ();
 }
 
 void InvalidateDataCacheL1Only (void)
@@ -260,7 +296,22 @@ void CleanDataCache (void)
         }
     }
 
-    DataSyncBarrier ();
+#ifdef L3_CACHE_SETS
+	// clean L3 unified cache
+	for (unsigned nSet = 0; nSet < L3_CACHE_SETS; nSet++)
+	{
+		for (unsigned nWay = 0; nWay < L3_CACHE_WAYS; nWay++)
+		{
+			u64 nSetWayLevel =   nWay << L3_SETWAY_WAY_SHIFT
+					   | nSet << L3_SETWAY_SET_SHIFT
+					   | 1 << SETWAY_LEVEL_SHIFT;
+
+			asm volatile ("dc csw, %0" : : "r" (nSetWayLevel) : "memory");
+		}
+	}
+#endif
+
+	DataSyncBarrier ();
 }
 
 void InvalidateDataCacheRange (u64 nAddress, u64 nLength)

@@ -2,7 +2,7 @@
 // cputhrottle.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2016-2022  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2016-2023  R. Stange <rsta2@o2online.de>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,19 +31,20 @@ static const char FromCPUThrottle[] = "throttle";
 CCPUThrottle *CCPUThrottle::s_pThis = 0;
 
 CCPUThrottle::CCPUThrottle (TCPUSpeed InitialSpeed)
-:    m_bDynamic (FALSE),
-    m_nMinClockRate (600),
-    m_nMaxClockRate (600),
-    m_nMaxTemperature (85000),
-    m_nEnforcedTemperature (60000),
-    m_SpeedSet (CPUSpeedUnknown),
-    m_nTicksLastSet (0),
-    m_nTicksLastUpdate (0),
-    m_ThrottledStateMask (SystemStateNothingOccurred),
-    m_LastThrottledState (SystemStateNothingOccurred),
-    m_pThrottledHandler (0),
-    m_pThrottledParam (0),
-    m_bFanConnected (FALSE)
+:	m_bDynamic (FALSE),
+	m_nMinClockRate (600),
+	m_nMaxClockRate (600),
+	m_nMaxTemperature (85000),
+	m_nEnforcedTemperature (60000),
+	m_SpeedSet (CPUSpeedUnknown),
+	m_nTicksLastSet (0),
+	m_nTicksLastUpdate (0),
+	m_ThrottledStateMask (SystemStateNothingOccurred),
+	m_LastThrottledState (SystemStateNothingOccurred),
+	m_pThrottledHandler (0),
+	m_pThrottledParam (0),
+	m_bFanConnected (FALSE),
+	m_bFanActiveLow (FALSE)
 {
     assert (s_pThis == 0);
     s_pThis = this;
@@ -54,10 +55,18 @@ CCPUThrottle::CCPUThrottle (TCPUSpeed InitialSpeed)
     {
         m_bFanConnected = TRUE;
 
-        m_FanPin.AssignPin (nFanPin);
-        m_FanPin.SetMode (GPIOModeOutput, FALSE);
-        m_FanPin.Write (HIGH);
-    }
+		m_FanPin.AssignPin (nFanPin);
+		m_FanPin.SetMode (GPIOModeOutput, FALSE);
+
+#if RASPPI >= 5
+		if (nFanPin == 45)
+		{
+			m_bFanActiveLow = TRUE;
+		}
+#endif
+
+		m_FanPin.Write (m_bFanActiveLow ? LOW : HIGH);
+	}
 
     if (InitialSpeed == CPUSpeedUnknown)
     {
@@ -181,14 +190,14 @@ boolean CCPUThrottle::SetOnTemperature (void)
             m_nEnforcedTemperature = m_nMaxTemperature;
         }
 
-        if (nTemperature > m_nEnforcedTemperature)
-        {
-            m_FanPin.Write (HIGH);
-        }
-        else if (nTemperature < (m_nEnforcedTemperature-5000))    // 5 degrees hysteresis
-        {
-            m_FanPin.Write (LOW);
-        }
+		if (nTemperature > m_nEnforcedTemperature)
+		{
+			m_FanPin.Write (m_bFanActiveLow ? LOW : HIGH);
+		}
+		else if (nTemperature < (m_nEnforcedTemperature-5000))	// 5 degrees hysteresis
+		{
+			m_FanPin.Write (m_bFanActiveLow ? HIGH : LOW);
+		}
 
         return TRUE;
     }

@@ -2,8 +2,8 @@
 // bcm2835.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2022  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -27,11 +27,18 @@
 #if RASPPI == 1
 #define ARM_IO_BASE         0x20000000
 #elif RASPPI <= 3
-#define ARM_IO_BASE         0x3F000000
+#define ARM_IO_BASE		0x3F000000
+#elif RASPPI == 4
+#define ARM_IO_BASE		0xFE000000
 #else
-#define ARM_IO_BASE         0xFE000000
+#define ARM_IO_BASE		0x107C000000UL
 #endif
-#define ARM_IO_END          (ARM_IO_BASE + 0xFFFFFF)
+
+#if RASPPI <= 4
+#define ARM_IO_END		(ARM_IO_BASE + 0xFFFFFF)
+#else
+#define ARM_IO_END		(ARM_IO_BASE + 0x3FFFFFF)
+#endif
 
 #define GPU_IO_BASE         0x7E000000
 
@@ -113,7 +120,11 @@
 //
 // DMAコントローラ
 //
-#define ARM_DMA_BASE            (ARM_IO_BASE + 0x7000)
+#if RASPPI <= 4
+#define ARM_DMA_BASE		(ARM_IO_BASE + 0x7000)
+#else
+#define ARM_DMA_BASE		0x1000010000UL
+#endif
 
 //
 // 割り込みコントローラ
@@ -149,7 +160,11 @@
 //
 // メールボックス
 //
-#define MAILBOX_BASE            (ARM_IO_BASE + 0xB880)
+#if RASPPI <= 4
+#define MAILBOX_BASE		(ARM_IO_BASE + 0xB880)
+#else
+#define MAILBOX_BASE		(ARM_IO_BASE + 0x13880)
+#endif
 
 #define MAILBOX0_READ           (MAILBOX_BASE + 0x00)
 #define MAILBOX0_STATUS         (MAILBOX_BASE + 0x18)
@@ -176,8 +191,8 @@
 #define ARM_PWM_RNG2            (ARM_PWM_BASE + 0x20)
 #define ARM_PWM_DAT2            (ARM_PWM_BASE + 0x24)
 
-#if RASPPI >= 4
-#define ARM_PWM1_BASE           (ARM_IO_BASE + 0x20C800)
+#if RASPPI == 4
+#define ARM_PWM1_BASE		(ARM_IO_BASE + 0x20C800)
 
 #define ARM_PWM1_CTL            (ARM_PWM1_BASE + 0x00)
 #define ARM_PWM1_STA            (ARM_PWM1_BASE + 0x04)
@@ -194,8 +209,13 @@
 //
 #define ARM_CM_BASE             (ARM_IO_BASE + 0x101000)
 
-#define ARM_CM_GP0CTL           (ARM_CM_BASE + 0x70)
-#define ARM_CM_GP0DIV           (ARM_CM_BASE + 0x74)
+#define ARM_CM_CAM0CTL		(ARM_CM_BASE + 0x40)
+#define ARM_CM_CAM0DIV		(ARM_CM_BASE + 0x44)
+#define ARM_CM_CAM1CTL		(ARM_CM_BASE + 0x48)
+#define ARM_CM_CAM1DIV		(ARM_CM_BASE + 0x4C)
+
+#define ARM_CM_GP0CTL		(ARM_CM_BASE + 0x70)
+#define ARM_CM_GP0DIV		(ARM_CM_BASE + 0x74)
 
 #define ARM_CM_SMICTL           (ARM_CM_BASE + 0xB0)
 #define ARM_CM_SMIDIV           (ARM_CM_BASE + 0xB4)
@@ -207,9 +227,10 @@
 //
 #define ARM_USB_BASE            (ARM_IO_BASE + 0x980000)
 
-#define ARM_USB_CORE_BASE       ARM_USB_BASE
-#define ARM_USB_HOST_BASE       (ARM_USB_BASE + 0x400)
-#define ARM_USB_POWER           (ARM_USB_BASE + 0xE00)
+#define ARM_USB_CORE_BASE	ARM_USB_BASE
+#define ARM_USB_HOST_BASE	(ARM_USB_BASE + 0x400)
+#define ARM_USB_DEV_BASE	(ARM_USB_BASE + 0x800)
+#define ARM_USB_POWER		(ARM_USB_BASE + 0xE00)
 
 //
 // ホストポート (MPHI)
@@ -225,7 +246,11 @@
 //
 // 外部大容量メディ（EMM）コントローラ（SDカード）
 //
-#define ARM_EMMC_BASE           (ARM_IO_BASE + 0x300000)
+#if RASPPI <= 4
+#define ARM_EMMC_BASE		(ARM_IO_BASE + 0x300000)
+#else
+#define ARM_EMMC_BASE		0x1000FFF000UL
+#endif
 
 //
 // SDHOSTコントローラ（SDカード）
@@ -235,7 +260,11 @@
 //
 // 電源管理
 //
-#define ARM_PM_BASE             (ARM_IO_BASE + 0x100000)
+#if RASPPI <= 4
+#define ARM_PM_BASE		(ARM_IO_BASE + 0x100000)
+#else
+#define ARM_PM_BASE		(ARM_IO_BASE + 0x1200000)
+#endif
 
 #define ARM_PM_RSTC             (ARM_PM_BASE + 0x1C)
 #define ARM_PM_RSTS             (ARM_PM_BASE + 0x20)
@@ -343,16 +372,31 @@
 #define ARM_VCHIQ_END           (ARM_VCHIQ_BASE + 0x0F)
 
 //
-// VC4/5 HDMI
+// VC4/5/6 HDMI
 //
 #if RASPPI <= 3
-#define ARM_HDMI_BASE           (ARM_IO_BASE + 0x902000)
-#define ARM_HD_BASE             (ARM_IO_BASE + 0x808000)
+#define ARM_HDMI_BASE		(ARM_IO_BASE + 0x902000)
+#define ARM_HD_BASE		(ARM_IO_BASE + 0x808000)
+#elif RASPPI == 4
+#define ARM_HDMI_BASE		(ARM_IO_BASE + 0xF00700)
+#define ARM_HD_BASE		(ARM_IO_BASE + 0xF20000)
+#define ARM_PHY_BASE		(ARM_IO_BASE + 0xF00F00)
+#define ARM_RAM_BASE		(ARM_IO_BASE + 0xF01B00)
 #else
-#define ARM_HDMI_BASE           (ARM_IO_BASE + 0xF00700)
-#define ARM_HD_BASE             (ARM_IO_BASE + 0xF20000)
-#define ARM_PHY_BASE            (ARM_IO_BASE + 0xF00F00)
-#define ARM_RAM_BASE            (ARM_IO_BASE + 0xF01B00)
+#define ARM_HDMI_BASE		(ARM_IO_BASE + 0x701400)
+#define ARM_HD_BASE		(ARM_IO_BASE + 0x720000)
+#define ARM_RAM_BASE		(ARM_IO_BASE + 0x703800)
 #endif
+
+//
+// CSI
+//
+#define ARM_CSI0_BASE		(ARM_IO_BASE + 0x800000)
+#define ARM_CSI0_END		(ARM_CSI0_BASE + 0x7FF)
+#define ARM_CSI0_CLKGATE	(ARM_IO_BASE + 0x802000)	// 4 bytes
+
+#define ARM_CSI1_BASE		(ARM_IO_BASE + 0x801000)
+#define ARM_CSI1_END		(ARM_CSI1_BASE + 0x7FF)
+#define ARM_CSI1_CLKGATE	(ARM_IO_BASE + 0x802004)	// 4 bytes
 
 #endif

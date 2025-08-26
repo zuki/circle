@@ -2,8 +2,13 @@
 // multicore.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
+<<<<<<< HEAD
 // Copyright (C) 2015-2019  R. Stange <rsta2@o2online.de>
 //
+=======
+// Copyright (C) 2015-2023  R. Stange <rsta2@o2online.de>
+// 
+>>>>>>> master
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,6 +30,7 @@
 #ifdef ARM_ALLOW_MULTI_CORE
 
 #include <circle/memory.h>
+#include <circle/synchronize.h>
 #include <circle/types.h>
 
 // inter-processor interrupt (IPI): プロセッサ間割り込み
@@ -71,6 +77,9 @@ public:
         u64 nMPIDR;
         asm volatile ("mrs %0, mpidr_el1" : "=r" (nMPIDR));
 #endif
+#if RASPPI >= 5
+		nMPIDR >>= 8;
+#endif
 
         return nMPIDR & (CORES-1);
     }
@@ -80,7 +89,11 @@ public:
 private:
     CMemorySystem *m_pMemorySystem;
 
-    static CMultiCoreSupport *s_pThis;
+#if RASPPI >= 5
+	volatile DMA_BUFFER (boolean, m_bCoreStarted, CORES);
+#endif
+
+	static CMultiCoreSupport *s_pThis;
 };
 
 #endif  // ifdef ARM_ALLOW_MULTI_CORE

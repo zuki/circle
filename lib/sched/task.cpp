@@ -161,9 +161,9 @@ void CTask::InitializeRegs (void)
 
     m_Regs.x30 = (u64) &TaskEntry;
 
-    u32 nFPCR;
-    asm volatile ("mrs %0, fpcr" : "=r" (nFPCR));
-    m_Regs.fpcr = nFPCR;
+	u64 nFPCR;
+	asm volatile ("mrs %0, fpcr" : "=r" (nFPCR));
+	m_Regs.fpcr = nFPCR;
 }
 
 #endif

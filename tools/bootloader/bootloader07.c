@@ -8,11 +8,10 @@
 // 8  TX out    (GP14)
 // 10 RX in     (GP15)
 
-// in vectors64.s
-extern void PUT32 ( unsigned int, unsigned int );
-extern void PUT16 ( unsigned int, unsigned int );
-extern void PUT8 ( unsigned int, unsigned int );
-extern unsigned int GET32 ( unsigned int );
+extern void PUT32 ( unsigned long, unsigned int );
+extern void PUT16 ( unsigned long, unsigned int );
+extern void PUT8 ( unsigned long, unsigned int );
+extern unsigned int GET32 ( unsigned long );
 extern unsigned int GETPC ( void );
 extern void BRANCHTO ( unsigned int );
 extern void dummy ( unsigned int );

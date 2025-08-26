@@ -54,6 +54,8 @@ public:
     boolean GetUSBBoost (void) const;
     //! Getter: 無視するUSBインタフェース
     const char *GetUSBIgnore (void) const;          // defaults to empty string
+    //! Getter: USBサウンドチャンネル
+    const unsigned *GetUSBSoundChannels (void) const; // returns 2 values
     //! Getter: サウンドデバイス
     const char *GetSoundDevice (void) const;        // defaults to empty string
     //! Getter: サウンドオプション
@@ -66,6 +68,9 @@ public:
     unsigned GetGPIOFanPin (void) const;            // returns 0, if not defined
     //! Getter: タッチスクリーン
     const unsigned *GetTouchScreen (void) const;    // returns 4 values (nullptr if unset)
+	// for application-defined options:
+	const char *GetAppOptionString (const char *pOption, const char *pDefault = nullptr) const;
+	unsigned GetAppOptionDecimal (const char *pOption, unsigned nDefault = -1) const;
     //! Getter: オブジェクト自身
     static CKernelOptions *Get (void);
 
@@ -114,6 +119,8 @@ private:
     boolean m_bUSBBoost;
     /// @brief 無視するUSBインタフェース
     char m_USBIgnore[20];
+    /// @brief USBサウンドチャンネル
+    unsigned m_USBSoundChannels[2];
     /// @brief サウンドデバイス
     char m_SoundDevice[20];
     /// @brief サウンドオプション
@@ -128,6 +135,14 @@ private:
     boolean m_bTouchScreenValid;
     /// @brief タッチスクリーン
     unsigned m_TouchScreen[4];
+	struct TAppOption
+	{
+		TAppOption	*pNext;
+		char		*pName;
+		char		*pValue;
+	};
+    /// @brief アプリケーションオプションリスト
+    TAppOption *m_pAppOptionList;
     /// @brief このオブジェクト
     static CKernelOptions *s_pThis;
 };

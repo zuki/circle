@@ -324,7 +324,7 @@ Circleで利用可能なクラスのリストは[doc/classes.txt](doc/classes.md
 
 ## Trademarks
 
-Raspberry Pi is a trademark of Raspberry Pi Trading.
+Raspberry Pi is a trademark of Raspberry Pi Ltd.
 
 Linux is a trademark of Linus Torvalds.
 

@@ -2,8 +2,8 @@
 // usbhostcontroller.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2023  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@
 #ifndef _circle_usb_usbhostcontroller_h
 #define _circle_usb_usbhostcontroller_h
 
+#include <circle/usb/usbcontroller.h>
 #include <circle/usb/usb.h>
 #include <circle/usb/usbendpoint.h>
 #include <circle/usb/usbrequest.h>
@@ -39,7 +40,7 @@ class CUSBDevice;
  * @class CUSBHostController
  * @brief USBホストコントローラを表すクラス
  */
-class CUSBHostController
+class CUSBHostController : public CUSBController	/// Base class of USB host controllers
 {
 public:
     CUSBHostController (boolean bPlugAndPlay);
@@ -109,7 +110,7 @@ public:
     virtual void CancelDeviceTransactions (CUSBDevice *pUSBDevice) {}
 
 public:
-    static boolean IsPlugAndPlay (void);
+    boolean IsPlugAndPlay (void) const;
 
     /**
      * デバイスツリーが更新されたか
@@ -118,14 +119,16 @@ public:
      * @return プラグアンドプレイが有効な場合、デバイスツリーが更新された場合
      *         TRUEを返す（最初に呼び出されたときは常にTRUEを返す）
      */
-    boolean UpdatePlugAndPlay (void);
+    boolean UpdatePlugAndPlay (void) override;
 
-    static boolean IsActive (void)
-    {
-        return s_pThis != 0 ? TRUE : FALSE;
-    }
+#if RASPPI <= 4
+	static boolean IsActive (void)
+	{
+		return s_pThis != 0 ? TRUE : FALSE;
+	}
 
-    static CUSBHostController *Get (void);
+	static CUSBHostController *Get (void);
+#endif
 
 protected:
     void PortStatusChanged (CUSBHCIRootPort *pRootPort);
@@ -136,13 +139,15 @@ private:
     friend class CUSBStandardHub;
 
 private:
-    static boolean s_bPlugAndPlay;          //< プラグアンドプレイは有効か
+    boolean s_bPlugAndPlay;                 //< プラグアンドプレイは有効か
     boolean m_bFirstUpdateCall;             //< 最初の更新呼び出しか
 
     CPtrList  m_HubList;                    //< ハブリスト
     CSpinLock m_SpinLock;                   //< スピンロック
 
-    static CUSBHostController *s_pThis;     //< USBホストコントローラインスタンス
+#if RASPPI <= 4
+	static CUSBHostController *s_pThis;
+#endif
 };
 
 #endif

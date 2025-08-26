@@ -5,8 +5,8 @@
 // tcprejector.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2018  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -47,10 +47,12 @@ public:
 	int Send (const void *pData, unsigned nLength, int nFlags)	{ return -1; }
 	int Receive (void *pBuffer, int nFlags)				{ return -1; }
 	int SendTo (const void *pData, unsigned nLength, int nFlags,
-		    CIPAddress	&rForeignIP, u16 nForeignPort)		{ return -1; }
+		    const CIPAddress &rForeignIP, u16 nForeignPort)	{ return -1; }
 	int ReceiveFrom (void *pBuffer, int nFlags,
 			 CIPAddress *pForeignIP, u16 *pForeignPort)	{ return -1; }
 	int SetOptionBroadcast (boolean bAllowed)			{ return -1; }
+	int SetOptionAddMembership (const CIPAddress &rGroupAddress)	{ return -1; }
+	int SetOptionDropMembership (const CIPAddress &rGroupAddress)	{ return -1; }
 	boolean IsConnected (void) const				{ return FALSE; }
 	boolean IsTerminated (void) const				{ return FALSE; }
 	void Process (void)						{ }

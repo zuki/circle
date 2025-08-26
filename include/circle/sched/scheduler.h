@@ -2,8 +2,8 @@
 /// \file scheduler.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2021  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,15 @@
 #include <circle/spinlock.h>
 #include <circle/device.h>
 #include <circle/sysconfig.h>
+#include <circle/macros.h>
 #include <circle/types.h>
+
+enum TTaskFlags		///< for EnumerateTasks()
+{
+	TaskFlagNone		= 0,
+	TaskFlagRunning		= BIT (0),
+	TaskFlagSuspended	= BIT (1)
+};
 
 typedef void TSchedulerTaskHandler (CTask *pTask);
 
@@ -74,6 +82,17 @@ public:
     ///       サスペンド状態で作成されたタスクを開始する
     void ResumeNewTasks (void);
 
+    /// \brief Enumerate all tasks
+	/// \param pCallback A callback to be invoked for each task
+	/// \param pParam A user define pointer that will back passed to the callback
+	/// \return FALSE if the enumeration was cancelled by the callback returning FALSE
+	boolean EnumerateTasks (
+		boolean (*pCallback) (CTask *pTask, const char *pName,
+				      TTaskState State, TTaskFlags Flags,
+				      void *pParam),
+		void *pParam
+	);
+    
     /// \brief タスクリストを作成する
     /// \param pTarget 出力に使用するデバイス
     void ListTasks (CDevice *pTarget);

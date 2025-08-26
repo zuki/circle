@@ -2,8 +2,8 @@
 // socket.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2018  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -103,7 +103,7 @@ int CSocket::Bind (u16 nOwnPort)
     return 0;
 }
 
-int CSocket::Connect (CIPAddress &rForeignIP, u16 nForeignPort)
+int CSocket::Connect (const CIPAddress &rForeignIP, u16 nForeignPort)
 {
     if (nForeignPort == 0)
     {
@@ -272,7 +272,7 @@ int CSocket::Receive (void *pBuffer, unsigned nLength, int nFlags)
 }
 
 int CSocket::SendTo (const void *pBuffer, unsigned nLength, int nFlags,
-             CIPAddress &rForeignIP, u16 nForeignPort)
+		     const CIPAddress &rForeignIP, u16 nForeignPort)
 {
     if (m_hConnection < 0)
     {
@@ -347,6 +347,38 @@ int CSocket::SetOptionBroadcast (boolean bAllowed)
 
     assert (m_pTransportLayer != 0);
     return m_pTransportLayer->SetOptionBroadcast (bAllowed, m_hConnection);
+}
+
+int CSocket::SetOptionAddMembership (const CIPAddress &rGroupAddress)
+{
+	if (m_hConnection < 0)
+	{
+		return -1;
+	}
+
+	if (m_nProtocol != IPPROTO_UDP)
+	{
+		return -1;
+	}
+
+	assert (m_pTransportLayer != 0);
+	return m_pTransportLayer->SetOptionAddMembership (rGroupAddress, m_hConnection);
+}
+
+int CSocket::SetOptionDropMembership (const CIPAddress &rGroupAddress)
+{
+	if (m_hConnection < 0)
+	{
+		return -1;
+	}
+
+	if (m_nProtocol != IPPROTO_UDP)
+	{
+		return -1;
+	}
+
+	assert (m_pTransportLayer != 0);
+	return m_pTransportLayer->SetOptionDropMembership (rGroupAddress, m_hConnection);
 }
 
 const u8 *CSocket::GetForeignIP (void) const

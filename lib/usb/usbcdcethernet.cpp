@@ -2,8 +2,8 @@
 // usbcdcethernet.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2017-2019  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2017-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,6 +25,11 @@
 #include <circle/macros.h>
 #include <assert.h>
 
+#define SET_ETHERNET_PACKET_FILTER		0x43
+	#define	PACKET_TYPE_ALL_MULTICAST	BIT (1)
+	#define	PACKET_TYPE_DIRECTED		BIT (2)
+	#define	PACKET_TYPE_BROADCAST		BIT (3)
+
 struct TEthernetNetworkingFunctionalDescriptor
 {
     u8      bLength;
@@ -42,9 +47,12 @@ PACKED;
 static const char FromCDCEthernet[] = "ucdceth";
 
 CUSBCDCEthernetDevice::CUSBCDCEthernetDevice (CUSBFunction *pFunction)
-:   CUSBFunction (pFunction),
-    m_pEndpointBulkIn (0),
-    m_pEndpointBulkOut (0)
+:	CUSBFunction (pFunction),
+	m_uchControlInterface (GetInterfaceNumber ()),
+	m_iMACAddress (GetMACAddressStringIndex ()),
+	m_bInterfaceOK (SelectInterfaceByClass (10, 0, 0, 2)),
+	m_pEndpointBulkIn (0),
+	m_pEndpointBulkOut (0)
 {
 }
 
@@ -59,48 +67,18 @@ CUSBCDCEthernetDevice::~CUSBCDCEthernetDevice (void)
 
 boolean CUSBCDCEthernetDevice::Configure (void)
 {
-    // Ethernetネットワーキング機能ディスクリプタを見つける
-    const TEthernetNetworkingFunctionalDescriptor *pEthernetDesc;
-    while ((pEthernetDesc = (TEthernetNetworkingFunctionalDescriptor *)
-                GetDescriptor (DESCRIPTOR_CS_INTERFACE)) != 0)
-    {
-        if (pEthernetDesc->bDescriptorSubtype == ETHERNET_NETWORKING_FUNCTIONAL_DESCRIPTOR)
-        {
-            break;
-        }
-    }
-
-    if (pEthernetDesc == 0)
-    {
-        ConfigurationError (FromCDCEthernet);
+	if (!m_bInterfaceOK)
+	{
+		ConfigurationError (FromCDCEthernet);
 
         return FALSE;
     }
 
-    // データクラスインタフェースディスクリプタを見つける
-    const TUSBInterfaceDescriptor *pInterfaceDesc;
-    while ((pInterfaceDesc = (TUSBInterfaceDescriptor *) GetDescriptor (DESCRIPTOR_INTERFACE)) != 0)
-    {
-        if (   pInterfaceDesc->bInterfaceClass    == 0x0A
-            && pInterfaceDesc->bInterfaceSubClass == 0x00
-            && pInterfaceDesc->bInterfaceProtocol == 0x00
-            && pInterfaceDesc->bNumEndpoints      >= 2)
-        {
-            break;
-        }
-    }
-
-    if (pInterfaceDesc == 0)
-    {
-        ConfigurationError (FromCDCEthernet);
-
-        return FALSE;
-    }
-
-    // MACアドレスを初期化
-    if (!InitMACAddress (pEthernetDesc->iMACAddress))
-    {
-        CLogger::Get ()->Write (FromCDCEthernet, LogError, "Cannot get MAC address");
+	// init MAC address
+	if (   !m_iMACAddress
+	    || !InitMACAddress (m_iMACAddress))
+	{
+		CLogger::Get ()->Write (FromCDCEthernet, LogError, "Cannot get MAC address");
 
         return FALSE;
     }
@@ -196,6 +174,40 @@ boolean CUSBCDCEthernetDevice::ReceiveFrame (void *pBuffer, unsigned *pResultLen
     *pResultLength = nResultLength;
 
     return TRUE;
+}
+
+boolean CUSBCDCEthernetDevice::SetMulticastFilter (const u8 Groups[][MAC_ADDRESS_SIZE])
+{
+	u16 usFilter = PACKET_TYPE_DIRECTED | PACKET_TYPE_BROADCAST;
+
+	// Enable all multicasts, if at least one host group is requested.
+	if (Groups[0][0])
+	{
+		usFilter |= PACKET_TYPE_ALL_MULTICAST;
+	}
+
+	return GetHost ()->ControlMessage (GetEndpoint0 (),
+					   REQUEST_OUT | REQUEST_CLASS | REQUEST_TO_INTERFACE,
+					   SET_ETHERNET_PACKET_FILTER,
+					   usFilter,
+					   m_uchControlInterface, 0, 0) >= 0;
+}
+
+u8 CUSBCDCEthernetDevice::GetMACAddressStringIndex (void)
+{
+	// find Ethernet Networking Functional Descriptor
+	const TEthernetNetworkingFunctionalDescriptor *pEthernetDesc;
+	while ((pEthernetDesc = (TEthernetNetworkingFunctionalDescriptor *)
+				GetDescriptor (DESCRIPTOR_CS_INTERFACE)) != 0)
+	{
+		if (pEthernetDesc->bDescriptorSubtype == ETHERNET_NETWORKING_FUNCTIONAL_DESCRIPTOR)
+		{
+			assert (pEthernetDesc->iMACAddress != 0);
+			return pEthernetDesc->iMACAddress;
+		}
+	}
+
+	return 0;
 }
 
 boolean CUSBCDCEthernetDevice::InitMACAddress (u8 iMACAddress)

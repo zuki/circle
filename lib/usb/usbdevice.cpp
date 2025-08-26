@@ -2,8 +2,8 @@
 // usbdevice.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2021  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +30,7 @@
 #include <circle/debug.h>
 #include <assert.h>
 
-#define MAX_CONFIG_DESC_SIZE        512        // best guess
+#define MAX_CONFIG_DESC_SIZE		1024		// best guess
 
 static const char FromDevice[] = "usbdev";
 
@@ -267,12 +267,18 @@ boolean CUSBDevice::Initialize (void)
 
     u8 ucConfigIndex = DESCRIPTOR_INDEX_DEFAULT;
 
-    // QEMUのEthernetデバイスの場合は、特別なサポート
-    if (   m_pDeviceDesc->idVendor  == 0x0525   // NetChip
-        && m_pDeviceDesc->idProduct == 0xA4A2)  // Ethernet/RNDIS Gadget
-    {
-        ucConfigIndex++;
-    }
+#ifndef EXCLUDE_USB_NET
+	// special support for CDC Ethernet devices
+	if (   (   m_pDeviceDesc->idVendor  == 0x0525	// NetChip
+	        && m_pDeviceDesc->idProduct == 0xA4A2)	// Ethernet/RNDIS Gadget (QEMU)
+	    || (   m_pDeviceDesc->idVendor  == 0x0BDA	// Realtek
+	        && m_pDeviceDesc->idProduct == 0x8152)	// RTL8152
+	    || (   m_pDeviceDesc->idVendor  == 0x0BDA	// Realtek
+	        && m_pDeviceDesc->idProduct == 0x8153))	// RTL8153
+	{
+		ucConfigIndex++;
+	}
+#endif
 
     // コンフィグレーションディスクリプタが取得できなかった
     if (m_pHost->GetDescriptor (m_pEndpoint0,
@@ -362,8 +368,14 @@ boolean CUSBDevice::Initialize (void)
             Product.Append (" ");
         }
 
-        Product.Append (USBString.Get ());
-    }
+	// must match enum TUSBSpeed in <circle/usb/usb.h>
+	static const char *Speeds[] = {"LS", "FS", "HS", "SS"};
+	assert (m_Speed < sizeof Speeds / sizeof Speeds[0]);
+
+	CString *pNames = GetNames ();
+	assert (pNames != 0);
+	LogWrite (LogNotice, "Device %s found (%s)", (const char *) *pNames, Speeds[m_Speed]);
+	delete pNames;
 
     if (Product.GetLength () > 0)
     {
@@ -396,16 +408,16 @@ boolean CUSBDevice::Initialize (void)
 
         CUSBFunction *pChild = 0;
 
-        if (nFunction == 0)
-        {
-            // ベンダ名でデバイスクラスを取得
-            pChild = CUSBDeviceFactory::GetDevice (m_pFunction[nFunction], GetName (DeviceNameVendor));
-            if (pChild == 0)
-            {
-                // デバイス名でデバイスクラスを取得
-                pChild = CUSBDeviceFactory::GetDevice (m_pFunction[nFunction], GetName (DeviceNameDevice));
-            }
-        }
+	if (!m_pHost->SetConfiguration (m_pEndpoint0, m_pConfigDesc->bConfigurationValue))
+	{
+		LogWrite (LogError, "Cannot set configuration (%u)",
+			  (unsigned) m_pConfigDesc->bConfigurationValue);
+
+		return FALSE;
+	}
+
+	unsigned nFunction = 0;
+	u8 ucInterfaceNumber = 0;
 
         if (pChild == 0)
         {
@@ -464,7 +476,39 @@ boolean CUSBDevice::Initialize (void)
         return FALSE;
     }
 
-    return TRUE;
+		if (!m_pFunction[nFunction]->Initialize ())
+		{
+			LogWrite (LogDebug, "Cannot initialize function");
+
+			delete m_pFunction[nFunction];
+			m_pFunction[nFunction] = 0;
+
+			continue;
+		}
+
+		if (++nFunction == USBDEV_MAX_FUNCTIONS)
+		{
+			LogWrite (LogWarning, "Too many functions per device");
+
+			break;
+		}
+
+		ucInterfaceNumber++;
+	}
+
+	if (nFunction == 0)
+	{
+		LogWrite (LogWarning, "Device has no supported function");
+
+		if (!m_pHost->SetConfiguration (m_pEndpoint0, 0))
+		{
+			LogWrite (LogWarning, "Cannot reset configuration");
+		}
+
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 boolean CUSBDevice::Configure (void)
@@ -481,30 +525,27 @@ boolean CUSBDevice::Configure (void)
     {
         LogWrite (LogError, "Cannot set configuration (%u)", (unsigned) m_pConfigDesc->bConfigurationValue);
 
-        return FALSE;
-    }
+	boolean bResult = FALSE;
+	
+	for (unsigned nFunction = 0; nFunction < USBDEV_MAX_FUNCTIONS; nFunction++)
+	{
+		if (m_pFunction[nFunction] != 0)
+		{
+			if (!m_pFunction[nFunction]->Configure ())
+			{
+				//LogWrite (LogError, "Cannot configure device");
 
-    boolean bResult = FALSE;
-    // 登録デバイスクラスを構成
-    for (unsigned nFunction = 0; nFunction < USBDEV_MAX_FUNCTIONS; nFunction++)
-    {
-        if (m_pFunction[nFunction] != 0)
-        {
-            if (!m_pFunction[nFunction]->Configure ())
-            {
-                //LogWrite (LogError, "Cannot configure device");
-
-                delete m_pFunction[nFunction];
-                m_pFunction[nFunction] = 0;
-            }
-            else
-            {
-                bResult = TRUE;
-            }
-        }
-    }
-    // 一つでも構成できればTRUE
-    return bResult;
+				delete m_pFunction[nFunction];
+				m_pFunction[nFunction] = 0;
+			}
+			else
+			{
+				bResult = TRUE;
+			}
+		}
+	}
+	
+	return bResult;
 }
 
 boolean CUSBDevice::ReScanDevices (void)
@@ -532,8 +573,8 @@ boolean CUSBDevice::RemoveDevice (void)
         return m_pRootPort->RemoveDevice ();
     }
 
-    assert (m_pHub != 0);
-    return m_pHub->RemoveDevice (m_nHubPortIndex);
+	assert (m_pHub != 0);
+	return m_pHub->RemoveDeviceAt (m_nHubPortIndex);
 }
 
 CString *CUSBDevice::GetName (TDeviceNameSelector Selector) const
@@ -680,6 +721,16 @@ void CUSBDevice::ConfigurationError (const char *pSource) const
 {
     assert (m_pConfigParser != 0);
     m_pConfigParser->Error (pSource);
+}
+
+CUSBFunction *CUSBDevice::GetFunction (unsigned nIndex)
+{
+	if (nIndex >= USBDEV_MAX_FUNCTIONS)
+	{
+		return 0;
+	}
+
+	return m_pFunction[nIndex];
 }
 
 void CUSBDevice::LogWrite (TLogSeverity Severity, const char *pMessage, ...)

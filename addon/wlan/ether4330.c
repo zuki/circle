@@ -229,6 +229,7 @@ enum{
 	CMescan,
 	CMcountry,
 	CMcreate,
+	CMdown,
 };
 
 static Cmdtab cmds[] = {
@@ -252,6 +253,7 @@ static Cmdtab cmds[] = {
 	{CMescan,	"escan", 2},
 	{CMcountry,	"country", 2},
 	{CMcreate,	"create", 4},
+	{CMdown,	"down", 1},
 };
 
 typedef struct Sdpcm Sdpcm;
@@ -291,9 +293,17 @@ static struct {
 	{ 0x4330, 4,	"fw_bcm40183b2.bin", config40183, 0 },
 	{ 43362, 0,	"fw_bcm40181a0.bin", config40181, 0 },
 	{ 43362, 1,	"fw_bcm40181a2.bin", config40181, 0 },
-	{ 43430, 1,	"brcmfmac43430-sdio.bin", "brcmfmac43430-sdio.txt", 0 },
+	{ 43430, 1,	"brcmfmac43430-sdio.bin", "brcmfmac43430-sdio.txt", "brcmfmac43430-sdio.clm_blob" },
 	{ 43430, 2,	"brcmfmac43436-sdio.bin", "brcmfmac43436-sdio.txt", "brcmfmac43436-sdio.clm_blob" },
+	// This may be necessary for newer Raspberry Pi Zero 2 W:
+	// { ???, ???,	"brcmfmac43436s-sdio.bin", "brcmfmac43436s-sdio.txt", 0 },
+#if RASPPI <= 4
 	{ 0x4345, 6, "brcmfmac43455-sdio.bin", "brcmfmac43455-sdio.txt", "brcmfmac43455-sdio.clm_blob" },
+#else
+	{ 0x4345, 6, "brcmfmac43455-sdio.raspberrypi,5-model-b.bin",
+		     "brcmfmac43455-sdio.raspberrypi,5-model-b.txt",
+		     "brcmfmac43455-sdio.raspberrypi,5-model-b.clm_blob" },
+#endif
 	{ 0x4345, 9, "brcmfmac43456-sdio.bin", "brcmfmac43456-sdio.txt", "brcmfmac43456-sdio.clm_blob" },
 };
 
@@ -485,6 +495,7 @@ sdioinit(void)
 	ulong ocr, rca;
 	int i;
 
+#if RASPPI <= 4
 	/* disconnect emmc from SD card (connect sdhost instead) */
 	for(i = 48; i <= 53; i++)
 		gpiosel(i, Alt0);
@@ -496,6 +507,21 @@ sdioinit(void)
 		else
 			gpiopullup(i);
 	}
+#else
+	/* See: https://forums.raspberrypi.com/viewtopic.php?t=362326#p2173647 */
+	gpiosel(28, Output);
+	gpioset(28, 1);		/* switch WLAN on */
+	microdelay(150000);
+
+	int d0 = get_soc_stepping() >= SOC_STEPPING_D0;		/* BCM2712D0 has different mapping */
+
+	gpiosel(30, d0 ? Func1 : Func4); gpiopulloff(30);	/* sdio_clk */
+	gpiosel(31, d0 ? Func1 : Func4); gpiopullup(31);	/* sdio_cmd */
+	gpiosel(32, d0 ? Func1 : Func4); gpiopullup(32);	/* sdio_d0 */
+	gpiosel(33, d0 ? Func1 : Func3); gpiopullup(33);	/* sdio_d1 */
+	gpiosel(34, d0 ? Func1 : Func4); gpiopullup(34);	/* sdio_d2 */
+	gpiosel(35, d0 ? Func1 : Func3); gpiopullup(35);	/* sdio_d3 */
+#endif
 	sdio.init();
 	sdio.enable();
 	sdiocmd(GO_IDLE_STATE, 0);
@@ -1595,8 +1621,10 @@ bcmevent(Ctlr *ctl, uchar *p, int len)
 		callevhndlr(ctl, ether_event_deauth, 0);
 		break;
 	case 16:	/* E_LINK */
-		if(flags&1)	/* link up */
+		if(flags&1){	/* link up */
+			callevhndlr(ctl, ether_event_link, 0);
 			break;
+		}
 	/* fall through */
 	case 12:	/* E_DISASSOC_IND */
 		linkdown(ctl);
@@ -2112,8 +2140,13 @@ wlinit(Ether *edev, Ctlr *ctlr)
 	char *p;
 	static uchar keepalive[12] = {1, 0, 11, 0, 0xd8, 0xd6, 0, 0, 0, 0, 0, 0};
 
+#if RASPPI >= 5
+	memmove(ea, edev->ea, Eaddrlen);
+	wlsetvar(ctlr, "cur_etheraddr", ea, Eaddrlen);
+#else
 	wlgetvar(ctlr, "cur_etheraddr", ea, Eaddrlen);
 	memmove(edev->ea, ea, Eaddrlen);
+#endif
 	memmove(edev->addr, ea, Eaddrlen);
 	print("ether4330: addr %02X:%02X:%02X:%02X:%02X:%02X\n",
 	      ea[0], ea[1], ea[2], ea[3], ea[4], ea[5]);
@@ -2471,6 +2504,10 @@ etherbcmctl(Ether* edev, const void* buf, long n)
 		else cmderror(cb, "bad channel number");
 		if(ctlr->essid[0]) wlcreateAP(ctlr, ctlr->essid, ctlr->chanid, atoi(cb->f[3]));
 		break;
+	case CMdown:
+		wlcmdint(ctlr, 3, 0);		/* DOWN */
+		ctlr->status = Disconnected;
+		break;
 	}
 	poperror();
 	free(cb);
@@ -2545,6 +2582,17 @@ etherbcmattach(Ether* edev)
 }
 
 static void
+ethersetmulticast(Ether *edev, void *buf, long n)
+{
+	Ctlr *ctlr;
+
+	ctlr = edev->ctlr;
+	wlsetvar(ctlr, "mcast_list", buf, n);
+	wlsetint(ctlr, "allmulti", 0);
+}
+
+
+static void
 etherbcmshutdown(Ether*edev)
 {
 	Ctlr *ctlr;
@@ -2574,6 +2622,7 @@ etherbcmpnp(Ether* edev)
 	edev->getbssid = etherbcmgetbssid;
 	edev->scanbs = etherbcmscan;
 	edev->setevhndlr = etherbcmsetevhndlr;
+	edev->setmulticast = ethersetmulticast;
 	edev->shutdown = etherbcmshutdown;
 	edev->arg = edev;
 

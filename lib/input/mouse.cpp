@@ -2,7 +2,7 @@
 // mouse.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,26 +27,33 @@ static const char FromMouse[] = "mouse";
 static const char DevicePrefix[] = "mouse";
 
 CMouseDevice::CMouseDevice (unsigned nButtons, boolean bHasWheel)
-:    m_pStatusHandler (0),
-    m_nDeviceNumber (s_DeviceNumberPool.AllocateNumber (TRUE, FromMouse)),
-    m_nButtons (nButtons),
-    m_bHasWheel (bHasWheel)
+:	m_pStatusHandler (0),
+	m_pStatusHandlerArg (0),
+	m_nDeviceNumber (s_DeviceNumberPool.AllocateNumber (TRUE, FromMouse)),
+	m_nButtons (nButtons),
+	m_bHasWheel (bHasWheel)
 {
     CDeviceNameService::Get ()->AddDevice (DevicePrefix, m_nDeviceNumber, this, FALSE);
 }
 
 CMouseDevice::~CMouseDevice (void)
 {
-    m_pStatusHandler = 0;
+	m_pStatusHandler = 0;
+	m_pStatusHandlerArg = 0;
 
     CDeviceNameService::Get ()->RemoveDevice (DevicePrefix, m_nDeviceNumber, FALSE);
 
     s_DeviceNumberPool.FreeNumber (m_nDeviceNumber);
 }
 
-boolean CMouseDevice::Setup (unsigned nScreenWidth, unsigned nScreenHeight)
+boolean CMouseDevice::Setup (CDisplay *pDisplay, boolean bCursor)
 {
-    return m_Behaviour.Setup (nScreenWidth, nScreenHeight);
+	return m_Behaviour.Setup (pDisplay, bCursor);
+}
+
+void CMouseDevice::Release (void)
+{
+	m_Behaviour.Release ();
 }
 
 void CMouseDevice::RegisterEventHandler (TMouseEventHandler *pEventHandler)
@@ -72,21 +79,34 @@ void CMouseDevice::UpdateCursor (void)
     }
 }
 
+void CMouseDevice::RegisterStatusHandler (TMouseStatusHandlerEx *pStatusHandler, void* pArg)
+{
+	assert (m_pStatusHandler == 0);
+	m_pStatusHandler = pStatusHandler;
+	m_pStatusHandlerArg = pArg;
+	assert (m_pStatusHandler != 0);
+}
+
+static void proxy_handler(unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove, void* pArg)
+{
+	((TMouseStatusHandler*)pArg)(nButtons, nDisplacementX, nDisplacementY, nWheelMove);
+}
+
+
 void CMouseDevice::RegisterStatusHandler (TMouseStatusHandler *pStatusHandler)
 {
-    assert (m_pStatusHandler == 0);
-    m_pStatusHandler = pStatusHandler;
-    assert (m_pStatusHandler != 0);
+	RegisterStatusHandler(proxy_handler, (void*)pStatusHandler);
 }
+
 
 void CMouseDevice::ReportHandler (unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove)
 {
     m_Behaviour.MouseStatusChanged (nButtons, nDisplacementX, nDisplacementY, nWheelMove);
 
-    if (m_pStatusHandler != 0)
-    {
-        (*m_pStatusHandler) (nButtons, nDisplacementX, nDisplacementY, nWheelMove);
-    }
+	if (m_pStatusHandler != 0)
+	{
+		(*m_pStatusHandler) (nButtons, nDisplacementX, nDisplacementY, nWheelMove, m_pStatusHandlerArg);
+	}
 }
 
 unsigned CMouseDevice::GetButtonCount (void) const

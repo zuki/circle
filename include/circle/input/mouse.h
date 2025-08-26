@@ -2,7 +2,7 @@
 // mouse.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #define _circle_input_mouse_h
 
 #include <circle/device.h>
+#include <circle/display.h>
 #include <circle/input/mousebehaviour.h>
 #include <circle/numberpool.h>
 #include <circle/types.h>
@@ -28,6 +29,7 @@
 #define MOUSE_DISPLACEMENT_MIN    -127
 #define MOUSE_DISPLACEMENT_MAX    127
 
+typedef void TMouseStatusHandlerEx (unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove, void* pArg);
 typedef void TMouseStatusHandler (unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove);
 
 /**
@@ -43,11 +45,15 @@ public:
     CMouseDevice (unsigned nButtons, boolean bHasWheel = FALSE);
     ~CMouseDevice (void);
 
-    /// \brief マウスデバイスをクックモードでセットアップする
-    /// \param nScreenWidth  スクリーンの幅（ピクセル単位）
-    /// \param nScreenHeight スクリーンの高さ（ピクセル単位）
-    /// \return 失敗したらFALSE
-    boolean Setup (unsigned nScreenWidth, unsigned nScreenHeight);
+	/// \brief マウスデバイスをクックモードでセットアップする
+	/// \param pDisplay このディスプレイにマウスを表示する
+	/// \param bCursor マウスカーソルをサポートする
+	/// \return FALSE on failure
+	boolean Setup (CDisplay *pDisplay, boolean bCursor = TRUE);
+
+	/// \brief Undo Setup()
+	/// \note Call this before resizing the screen!
+	void Release (void);
 
     /// \brief クックモードのイベントハンドラを登録する
     /// \param pEventHandler イベントハンドラへのポインタ（ mousebehaviour.hを参照）
@@ -67,6 +73,10 @@ public:
     void UpdateCursor (void);
 
     /// \brief rawモードのマウスステートハンドラを登録する
+	/// \param pStatusHandler マウスステートハンドラへのポインタ
+	/// \param pArg マウスステートハンドラへ渡されるユーザ引数
+	void RegisterStatusHandler (TMouseStatusHandlerEx *pStatusHandler, void* pArg);
+    /// \brief rawモードのマウスステートハンドラを登録する
     /// \param pStatusHandler マウスステートハンドラへのポインタ
     void RegisterStatusHandler (TMouseStatusHandler *pStatusHandler);
 
@@ -83,7 +93,8 @@ public:
 private:
     CMouseBehaviour m_Behaviour;            //< マウスビヘイビア
 
-    TMouseStatusHandler *m_pStatusHandler;  //< マウスステータスハンドラ
+	TMouseStatusHandlerEx *m_pStatusHandler;
+	void* m_pStatusHandlerArg;
 
     unsigned m_nDeviceNumber;               //< デバイス番号
     static CNumberPool s_DeviceNumberPool;  //< デバイス番号プール

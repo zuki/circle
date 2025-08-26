@@ -13,7 +13,7 @@
 //    user timeout
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2021  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -138,30 +138,45 @@ PACKED;
 
 unsigned CTCPConnection::s_nConnections = 0;
 
+const char *CTCPConnection::s_pStateName[] =	// must match TTCPState
+{
+	"CLOSED",
+	"LISTEN",
+	"SYN-SENT",
+	"SYN-RECEIVED",
+	"ESTABLISHED",
+	"FIN-WAIT-1",
+	"FIN-WAIT-2",
+	"CLOSE-WAIT",
+	"CLOSING",
+	"LAST-ACK",
+	"TIME-WAIT"
+};
+
 static const char FromTCP[] = "tcp";
 
-CTCPConnection::CTCPConnection (CNetConfig    *pNetConfig,
-                CNetworkLayer    *pNetworkLayer,
-                CIPAddress    &rForeignIP,
-                u16         nForeignPort,
-                u16         nOwnPort)
-:    CNetConnection (pNetConfig, pNetworkLayer, rForeignIP, nForeignPort, nOwnPort, IPPROTO_TCP),
-    m_bActiveOpen (TRUE),
-    m_State (TCPStateClosed),
-    m_nErrno (0),
-    m_RetransmissionQueue (TCP_CONFIG_RETRANS_BUFFER_SIZE),
-    m_bRetransmit (FALSE),
-    m_bSendSYN (FALSE),
-    m_bFINQueued (FALSE),
-    m_nRetransmissionCount (0),
-    m_bTimedOut (FALSE),
-    m_pTimer (CTimer::Get ()),
-    m_nSND_WND (TCP_CONFIG_WINDOW),
-    m_nSND_UP (0),
-    m_nRCV_NXT (0),
-    m_nRCV_WND (TCP_CONFIG_WINDOW),
-    m_nIRS (0),
-    m_nSND_MSS (536)    // RFC 1122 section 4.2.2.6
+CTCPConnection::CTCPConnection (CNetConfig	*pNetConfig,
+				CNetworkLayer	*pNetworkLayer,
+				const CIPAddress &rForeignIP,
+				u16		 nForeignPort,
+				u16		 nOwnPort)
+:	CNetConnection (pNetConfig, pNetworkLayer, rForeignIP, nForeignPort, nOwnPort, IPPROTO_TCP),
+	m_bActiveOpen (TRUE),
+	m_State (TCPStateClosed),
+	m_nErrno (0),
+	m_RetransmissionQueue (TCP_CONFIG_RETRANS_BUFFER_SIZE),
+	m_bRetransmit (FALSE),
+	m_bSendSYN (FALSE),
+	m_bFINQueued (FALSE),
+	m_nRetransmissionCount (0),
+	m_bTimedOut (FALSE),
+	m_pTimer (CTimer::Get ()),
+	m_nSND_WND (TCP_CONFIG_WINDOW),
+	m_nSND_UP (0),
+	m_nRCV_NXT (0),
+	m_nRCV_WND (TCP_CONFIG_WINDOW),
+	m_nIRS (0),
+	m_nSND_MSS (536)	// RFC 1122 section 4.2.2.6
 {
     s_nConnections++;
 
@@ -233,6 +248,11 @@ CTCPConnection::~CTCPConnection (void)
 
     assert (s_nConnections > 0);
     s_nConnections--;
+}
+
+const char *CTCPConnection::GetStateName (void) const
+{
+	return s_pStateName[m_State];
 }
 
 int CTCPConnection::Connect (void)
@@ -477,7 +497,7 @@ int CTCPConnection::Receive (void *pBuffer, int nFlags)
 }
 
 int CTCPConnection::SendTo (const void *pData, unsigned nLength, int nFlags,
-                CIPAddress    &rForeignIP, u16 nForeignPort)
+			    const CIPAddress &rForeignIP, u16 nForeignPort)
 {
     // ignore rForeignIP and nForeignPort
     return Send (pData, nLength, nFlags);
@@ -504,6 +524,16 @@ int CTCPConnection::ReceiveFrom (void *pBuffer, int nFlags, CIPAddress *pForeign
 int CTCPConnection::SetOptionBroadcast (boolean bAllowed)
 {
     return 0;
+}
+
+int CTCPConnection::SetOptionAddMembership (const CIPAddress &rGroupAddress)
+{
+	return -1;
+}
+
+int CTCPConnection::SetOptionDropMembership (const CIPAddress &rGroupAddress)
+{
+	return -1;
 }
 
 boolean CTCPConnection::IsConnected (void) const
@@ -1605,6 +1635,7 @@ void CTCPConnection::DumpStatus (void)
 
 TTCPState CTCPConnection::NewState (TTCPState State, unsigned nLine)
 {
+<<<<<<< HEAD
     const static char *StateName[] =    // must match TTCPState
     {
         "CLOSED",
@@ -1624,6 +1655,13 @@ TTCPState CTCPConnection::NewState (TTCPState State, unsigned nLine)
     assert (State < sizeof StateName / sizeof StateName[0]);
 
     CLogger::Get ()->Write (FromTCP, LogDebug, "State %s -> %s at line %u", StateName[m_State], StateName[State], nLine);
+=======
+	assert (m_State < sizeof s_pStateName / sizeof s_pStateName[0]);
+	assert (State < sizeof s_pStateName / sizeof s_pStateName[0]);
+
+	CLogger::Get ()->Write (FromTCP, LogDebug, "State %s -> %s at line %u",
+				s_pStateName[m_State], s_pStateName[State], nLine);
+>>>>>>> master
 
     return m_State = State;
 }

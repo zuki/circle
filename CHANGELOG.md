@@ -1,12 +1,280 @@
 Change Log
 ==========
 
-> If you read this file in an editor you should switch line wrapping on.
-
 This file contains the release notes (the major changes) since Circle Step30 for quick access. For earlier releases please checkout the respective git tag and look into README.md. More info is attached to the release tags (git cat-file tag StepNN) and is available in the git commit log.
+
+The 50th Step
+-------------
+
+This release comes with full (send and receive) network multicast support, including IGMPv2 support. A class `CmDNSDaemon` has been added, which determines and maintains our mDNS hostname on the local network. Name collisions with other hosts will be resolved by appending a numeric suffix to the hostname. The daemon is automatically started, when someone requests a pointer to it. This has been added to the `CmDNSPublisher` class, which works in conjunction with `CmDNSDaemon` now. The *test/mdns-publisher* uses the numeric suffix to generate an unique service name.
+
+More news:
+
+* The function of the `CTerminalDevice` sequences ESC "[0m" and ESC "[27m" have been modified. The first one resets the color settings too, while the second one resets the reversed mode only.
+* The method `CLogger::Read()` returns 0 now, when the log buffer is empty. Before it returned -1.
+* The DHCP process has been improved and is quicker now under some circumstances.
+* A method `GetUptime(sec, usec)` has been added to the class `CTimer`.
+* The FatFs library in *addon/fatfs/* has been updated to R0.16 with Unicode patch.
+* A display font `Font12x22` has been added. The class `CCharGenerator` can handle fonts, with a width of up to 32 pixels.
+
+Fixes:
+
+* The HDMI sound support with the class `CHDMISoundBaseDevice` did not work since Step 49.
+* The WLAN support in earlier versions was based on a port of wpa_supplicant v0.7.0, for which open security advisories exist. This has been fixed by porting wpa_supplicant v2.11 to Circle.
+* The Handling of "Enumeration done" in the USB gadget driver had issues, that made booting from the USB mass-storage device (MSD) gadget impossible.
+
+The recommended toolchain for building Circle is based on GCC 14.3.1 now (see the Building section).
+
+The recommended firmware, downloadable in *boot/*, has been updated. For the Raspberry Pi 5 it is required to use the new DTB file(s), because otherwise some functions will not work with this Circle version.
+
+The WLAN firmware, downloadable in *addon/wlan/firmware/*, has been updated. It is absolutely recommended to use the new firmware, because older versions may have security vulnerabilities.
+
+Release 49.0.1
+--------------
+
+2025-06-18
+
+This hotfix release solves the following issues:
+
+* Download of firmware files in boot/ did not work any more.
+* LVGL library in addon/lvgl/ did not build on Windows.
+* "fgrep is obsolescent" warnings appeared on newer build host systems.
+
+The 49th Step
+-------------
+
+2025-03-18
+
+This release comes with an improved dot-matrix display management. All driver classes for dot-matrix displays should be derived from the class `CDisplay` now. The old character display support for ST7789- and SSD1306-based displays is still available, but will be deprecated in a future version. Instead there is the new class `CTerminalDevice`, which implements a scrolling character terminal display for any display driver, which is derived from `CDisplay`. This class is also used to implement the class `CScreenDevice` now for the known terminal display on a firmware-driven frame buffer device. The following displays are currently supported by `CDisplay`-derived driver classes:
+
+* Firmware-driven frame buffer (`CBcmFrameBuffer`)
+* ST7789 SPI display (`CST7789Display`)
+* SSD1306 I2C display (`CSSD1306Display`)
+* ILI9341 SPI display (`CILI9341Display`)
+
+Beside the terminal support also the 2D graphics (`C2DGraphics`) and LVGL (`CLVGL`) support have been updated to work with all these displays. The 2D graphics support works with logical colors (`T2DColor`) now. There is a new class `C2DImage`, which manages the color conversion from logical to physical colors for 2D sprite images.
+
+Classes, which support the displaying of text on dot-matrix displays, allow the selection of the used font now. The default system font can by defined with system option `DEFAULT_FONT`.
+
+There is a new class `CWindowDisplay`, which allows to use multiple non-overlapping windows on a dot-matrix display. This is demonstrated in the multi-core program *sample/43-multiwindow*.
+
+*sample/08-usbkeyboard*, *sample/41-screenanimations* and *addon/lvgl/sample* have been updated for the new display management and support SPI and I2C displays too.
+
+There are a number of API breaking changes for the new display support, which are listed in [this article](https://github.com/rsta2/circle/discussions/380#discussioncomment-11417658).
+
+More news:
+
+* The external PCIe bus of the Raspberry Pi 5 can be accessed using the class `CBcmPCIeHostBridge` now. See the *test/pcie-external* for details. Interrupts from the external PCIe bus are available via the INTA pin at the IRQ number `ARM_IRQ_PCIE_EXT_HOST_INTA`.
+* A driver for XPT2046-based touchscreens has been added. See *test/xpt2046-touchscreen* for details.
+* The FatFs support has been updated to R0.15a + patch1.
+* The LVGL support has been updated to v9.2.2.
+* DMA channels are usable in different modes now. Before a DMA channel, which has been used for an asynchronous transfer, could not be used for synchronous transfers afterwards without re-initialization. The completion routine has to be set prior to each asynchronous transfer now.
+
+Fixes:
+
+* The detection of WM8960-based I2S codecs did not work, when the I2C address was explicitly specified.
+* Commit ae00d9d8 in Step48 was leading to lost MIDI events with USB MIDI devices on the Raspberry Pi 1-3 and has been reverted. In the rare case that you are using an USB device, which has a MIDI interface and an other (e.g. HID) interface, and the device is directly connected to the root port without USB hub in-between (e.g. on Raspberry Pi Zero), you have to define the system option `USE_NAK_USB_FIX` now.
+* The MQTT client might have crashed after receiving a disconnect from peer before.
+* The check for the length, opcode and block number of incoming ACK packets in the TFTP daemon used an invalid logical operator. This could have caused receiving invalid files on read requests.
+* The HideLink THEC64 USB keyboard did not work before.
+* The initial LVGL mouse cursor was not centered on the Raspberry Pi 5.
+* The `configure` script and cFlashy can be used on macOS now. cFlashy caused a build error before on macOS.
+
+The recommended firmware version has been updated. The option `initial_turbo=0` has been added to the file *config.txt*, because newer firmware versions enable `initial_turbo=60` by default now, which can disturb the Circle device initialization.
+
+The 48th Step
+-------------
+
+2024-11-08
+
+This release comes with **USB mass-storage device gadget** support. *test/usb-msd-gadget* shows, how this can be used to provide direct access to the SD card via USB. Furthermore this version supports **HDMI sound for the Raspberry Pi 5**. The sound samples and tests have been updated to use this. The **Raspberry Pi 5 with BCM2712 stepping D0** is supported. The **LVGL support** has been updated to **version 9.2.0**.
+
+The network library has been updated to support the receiving of ICMP packets in applications. This is used in *test/ping-client* to implement a **ping client**. Raspberry Pi models without an on-board Ethernet NIC can be used with **RTL8152 and RTL8153 USB Ethernet adapters** to access a network.
+
+The platform **DMA** controller drivers support **cyclic write transfers** now. To implement this, it was necessary to extend the type `TDMACompletionRoutine` by a buffer index. If you directly use DMA transfers in your application, you have to update your DMA completion routine.
+
+There is a complete rewrite of the Flashy **serial bootloader tool in C**, which is called cFlashy and which does not need a Node-JS environment any more. You can define `USEFLASHY=0` in the file *Config.mk* to enable it. See [doc/bootloader.txt](doc/bootloader.txt) for details.
+
+More news:
+
+* A class `CmDNSPublisher` was added, which can be used to publish services to mDNS (aka Bonjour) in a local network. See *test/mdns-publisher* for an example.
+* There is a new option `backlight=` for *cmdline.txt* for setting the backlight level for the Official 7" Raspberry Pi touchscreen. For some versions of this touchscreen this option is required.
+* The class `CSerialDevice` now supports modifying the parity setting (including a mark or space parity) and a per character receive for specific RS-485 applications.
+* A block cursor can be enabled on the screen using `CScreenDevice::SetCursorBlock()`. See *test/screen-ansi-colors* for an example.
+* The SD card driver implements the `GetSize()` method now.
+* Only serious USB transaction errors are logged on Raspberry Pi 1-3 any more.
+* The new doc file [doc/debug-swd.txt](doc/debug-swd.txt) explains SWD debugging on the Raspberry Pi 5 using the Raspberry Pi Debug Probe adapter.
+
+Fixes:
+
+* Only 4 GB RAM were usable, even on Raspberry Pi 5 with 8 GB RAM.
+* The MAC address for WLAN access is read from the device tree on the Raspberry Pi 5 now, as it is required. Before always the same address was used.
+* The Official 7" Raspberry Pi touchscreen did not work with circle-stdlib.
+* The MQTT client delivered an invalid payload in `OnMessage()`, when there were multiple MQTT publish messages arriving in one network packet.
+* The access to USB bulk endpoints on the Raspberry Pi 1-3 in no-hub configurations was occupying the whole USB bandwidth, which was not allowing to access other endpoints on the same USB device.
+* The I2C master was not initialized on the Raspberry Pi 5 in *sample/34-sounddevices*.
+
+The recommended firmware version has been updated and is required to use the Raspberry Pi 5 with BCM2712 stepping D0. Please note that the file *bcm2712d0.dtbo* has to be copied into the directory *overlays/* on the SD card.
+
+The 47th Step
+-------------
+
+2024-07-09
+
+This release provides a number of **new features for the Raspberry Pi 5**, which were already available for earlier models:
+
+* SPI master support (polling and DMA driver)
+* I2S sound (output or input, DMA or programmed I/O operation)
+* PWM sound (requires external circuit on GPIO12/13 or GPIO18/19)
+* PWM output (4 channels)
+* GPIO clocks (GP0-2)
+* `CGPIOPin::WriteAll()` and `CGPIOPin::ReadAll()`
+
+The following **new hardware features of the Raspberry Pi 5** are supported now:
+
+* Real-time clock (class `CFirmwareRTC` in [addon/rtc](addon/rtc))
+* Power button (Function `is_power_button_pressed()`)
+* Function `main()` can return `EXIT_POWER_OFF` to power-off the system
+* 8-channels I2S sound output (via GPIO21/23/25/27, e.g. for HifiBerry DAC8x)
+
+The **WM8960 I2S sound driver** has been revised and provides a better audio quality and the sound controller jack and control functions now. The new sound controller control `ControlALC` (Automatic Level Control) has been defined and implemented for the WM8960. ALC is disabled by default now. The WM8960 driver supports sample rates of 44100 and 48000.
+
+More news:
+
+* A new **IRQ-based driver for the I2C master** of Raspberry Pi 1-4 is available.
+* A **character mode for ST7789-based dot-matrix displays** is available.
+* The **timing of the GPIO pin driver** has been improved on the Raspberry Pi 5 by using the RIO module.
+* There is a **new GPIO pin mode** `GPIOModeNone`, which disables the GPIO pin on the Raspberry Pi 5. On other models it has the same function as `GPIOModeInput`.
+* The new static method `CGPIOPin::SetModeAll()` allows to **set the mode of the GPIO pins 0-31 at once** to input or output.
+* **IP multi-cast support level 1** according to RFC 1112 is implemented (send only).
+* The **LVGL support** has been updated to LVGL v8.3.11.
+
+Fixes:
+
+* The USB serial CDC gadget was not detected on Windows 10.
+* The Raspberry Pi Debug Probe UART did not work with the USB serial CDC driver.
+* The class `CPWMSoundDevice` did not apply the full chunk size.
+
+The recommended firmware and toolchain versions have been updated.
+
+The 46th Step
+-------------
+
+2024-02-28
+
+With this release Circle initially **supports the Raspberry Pi 5**. There are many features, which are not available yet, but important features like USB and networking are supported. Please see the [Circle documentation](https://circle-rpi.readthedocs.io/en/46.0/appendices/raspberry-pi-5.html) for more information on Raspberry Pi 5 support!
+
+Circle comes with an **USB serial CDC gadget** now, which allows to communicate with a Circle application from a host computer via a serial interface without an USB serial adapter. This can be tested with the [test/usb-serial-cdc-gadget](test/usb-serial-cdc-gadget/).
+
+The **properties file library** in [addon/Properties](addon/Properties/) supports section headers now.
+
+A possible race condition in `CTimer` has been fixed, which could only occur with the KY-040 rotary encoder module driver.
+
+Release 45.3.1
+--------------
+
+2023-10-08
+
+This is a hotfix release. It fixes the release of guard structures, which are used to protect static objects, which are defined inside of a function. This problem did occur only, when the system option `ARM_ALLOW_MULTI_CORE` was defined.
+
+Release 45.3
+------------
+
+2023-10-06
+
+This release comes with initial **USB gadget (aka device, peripheral) mode support**, which is used to implement an **USB MIDI (v1.0) gadget**. This allows to connect the Raspberry Pi models (3)A(+), Zero (2) (W) and 4B directly to a host computer (e.g. for running a sequencer program). Before the Raspberry Pi was always the USB host with Circle and required an additional USB MIDI serial adapter for that purpose.
+
+The sample [29-miniorgan](sample/29-miniorgan/) is prepared to work as MIDI gadget. Please see the [README](sample/29-miniorgan/README) for information about the required configuration. Beside the define `USB_GADGET_MODE`, which enables the gadget mode in the sample, you have to define your own USB vendor ID as system option `USB_GADGET_VENDOR_ID` in *Config.mk* or *include/circle/sysconfig.h*. Please note that Circle does not support OTG protocols, so the USB controller always works in host or gadget mode and the connected peer must work in the opposite mode.
+
+Adapting your own application to be used as an USB MIDI gadget should not be difficult. You have to create an object of the class `CUSBMIDIGadget` (see *include/circle/usb/gadget/usbmidigadget.h*) instead of `CUSBHCIDevice` and call `Initialize()` and `UpdatePlugAndPlay()` on it as before in host mode. You have to add the library *lib/usb/gadget/libusbgadget.a* to your `LIBS` variable. The USB MIDI API device `umidi1` has the same interface as in host mode. There is a shared base class `CUSBController` for `CUSBHCIDevice` and `CUSBMIDIGadget`, so it is easy to implement host and gadget mode in one application and to select it on user configuration.
+
+Further improvements:
+
+* The **LVGL submodule** has been updated to version 8.3.10.
+* **Application-defined kernel options** can be used now in the file *cmdline.txt*. The methods `GetAppOptionString()` and `GetAppOptionDecimal()` have been added to the class `CKernelOptions` for this purpose.
+* **Resizing the screen** is supported in the classes `CScreenDevice`, `C2DGraphics` and `CMouseDevice`.
+* **TV service support** has been added to [addon/vc4/interface](addon/vc4/interface/). It works in 32-bit mode only.
+* The class `CI2CMaster` supports **I2C operations with repeated start** now.
+
+Release 45.2
+------------
+
+2023-05-22
+
+This release provides many enhancements and fixes for the **USB audio streaming support** for Raspberry Pi 4, 400 and Compute Module 4. USB audio interfaces with 16-bit or 24-bit wide samples with up to 32 channels are supported now. You have to specify the option `soundopt=24` in the file *cmdline.txt* to select 24-bit wide samples and the option `usbsoundchannels=TX,RX` to select a specific number of output (TX) and input (RX) channels. See the file [cmdline.txt](doc/cmdline.txt) for more info on this option. You can call the methods `GetHWTXChannels()` and `GetHWRXChannels()` of a sound device driver class to request the number of available hardware channels in your application now.
+
+Please note that an application, which uses the alternate sound interface and wants to use USB audio streaming support with 24-bit wide samples, has to implement the method `unsigned GetChunk(u32 *pBuffer, unsigned nChunkSize)`, were each sample occupies 3 bytes. The class `CUSBSoundBaseDevice` must be instantiated, when the USB host controller driver has been initialized already. Therefore you cannot do this in the constructor of `CKernel` and must create the driver object later using the `new` operator.
+
+There is support for the Raspberry Pi **Camera Modules 1 and 2** now in the external project [libcamera](https://github.com/rsta2/libcamera).
+
+Further improvements:
+
+* The **LVGL submodule** has been updated to version 8.3.7. The `CLVGL` wrapper class has been updated for better performance and compatibility with LVGL.
+* The **FatFs submodule** has been updated to release R0.15 with patch 1 and 2.
+* The support for USB serial interfaces has been extended for **more CP210x family devices**.
+* Support for **Ctrl+navigation key combinations for USB keyboard** devices in cooked mode has been added.
+* Support for **rotated and/or mirrored display for SSD1306-based dot-matrix displays** has been added.
+* A `C2DGraphics::DrawText()` method for **displaying text with 2D graphics** has been added.
+* **gzip-compressed kernel images** (supported for 64-bit kernels only) can be generated by defining `GZIP_KERNEL = 1` in *Config.mk* now.
+
+Bug fixes:
+
+* DMA4 (`DMA_CHANNEL_EXTENDED`) memory-to-memory transfers sometimes failed.
+* `C2DGraphics::DrawImageRect()` used display stride instead of image stride.
+
+The **recommended firmware** has been updated and can be downloaded in [boot/](boot/). It is now always recommended to copy the file *config32.txt* (AArch32) or *config64.txt* (AArch64) from the *boot/* directory to the SD card and to rename it to *config.txt* there.
+
+The **recommended toolchain** is based on GCC 12.2.1 now. You can download it using the link in the *Building* section below. With this toolchain the system options `SAVE_VFP_REGS_ON_IRQ` and `SAVE_VFP_REGS_ON_FIQ` are enabled by default in any case now.
+
+Please note that it is checked on start-up now, if the system option `KERNEL_MAX_SIZE` is properly set. If the given value (default 2 MByte) is too small, the system does not boot.
+
+Release 45.1
+------------
+
+2023-02-01
+
+This hotfix release fixes the HDMI sound driver (without VCHIQ), which did not work any more on the Raspberry Pi 4 with the recommended firmware. Furthermore is enables the relative path support in the FatFs library.
+
+The 45th Step
+-------------
+
+2022-12-01
+
+This release comes with **support for USB audio streaming devices**, available **for Raspberry Pi 4, 400 and Compute Module 4** only. Supported should be devices, which are compliant with the "USB Device Class Definition for Audio Devices", Release 1.0 and 2.0. Only USB audio interfaces with 16-bit PCM audio and two channels (Stereo) are supported for output and input, and additionally with one channel (Mono) for input. There is no constant chunk size for USB sound devices and it is not configurable here. You should enable the system option `REALTIME` for applications, which use USB sound. Some devices also may require the option `usbpowerdelay=1000` in the file [cmdline.txt](doc/cmdline.txt) to enumerate successfully.
+
+USB audio streaming devices often support multiple jacks for output and input and some method was required to select them. Furthermore these devices have Feature Units, which allow to set the volume for different audio channels or to mute the whole signal. Before there was no common API for such functions. This release adds the new feature of a **sound controller** for that purpose, which is provided by the class `CSoundController`. A pointer to the sound controller of an existing sound device (derived from the class `CSoundBaseDevice`) can be requested by calling `GetController()` on its device object. See the [Circle documentation](https://circle-rpi.readthedocs.io/en/latest/devices/audio-devices.html#sound-controller) for more information.
+
+Please note that the sound controller is optional and currently only the following sound devices implement it: `CUSBSoundBaseDevice`, `CI2SSoundBaseDevice` (for PCM512x-based devices), `CVCHIQSoundBaseDevice`. Because implementations of sound controllers for new devices are expected in the future, which provide additional audio functions, the sound controller API may be extended or modified in coming releases.
+
+The sound support has been moved from the base library to the new library *lib/sound/libsound.a* with the header files in *include/circle/sound/* (instead of *include/circle/*). If your application uses sound, you have to add the sound library to the `LIBS` variable in the *Makefile* and to update some `#include` statements for the sound classes.
+
+The samples [29-miniorgan](sample/29-miniorgan/), [34-sounddevices](sample/34-sounddevices/) and [42-soundinput](sample/42-soundinput/) (former *42-i2sinput*) have been updated to use USB audio streaming devices. The samples 29 and 42 also demonstrate functions of the sound controller. The sound recorder in sample 42 generates compatible *.wav* files now. The default sample rate for these samples is 48000 Hz now, because it is supported by most USB sound cards. The new test [sound-controller](test/sound-controller/) may also be of interest for trying several sound features and the sound controller.
+
+There is a new method `CDevice::UnregisterRemovedHandler()` for undoing the registration of **device remove handlers**. Calling `CDevice::RegisterRemovedHandler()` with a `nullptr` for this purpose does not work any more. There can be multiple device remove handlers for one device now.
+
+Further improvements:
+
+* The **LVGL submodule** has been updated to version 8.3.3.
+* The **FatFs submodule** has been updated with two recent patches. Furthermore it supports the function `f_mkfs()` for USB mass-storage devices now. This requires the FatFs option `FF_USE_MKFS` to be enabled in [addon/fatfs/ffconf.h](addon/fatfs/ffconf.h).
+* There is a new **driver for SSD1306-based displays** in [addon/display/](addon/display/).
+* The new system option `USE_LOG_COLORS` can be defined to **use different ANSI colors** for different severities **in the system log**.
+
+Bug fixes:
+
+* Reading the USB HID report descriptor for `int3-0-0` devices did fail on some devices, when they were not configured yet. The USB HID support was not usable on these devices before.
+* Some USB MIDI controllers use an USB interrupt endpoint for reporting MIDI events, instead of a bulk endpoint. These devices were not usable before.
+* The serial bootloader "Flashy" did not work with the Bluetooth modules HC-05/-06.
+
+This release has been built with a new recommended toolchain, which comes from a new webpage. See the link in the *Building* section below.
+
+With this release a number of Circle applications **can be built using Clang/LLVM**. Please see [doc/clang-support.txt](doc/clang-support.txt) for details. This support is currently experimental.
+
+Don't forget to update the used firmware to the one downloadable in [boot/](boot/)!
 
 Release 44.5
 ------------
+
+2022-06-08
 
 This intermediate release offers a **revised DWHCI USB low-level driver for the Raspberry Pi 1-3 and Zero**. With the system option `USE_USB_FIQ` one can use the FIQ (Fast Interrupt Request) for this driver, which results in a more accurate timing on the USB. This may improve the compatibility with some USB devices and may help to prevent data loss, especially when receiving MIDI data from some USB MIDI controllers, which do have only small data buffers. Because there is only one FIQ source supported in the system, the FIQ cannot be used for other purpose than the USB with this system option. The xHCI USB driver for the Raspberry Pi 4 does not support this system option and remains unchanged.
 

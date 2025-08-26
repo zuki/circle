@@ -2,8 +2,10 @@ let fs = require('fs');
 let os = require('os');
 let util = require('util');
 let stdout = process.stdout;
+let child_process = require('child_process');
 
-// コマンドラインオプション
+
+// Command line options
 let hexFile = null;
 let serialPortName = null;
 let serialPortOptions = {
@@ -20,35 +22,36 @@ let rebootMagic = null;
 let rebootDelay = null;
 let monitor = false;
 let noFast = false;
+let usingHC06 = false;
+let noRespawn = false;
 let goDelay = 0;
 
-// 現在オープンしているシリアルポート
+// The currently open serial port
 let port;
 
-// シリアルポートモジュール（遅延ロード）
+// The serial port module (delayed load)
 let SerialPort;
 
-// 設定済みの実行時オプション
+// Resolved runtime settings
 let fastMode = false;
 let willSendGoCommand;
 
-// 指定されたボーレートでシリアルポートを開く。
-// 現在違うボーレートでオープンしている場合は、閉じて、再度開く。
+// Open the serial port at specified baud rate, closing and reopening
+// if currently open at a different rate
 async function openSerialPortAsync(baudRate)
 {
-    // オープン済みか?
+    // Already open?
     if (port != null)
     {
-        // ボーレートは指定されたものと同じか
+        // Correct baud rate already?
         if (serialPortOptions.baudRate == baudRate)
             return;
 
-        // 違う場合はポートを閉じる
+        // Close the port
         await closeSerialPortAsync();
     }
-
-    // シリアルポートモジュールをロードする。ロードできなかった場合は
-    // 簡単なメッセージを表示する
+    
+    // Load the serial port module and display handy message if can't
     if (!SerialPort)
     {
         try
@@ -63,19 +66,46 @@ async function openSerialPortAsync(baudRate)
             process.exit(7);
         }
     }
-
-    // Windowsの場合は必要に応じてWSLシリアルポート名を同等のポート名に再マップする
+    
+    // Remap WSL serial port names to Windows equivalent if appropriate
     if (os.platform() == 'win32' && serialPortName.startsWith(`/dev/ttyS`))
     {
+        // This is a hacky fix for when launched from within a WSL session (possibly
+        // related to Windows 11) where the SerialPort module fails with overlapped
+        // I/O errors.  No sure why this happens but only seems to occur in the process
+        // launched immediately from WSL.
+        // As a work around, we simply respawn ourself with the same arguments + an
+        // additional "--no-respawn" flag so we know not to do this again.
+        if (!noRespawn)
+        {
+            // Use same args, but add the --no-respawn flag
+            let args = process.argv.slice(1);
+            args.push("--no-respawn");
+
+            // Respawn
+            let r = child_process.spawnSync(
+                process.argv[0], 
+                args,
+                { 
+                    stdio: 'inherit', 
+                    shell: false
+                }
+            );
+            
+            // Quit with exit code of child process
+            process.exit(r.status);
+        }
+        
+
         let remapped = `COM` + serialPortName.substr(9);
         stdout.write(`Using '${remapped}' instead of WSL port '${serialPortName}'.\n`)
         serialPortName = remapped;
     }
 
-    // オプションを設定する
+    // Configure options
     serialPortOptions.baudRate = baudRate;
 
-    // ポートを開く
+    // Open it
     stdout.write(`Opening ${serialPortName} at ${baudRate}...`)
     port = new SerialPort(serialPortName, serialPortOptions, function(err) {
         if (err)
@@ -86,7 +116,6 @@ async function openSerialPortAsync(baudRate)
     stdout.write(`ok\n`);
 }
 
-// 古い行を捨てる
 function discardOldLines(str)
 {
     let nlpos = str.lastIndexOf('\n');
@@ -96,10 +125,9 @@ function discardOldLines(str)
         return str;
 }
 
-// シリアルポートをdrainする
 async function drainSerialPortAsync()
 {
-    // ポートをDrain
+    // Drain port
     await new Promise((resolve, reject) => {
         port.drain((function(err) {
             if (err)
@@ -110,7 +138,7 @@ async function drainSerialPortAsync()
     });
 }
 
-// シリアルポートを閉じる（開いていた場合）
+// Close the serial port (if it's open)
 async function closeSerialPortAsync()
 {
     if (port)
@@ -122,7 +150,7 @@ async function closeSerialPortAsync()
 
         // Close the port
         await new Promise((resolve, reject) => {
-            port.close(function(err) {
+            port.close(function(err) { 
                 if (err)
                     reject(err);
                 else
@@ -136,12 +164,12 @@ async function closeSerialPortAsync()
     }
 }
 
-// 書き込み操作の非同期ラッパー。これによりコールバックを扱う必要がなくなる
-async function writeSerialPortAsync(data)
+// Async wrapper for write operations so we don't have to deal with callbacks
+async function writeSerialPortAsync(data) 
 {
-    return new Promise((resolve,reject) =>
+    return new Promise((resolve,reject) => 
     {
-        port.write(data, function(err)
+        port.write(data, function(err) 
         {
             if (err)
                 reject(err);
@@ -151,7 +179,6 @@ async function writeSerialPortAsync(data)
     });
 };
 
-// エラーが無かったかチェック。エラーがあったらプロセスを終了させる
 function bootloaderErrorWatcher(data)
 {
     let str = data.toString(`utf8`);
@@ -166,12 +193,12 @@ function bootloaderErrorWatcher(data)
 
 function watchForBootloaderErrors(enable)
 {
-    // 冗長?
+    // Redundant?
     if (port.listenerEnabled == enable)
         return;
     port.listenerEnabled = enable;
-
-    // リスナーのインストール/削除
+    
+    // Install/remove listener
     if (enable)
     {
         port.on('data', bootloaderErrorWatcher);
@@ -184,7 +211,8 @@ function watchForBootloaderErrors(enable)
 
 
 
-// IHEX形式のアスキーテキストをブートローダが理解できるバイナリストリームに変換する
+// Receives IHEX formatted ascii text and converts to binary
+// stream as understood by the bootloader.
 function binary_encoder()
 {
     let state = 0;
@@ -193,7 +221,7 @@ function binary_encoder()
     let unsent_nibble = -1;
     let record_bytes_left = -1;
 
-    // 高速flashバッファをFlush
+    // Flush the fast flash buffer
     async function flush()
     {
         if (buffer_used)
@@ -203,19 +231,21 @@ function binary_encoder()
         }
     }
 
-    // バイトを書き込む
+    // Write a byte
     async function write(inbyte)
     {
         if (state == 0)
         {
-            if (inbyte == 0x3a)     // ":"  HEXモードの書き込み開始コマンド
+            if (inbyte == 0x3a)     // ":"
             {
-                // バッファをフラッシュするか?
-                if (buffer_used > buffer.length - 1024)
+                // Flush buffer?
+                // When using an HC-06 module as a serial device,
+                // flush on every record to fix transfer failure.
+                if (buffer_used > buffer.length - 1024 || usingHC06)
                     await flush();
 
-                // 新レコードを開始する
-                buffer[buffer_used++] = 0x3d;     // "="   バイナリモードの書き込み開始コマンドに変換
+                // start of new record
+                buffer[buffer_used++] = 0x3d;     // "="
                 fast_record_length = -1;
                 state = 1;
                 record_bytes_left = -1;
@@ -223,7 +253,7 @@ function binary_encoder()
             }
             else
             {
-                // 開始コマンド以外は空白のはず
+                // Must be white space
                 if (inbyte != 0x20 && inbyte != 0x0A && inbyte != 0x0D)
                 {
                     fail("Invalid .hex file, unexpected character outside record");
@@ -232,20 +262,20 @@ function binary_encoder()
             }
         }
 
-        // 入力文字をhexニブルに変換
+        // Convert the incoming character to a hex nibble
         let nibble;
-        if (inbyte >= 0x30 && inbyte <= 0x39)       // '0' - '9'
+        if (inbyte >= 0x30 && inbyte <= 0x39)
             nibble = inbyte - 0x30;
-        else if (inbyte >= 0x41 && inbyte <= 0x46)  // 'A' - 'F'
+        else if (inbyte >= 0x41 && inbyte <= 0x46)
             nibble = inbyte - 0x41 + 0xA;
-        else if (inbyte >= 0x61 && inbyte <= 0x66)  // 'a' - 'f'
+        else if (inbyte >= 0x61 && inbyte <= 0x66)
             nibble = inbyte - 0x61 + 0xA;
         else
             fail("Invalid .hex file, expected hex digit");
 
         if (state == 1)
         {
-            // 第1 hexニブルなので保存
+            // First hex nibble, store it
             state = 2;
             unsent_nibble = nibble;
             return;
@@ -253,17 +283,17 @@ function binary_encoder()
 
         if (state == 2)
         {
-            // 第2 hexニブルなのでバイトに変換
+            // Second hex nibble, calculate full byte
             let byte = ((unsent_nibble << 4) | nibble);
 
-            // 1バイト書き込む
+            // Write it
             buffer[buffer_used++] = byte;
 
-            // レコード長を初期化する
-            if (record_bytes_left == -1)        // レコード先頭のbyteはレコード数
-                record_bytes_left = byte + 5;   // +5 は ':'+lengh+address(2)+type
+            // Initialize the record length
+            if (record_bytes_left == -1)
+                record_bytes_left = byte + 5;  
 
-            // レコード長を更新してレコードの終わりかチェックする
+            // Update record length and check for end of record
             record_bytes_left--;
             if (record_bytes_left == 0)
                 state = 0;
@@ -275,18 +305,18 @@ function binary_encoder()
     return { flush, write };
 }
 
-// リブートマジック文字列を送信する
+// Send the reboot magic string
 async function sendRebootMagic()
-{
-    // シリアルポートを開く
+{   
+    // Open serial port
     await openSerialPortAsync(userBaud);
 
-    // 送信する
+    // Send it
     stdout.write(`Sending reboot magic '${rebootMagic}'...`)
     await writeSerialPortAsync(rebootMagic);
     stdout.write(`ok\n`);
 
-    // 遅延
+    // Delay
     if (rebootDelay)
     {
         stdout.write(`Delaying for ${rebootDelay}ms while rebooting...`);
@@ -295,29 +325,30 @@ async function sendRebootMagic()
     }
 }
 
-// hexファイルをデバイスにFlash
+// Flash the device with the hex file
 async function flashDevice()
-{
-    // シリアルポートをOpen
+{   
+    // Open serial port
     await openSerialPortAsync(flashBaud);
 
-    // リセット信号は256個の0x80文字で構成され、その後にリセット
-    // コマンド'R'コマンドが続きます。ここでのアイデアは0x80は
-    // 以前にキャンセルされたフラッシュをバイナリレコードの状態から
-    // フラッシュすることです。0x80はブートローダがバイナリレコードの
-    // 先頭でキャンセルされる場合に使用されます。ブートローダ自体を
-    // 台無しにするようなローメモリアドレスを書かないようにするためです。
+    // Reset signal consists of 256 x 0x80 chars, followed
+    // by a reset 'R' command.  The idea here is the 0x80s will
+    // flush a previously canceled flash out of a binary
+    // record state.  0x80 is used in case the bootloader is
+    // cancelled at the start of a binary record and we don't 
+    // want to write a lo-memory address that will trash the
+    // bootloader itself.
     let resetBuf = Buffer.alloc(257, 0x80);
     resetBuf[256] = 'R'.charCodeAt(0);
 
-    // デバイスから準備完了のackである`IHEX`が来るのを待つ
+    // Wait for `IHEX` from device as ack it's ready
     if (waitForAck)
     {
-        // リセットコマンドを送信
-        // (bootloaderカーネルの最新版が必要）
+        // Send a reset command 
+        // (requires the newest version of the booloader kernal)
         stdout.write(`Sending reset command...`);
 
-        // 受信用のリスナーを設定
+        // Setup receive listener
         let resolveDeviceReady;
         let buf = "";
         port.on('data', function(data) {
@@ -329,9 +360,9 @@ async function flashDevice()
 
                 if (!noFast)
                 {
-                    // デバイスがIHEX-Fと応答したら高速ブートローダ
-                    // なのでコマンドラインスイッチで無効になって
-                    // いない限り高速モードに切り替える
+                    // If the device responds with IHEX-F it's got
+                    // the fast bootloader so switch to that mode unless
+                    // disabled by command line switch
                     if (buf.includes(`IHEX-F`))
                     {
                         stdout.write("Fast mode enabled\n");
@@ -346,46 +377,52 @@ async function flashDevice()
 
         });
 
-        // リセットコマンドを送信
+        // Send reset command
         await writeSerialPortAsync(resetBuf);
 
-        // リセットをセット
+        // Set the reset
         stdout.write(`ok\n`);
         stdout.write(`Waiting for device...`);
 
-        // 受信を待つ
+        // Wait for it
         await new Promise((resolve, reject) => {
             resolveDeviceReady = resolve;
         });
         port.removeAllListeners('data');
 
-        // デバイスが正しい状態になったのでエラーがないか調べる
+        // Now that we know the device is in a good state, watch for errors
         watchForBootloaderErrors(true);
     }
     else
     {
-        // リセットコマンドを送信
+        // Send reset command
         await writeSerialPortAsync(resetBuf);
     }
 
-    // 高速書き込み用のバイナリエンコーダを作成
+    // Make sure fast mode is enabled when using an HC-06
+    if(!fastMode && usingHC06)
+    {
+        fail(`Bootloader doesn't support fast mode while HC-06 depends on it`);
+    }
+
+    // Create fast write binary encoder
     let binenc = fastMode ? binary_encoder() : null;
 
-    // デバイスにコピー
+    // Copy to device
     let startTime = new Date().getTime();
     stdout.write(`Sending`);
-    let fd = fs.openSync(hexFile, `r`);
+    let fd = fs.openSync(hexFile, `r`);    
     let buf = Buffer.alloc(4096);
     while (true)
     {
-        // hexファイルから読み込む
+        // Read from hex file
         let bytesRead = fs.readSync(fd, buf, 0, buf.length);
         if (bytesRead == 0)
             break;
 
         if (fastMode)
         {
-            // 高速モードの場合、各バイトをバイナリエンコーダに書き込む
+            // In fast mode, push each byte through the binary encoder
             for (let i=0; i<bytesRead; i++)
             {
                 await binenc.write(buf[i]);
@@ -393,60 +430,60 @@ async function flashDevice()
         }
         else
         {
-            // 高速モードでない場合は、シリアルポートに直接書き込む
+            // Write directly to serial port
             await writeSerialPortAsync(buf.subarray(0, bytesRead));
         }
         stdout.write(`.`);
     }
     fs.closeSync(fd);
 
-    // 高速flashバッファをFlush
+    // Flush the fast flash buffer
     if (fastMode)
     {
         binenc.flush();
     }
 
-    // 保留中のエラーを待つ
-    // （これからgoコマンドを送信する場合はackedされる前に
-    //   エラーが検出されるのでここで待つ必要はない）
+    // Wait for any pending errors
+    // (If we're about to send the go command, it will pick up errors
+    // before it's acked so don't need to wait here)
     if (waitForAck && !willSendGoCommand)
     {
-        // すべてが送信されるのを待つ
+        // Wait for everything to be sent
         await drainSerialPortAsync();
 
-        // ブートローダから保留中エラーがある場合に備えて少し遅延させる
+        // Small delay in case there's a pending error coming from the bootloader
         await delay(10);
         port.removeAllListeners('data');
     }
 
-    // 完了
+    // Done
     stdout.write(`ok\n`);
 
-    // 実行時間をログ出力
+    // Log time taken
     let elapsedTime = new Date().getTime() - startTime;
     stdout.write(`Finished in ${((elapsedTime / 1000).toFixed(1))} seconds.\n`);
 }
 
 
-// goコマンドを送信してackを待つ
+// Send the go command and wait for ack
 async function sendGoCommand()
-{
-    // シリアルポートを開く
+{   
+    // Open serial port
     await openSerialPortAsync(flashBaud);
 
-    // 送信する
+    // Send it
     stdout.write(`Sending go command...`)
 
-    // 開始遅延をセット
+    // Set a start delay
     if (goDelay)
     {
         await writeSerialPortAsync(`s${(goDelay*1000).toString(16).toUpperCase()}\n`);
     }
 
-    // デバイスがgoコマンドを受信したことを示す`--`を受信するまで待つ
+    // Wait until we receive `--` indicating device received the go command
     if (waitForAck)
     {
-        // 受信リスナーをセットアップ
+        // Setup receive listener
         let resolveAck;
         let buf = "";
         port.on('data', function(data) {
@@ -462,13 +499,13 @@ async function sendGoCommand()
 
         });
 
-        // エラーウォッチを有効化
+        // Enable error watch
         watchForBootloaderErrors(true);
 
-        // コマンドを送信する
+        // Send command
         await writeSerialPortAsync('g');
 
-        // ackを待つ
+        // Wait for it
         await new Promise((resolve, reject) => {
             resolveAck = resolve;
         });
@@ -481,18 +518,18 @@ async function sendGoCommand()
     }
 }
 
-// シリアルモニタを開始する
+// Start serial monitor
 async function startMonitor()
-{
-    // シリアルポートを開く
+{   
+    // Open serial port
     await openSerialPortAsync(userBaud);
 
-    // ブートローダは実行していないはずなのでエラーウォッチャを削除する
+    // Bootloader shouldn't be running so remove error watcher
     watchForBootloaderErrors(false);
 
     stdout.write("Monitoring....\n");
 
-    // 受信リスナーをセットアップ
+    // Setup receive listener
     let resolveDeviceReady;
     port.removeAllListeners('data');
     port.on('data', function(data) {
@@ -501,11 +538,11 @@ async function startMonitor()
         stdout.write(str);
     });
 
-    // 生き続けるために配送されないprmiseを待ち続ける
+    // Wait for the never delivered promise to keep alive
     await new Promise((resolve) => { });
 }
 
-// 非同期遅延ヘルパー
+// Async delay helper
 async function delay(period)
 {
     return new Promise((resolve) => {
@@ -513,7 +550,7 @@ async function delay(period)
     })
 }
 
-// ヘルプを表示する
+// Help!
 function showHelp()
 {
     console.log(`Usage: node flashy <serialport> [<hexfile>] [options]`);
@@ -532,10 +569,11 @@ function showHelp()
     console.log(`--reboot:<magic>   Sends a magic reboot string at user baud before flashing`);
     console.log(`--rebootdelay:<ms> Delay after sending reboot magic`);
     console.log(`--monitor          Monitor serial port`);
+    console.log(`--hc06             Hints that a HC-06 is used as a serial device (cannot be used with --nofast)`)
     console.log(`--help             Show this help`);
 }
 
-// メッセージを表示してアボート
+// Abort with message
 function fail(msg)
 {
     console.error(msg);
@@ -543,11 +581,11 @@ function fail(msg)
     process.exit(7);
 }
 
-// コマンドライン引数をパース
+// Parse command line args
 function parseCommandLine()
 {
     for (let i=2; i<process.argv.length; i++)
-    {
+    {   
         let arg = process.argv[i];
         if (arg.startsWith(`--`))
         {
@@ -604,13 +642,21 @@ function parseCommandLine()
                     noFast = true;
                     break;
 
+                case `hc06`:
+                    usingHC06 = true;
+                    break;
+
+                case "no-respawn":
+                    noRespawn = true;
+                    break;
+
                 default:
                     fail(`Unknown switch --${sw}`);
             }
         }
         else
         {
-            // 第1引数はシリアルポート名
+            // First arg is serial port name
             if (serialPortName == null)
             {
                 serialPortName = arg;
@@ -618,10 +664,10 @@ function parseCommandLine()
             }
             else if (hexFile == null)
             {
-                // 第2引数は .hex ファイル
+                // Second arg is the .hex file
                 hexFile = arg;
-
-                // サニティチェック
+                
+                // Sanity check
                 if (!arg.toLowerCase().endsWith('.hex'))
                 {
                     console.error(`Warning: hex file '${arg}' doesn't have .hex extension.`);
@@ -634,25 +680,31 @@ function parseCommandLine()
         }
     }
 
-    // シリアルポートなしでは何もできない
+    // Can't do anything without a serial port
     if (!serialPortName)
         fail(`No serial port specified`);
+
+    // HC-06 module must use fast mode (binary encoder) in order to work
+    if(usingHC06 && noFast)
+    {
+        fail(`Cannot use --hc06 and --nofast`);
+    }
 }
 
 
-// 非同期に実行
+// Run async
 (async function()
 {
-    // コマンドラインのパース
+    // parse the command line
     parseCommandLine();
 
     willSendGoCommand = (hexFile && !nogoSwitch) || (!hexFile && goSwitch);
 
-    // リブート
+    // Reboot
     if (rebootMagic)
         await sendRebootMagic();
 
-    // フラッシュ
+    // Flash
     if (hexFile)
         await flashDevice();
 
@@ -660,11 +712,12 @@ function parseCommandLine()
     if (willSendGoCommand)
         await sendGoCommand();
 
-    // モニター
+    // Monitor
     if (monitor)
         await startMonitor();
 
-    // 終了
+    // Finished
     await closeSerialPortAsync();
     stdout.write(`Done!\n`);
+    process.exit(0);
 })();

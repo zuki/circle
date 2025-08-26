@@ -5,8 +5,8 @@
 // networklayer.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2020  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -28,6 +28,7 @@
 #include <circle/net/netqueue.h>
 #include <circle/net/ipaddress.h>
 #include <circle/net/icmphandler.h>
+#include <circle/net/igmphandler.h>
 #include <circle/net/routecache.h>
 #include <circle/macros.h>
 #include <circle/types.h>
@@ -57,6 +58,7 @@ struct TIPHeader
     /// @brief 生存期間（TTL）
     u8    nTTL;
 #define IP_TTL_DEFAULT              64
+#define IP_TTL_MULTICAST		    1
     /// @brief プロトコル
     u8    nProtocol;                // see: in.h
     /// @brief ヘッダチェックサム
@@ -127,6 +129,14 @@ public:
                      u16 *pSendPort, u16 *pReceivePort,
                      int *pProtocol);
 
+	void EnableReceiveICMP (boolean bEnable);
+	// pBuffer must have size FRAME_BUFFER_SIZE
+	boolean ReceiveICMP (void *pBuffer, unsigned *pResultLength,
+			     CIPAddress *pSender, CIPAddress *pReceiver);
+
+	boolean JoinHostGroup (const CIPAddress &rGroupAddress);
+	boolean LeaveHostGroup (const CIPAddress &rGroupAddress);
+
 private:
     /// @brief ルートキャッシュに宛先IPとそのゲートウェイアドレスを追加する
     /// @param pDestIP 宛先IP
@@ -152,13 +162,18 @@ private:
     CLinkLayer   *m_pLinkLayer;
     /// @brief ICMPハンドラ
     CICMPHandler *m_pICMPHandler;
+    /// @brief IGNOハンドラ
+    CIGMPHandler *m_pIGMPHandler;
     /// @brief 受信キュー
     CNetQueue m_RxQueue;
     /// @brief ICMP受信キュー
     CNetQueue m_ICMPRxQueue;
     /// @brief ICMP通知キュー
     CNetQueue m_ICMPNotificationQueue;
-
+    /// @brief IGMP受信キュー
+    CNetQueue m_IGMPRxQueue;
+    /// @brief IGMP受信キュー2
+	CNetQueue *m_pICMPRxQueue2;
     CRouteCache m_RouteCache;
 };
 

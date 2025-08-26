@@ -20,8 +20,7 @@
 #ifndef _circle_usb_usbserial_h
 #define _circle_usb_usbserial_h
 
-#include <circle/usb/usbfunction.h>
-#include <circle/usb/usbendpoint.h>
+#include <circle/device.h>
 #include <circle/numberpool.h>
 #include <circle/types.h>
 
@@ -58,16 +57,17 @@ enum TUSBSerialParity
     USBSerialParityEven     = 2,
 };
 
+// serial options
+#define SERIAL_OPTION_ONLCR	(1 << 0)	///< Translate NL to CR+NL on output
 /**
  * @class CUSBSerialDevice
  * @brief シリアルデバイスを表すクラス
  */
-class CUSBSerialDevice : public CUSBFunction
+class CUSBSerialDevice : public CDevice		/// Interface device for USB serial devices
 {
 public:
-    CUSBSerialDevice (CUSBFunction *pFunction,
-              size_t nReadHeaderBytes = 0);        // 無視するバイト数
-    virtual ~CUSBSerialDevice (void);
+    CUSBSerialDevice (void);        // 無視するバイト数
+    ~CUSBSerialDevice (void);
 
     boolean Configure (void);
 
@@ -79,28 +79,40 @@ public:
     /** シリアルライン属性を設定 */
     virtual boolean SetLineProperties (TUSBSerialDataBits nDataBits, TUSBSerialParity nParity, TUSBSerialStopBits nStopBits);
 
-private:
-    void CompletionRoutine (CUSBRequest *pURB);
-    static void CompletionStub (CUSBRequest *pURB, void *pParam, void *pContext);
-
-protected:
-    unsigned m_nBaudRate;                   /**< ボーレート */
-    TUSBSerialDataBits m_nDataBits;         /**< データビット数 */
-    TUSBSerialParity m_nParity;             /**< パリティ */
-    TUSBSerialStopBits m_nStopBits;         /**< ストップビット長 */
+    /// \return Serial options mask (see serial options)
+	unsigned GetOptions (void) const;
+	/// \param nOptions Serial options mask (see serial options)
+	void SetOptions (unsigned nOptions);
 
 private:
-    size_t m_nReadHeaderBytes;              /**< 無視するバイト長 */
+	typedef int TWriteHandler (const void *pBuffer, size_t nCount, void *pParam);
+	typedef int TReadHandler (void *pBuffer, size_t nCount, void *pParam);
+	typedef boolean TSetBaudRateHandler (unsigned nBaudRate, void *pParam);
+	typedef boolean TSetLinePropertiesHandler (TUSBSerialDataBits nDataBits,
+						   TUSBSerialParity nParity,
+						   TUSBSerialStopBits nStopBits,
+						   void *pParam);
 
-    CUSBEndpoint *m_pEndpointIn;            /**< IN用エンドポイント */
-    CUSBEndpoint *m_pEndpointOut;           /**< OUT用エンドポイント */
+	void RegisterWriteHandler (TWriteHandler *pHandler, void *pParam);
+	void RegisterReadHandler (TReadHandler *pHandler, void *pParam);
+	void RegisterSetBaudRateHandler (TSetBaudRateHandler *pHandler, void *pParam);
+	void RegisterSetLinePropertiesHandler (TSetLinePropertiesHandler *pHandler, void *pParam);
 
-    u8 *m_pBufferIn;                        /**< IN用バッファ */
-    size_t m_nBufferInSize;                 /**< IN用バッファサイズ */
-    size_t m_nBufferInValid;                /**< 不正バッファ */
-    unsigned m_nBufferInPtr;                /**< バッファ内ポインタ */
+	friend class CUSBSerialHostDevice;
+	friend class CUSBCDCGadgetEndpoint;
 
-    volatile boolean m_bInRequestActive;    /**< INリクエストがアクティブか */
+private:
+	TWriteHandler *m_pWriteHandler;
+	TReadHandler *m_pReadHandler;
+	TSetBaudRateHandler *m_pSetBaudRateHandler;
+	TSetLinePropertiesHandler *m_pSetLinePropertiesHandler;
+
+	void *m_pWriteParam;
+	void *m_pReadParam;
+	void *m_pSetBaudRateParam;
+	void *m_pSetLinePropertiesParam;
+
+	unsigned m_nOptions;
 
     unsigned m_nDeviceNumber;               /**< デバイス番号 */
     static CNumberPool s_DeviceNumberPool;  /**< デバイス番号プール */

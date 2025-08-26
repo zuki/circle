@@ -5,8 +5,8 @@
 // netconnection.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2015-2018  R. Stange <rsta2@o2online.de>
-//
+// Copyright (C) 2015-2025  R. Stange <rsta2@gmx.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -43,8 +43,8 @@ public:
     /// @param nProtocol 通信プロトコル
     CNetConnection (CNetConfig    *pNetConfig,
             CNetworkLayer  *pNetworkLayer,
-            CIPAddress     &rForeignIP,
-            u16             ForeignPort,
+            const CIPAddress     &rForeignIP,
+            u16             nForeignPort,
             u16             nOwnPort,
             int             nProtocol);
     /// @brief コンストラクタ（相手先を指定しない）
@@ -61,6 +61,9 @@ public:
     /// @brief 宛先IPアドレスを取得
     /// @return 宛先IPアドレスのバイト列
     const u8 *GetForeignIP (void) const;
+    /// @brief 宛先IPアドレスを取得
+    /// @return ポート
+    u16 GetForeignPort (void) const;
     /// @brief 自身のポートを取得
     /// @return ポート
     u16 GetOwnPort (void) const;
@@ -68,6 +71,9 @@ public:
     /// @return プロトコル
     int GetProtocol (void) const;
 
+    // returns: string representation for current connection state
+	virtual const char *GetStateName (void) const;
+    
     virtual int Connect (void) = 0;
     virtual int Accept (CIPAddress *pForeignIP, u16 *pForeignPort) = 0;
     virtual int Close (void) = 0;
@@ -80,9 +86,12 @@ public:
 
     virtual int SetOptionBroadcast (boolean bAllowed) = 0;
 
-    virtual boolean IsConnected (void) const = 0;
-    virtual boolean IsTerminated (void) const = 0;
+	virtual int SetOptionAddMembership (const CIPAddress &rGroupAddress) = 0;
+	virtual int SetOptionDropMembership (const CIPAddress &rGroupAddress) = 0;
 
+	virtual boolean IsConnected (void) const = 0;
+	virtual boolean IsTerminated (void) const = 0;
+	
     virtual void Process (void) = 0;
 
     // returns: -1: invalid packet, 0: not to me, 1: packet consumed
