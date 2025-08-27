@@ -138,14 +138,14 @@ TShutdownMode CKernel::Run (void)
 		m_Scheduler.MsSleep (100);
 	}
 
-	//m_WLAN.DumpStatus ();
+	m_WLAN.DumpStatus ();
 
 	CString IPString;
 	m_Net.GetConfig ()->GetIPAddress ()->Format (&IPString);
 	m_Logger.Write (FromKernel, LogNotice, "Try \"ping %s\" from another computer!",
 			(const char *) IPString);
 
-	m_Timer.SetTimeZone (0*60);
+	m_Timer.SetTimeZone (9*60);
 	new CNTPDaemon ("pool.ntp.org", &m_Net);
 
 	while (1)
