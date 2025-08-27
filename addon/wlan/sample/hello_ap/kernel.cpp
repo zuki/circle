@@ -21,7 +21,7 @@
 #include "echoserver.h"
 #include <circle/string.h>
 
-//#define COUNTRY_CODE	"DE"
+#define COUNTRY_CODE	"JP"
 
 #define SSID_OPEN_NET	"TEST"
 #define AP_CHANNEL	6
