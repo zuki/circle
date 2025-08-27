@@ -1,7 +1,7 @@
 # ADDON_04: wlan/hello_waln
 
 このサンプルはRaspberry Pi 3, 4とZero Wに搭載されているオンボードWLANデバイスを使用して
-WLANに接続し、NTPサーバからシステム時間を更新します。現在のろこと、デフォルトではWPA[2]
+WLANに接続し、NTPサーバからシステム時間を更新します。現在のところ、デフォルトではWPA[2]
 対応のWLANしか接続できません。WLANドライバはPlan 9オペレーティングシステムから移植しました。
 さらに、移植した"WPA Supplicant"ツールも使用しています。
 
@@ -554,6 +554,8 @@ zuki@airm3:/Volumes/wdb/raspi_os/circle/addon/wlan/sample/hello_wlan$ cp kernel8
 
 ### 実行
 
+- LEDが5回点滅し、しばらくたってさらに2回点滅。何も表示されない
+
 ```bash
 $ minicom
 
@@ -567,6 +569,109 @@ Using character set conversion
                                                                                
 Press Meta-Z for help on special keys                                          
                                                                      
-// LEDが5回点滅し、しばらくたってさらに2回点滅。何も表示されない
+// 何も表示されない
+```
+
+### 問題解決
+
+- Logシステムの設定がしていないためだった
+- cmdline.txtを次の内容で作成してSDカードのrootディレクトリに置く
+
+  ```bash
+  width=640 height=480 logdev=ttyS1 loglevel=4
+  ```
+
+#### 実行結果 ()
 
 ```bash
+$ minicom
+
+
+Welcome to minicom 2.8
+
+OPTIONS: 
+Compiled on Jan  4 2021, 00:04:46.
+Port /dev/cu.usbserial-AI057C9L, 08:56:44
+Using character set conversion
+
+Press Meta-Z for help on special keys
+
+logger: Circle 50 started on Raspberry Pi 3 Model B+ 1GB (AArch64)
+logger: Revision code is a020d3, compiler has been GCC 14.3.1
+00:00:00.66 timer: SpeedFactor is 1.51
+00:00:01.47 usbdev: Dumping 0x12 bytes starting at 0x610F00
+00:00:01.47 usbdev: 0F00: 12 01 00 02 09 00 02 40-24 04 14 25 B3 0B 00 00
+00:00:01.48 usbdev: 0F10: 00 01 25 B8 55 55 D5 55-75 55 55 D4 D5 75 55 51
+00:00:01.53 usbdev: Dumping 0x29 bytes starting at 0x610F80
+00:00:01.54 usbdev: 0F80: 09 02 29 00 01 01 00 E0-01 09 04 00 00 01 09 00
+00:00:01.54 usbdev: 0F90: 01 00 07 05 81 03 01 00-0C 09 04 00 01 01 09 00
+00:00:01.55 usbdev: 0FA0: 02 00 07 05 81 03 01 00-0C B4 37 00 20 37 35 20
+00:00:01.56 usbdev0-1: Device ven424-2514, dev9-0-2 found
+00:00:01.61 usbdev0-1: Interface int9-0-1 found
+00:00:01.61 usbdev0-1: Function is not supported
+00:00:01.62 usbdev0-1: Interface int9-0-2 found
+00:00:01.62 usbdev0-1: Using device/interface int9-0-2
+00:00:02.24 usbdev: Dumping 0x12 bytes starting at 0x613B40
+00:00:02.24 usbdev: 3B40: 12 01 00 02 09 00 02 40-24 04 14 25 B3 0B 00 00
+00:00:02.25 usbdev: 3B50: 00 01 25 B8 63 65 20 69-6E 74 39 2D 30 2D 32 00
+00:00:02.30 usbdev: Dumping 0x29 bytes starting at 0x614D40
+00:00:02.31 usbdev: 4D40: 09 02 29 00 01 01 00 E0-01 09 04 00 00 01 09 00
+00:00:02.31 usbdev: 4D50: 01 00 07 05 81 03 01 00-0C 09 04 00 01 01 09 00
+00:00:02.32 usbdev: 4D60: 02 00 07 05 81 03 01 00-0C B4 37 00 20 32 44 20
+00:00:02.33 usbdev0-1: Device ven424-2514, dev9-0-2 found
+00:00:02.38 usbdev0-1: Interface int9-0-1 found
+00:00:02.39 usbdev0-1: Function is not supported
+00:00:02.39 usbdev0-1: Interface int9-0-2 found
+00:00:02.39 usbdev0-1: Using device/interface int9-0-2
+00:00:03.01 usbdev: Dumping 0x12 bytes starting at 0x617A40
+00:00:03.01 usbdev: 7A40: 12 01 10 02 FF 00 FF 40-24 04 00 78 00 03 00 00
+00:00:03.02 usbdev: 7A50: 00 01 07 A8 31 3A 20 49-6E 74 65 72 66 61 63 65     
+00:00:03.08 usbdev: Dumping 0x27 bytes starting at 0x617B40                   
+00:00:03.08 usbdev: 7B40: 09 02 27 00 01 01 00 E0-01 09 04 00 00 03 FF 00     
+00:00:03.09 usbdev: 7B50: FF 00 07 05 81 02 00 02-00 07 05 02 02 00 02 00     
+00:00:03.09 usbdev: 7B60: 07 05 83 03 10 00 04 E9-32 20 36 36 20 36 31 20
+00:00:03.10 usbdev0-1: Device ven424-7800 found
+00:00:03.15 usbdev0-1: Using device/interface ven424-7800
+00:00:03.23 lan7800: MAC address is B8:27:EB:AB:E8:48
+00:00:03.37 usbhub: Port 1: Device configured
+00:00:03.37 usbhub: Port 1: Device configured
+00:00:03.38 dwroot: Device configured
+00:00:03.40 sdhost: emmc1: sdhost-bcm2835 loaded
+00:00:03.91 emmc: Capacity is 29512 MBytes
+00:00:03.91 emmc: Found a valid version 3.0x SD card
+00:00:04.05 wlan: ether4330: chip 0x4345 rev 6 type 1
+00:00:04.85 wlan: ether4330: firmware ready
+00:00:04.85 wlan: ether4330: addr B8:27:EB:FE:BD:1D
+00:00:04.88 kernel: Compile time: Aug 27 2025 09:41:17
+00:00:05.01 wpa: Setting country code to 'JP'
+00:00:08.61 wpa: Trying to associate with f8:b7:97:87:2c:de (SSID='MSRS_TDF_A2_S04' freq=2452 MHz)
+00:00:11.41 wpa: Associated with f8:b7:97:87:2c:de
+00:00:12.25 wpa: WPA: Key negotiation completed with f8:b7:97:87:2c:de [PTK=CCMP GTK=CCMP]
+00:00:12.25 wpa: CTRL-EVENT-CONNECTED - Connection to f8:b7:97:87:2c:de completed [id=0 id_str=]
+00:00:12.53 dhcp: IP address is 192.168.10.104
+00:00:12.54 wlan: channel: 0
+00:00:12.54 wlan: bssid: f8:b7:97:87:2c:de
+00:00:12.54 wlan: essid: MSRS_TDF_A2_S04
+00:00:12.55 wlan: crypt: wpa2
+00:00:12.55 wlan: oq: 0
+00:00:12.55 wlan: txwin: 75
+00:00:12.55 wlan: txseq: 35
+00:00:12.56 wlan: status: associated
+00:00:12.56 kernel: Try "ping 192.168.10.104" from another computer!
+Aug 27 09:43:32.56 ntpd: System time updated      // <= 日付が正しく設定されている
+```
+
+#### 別の端末から
+
+```bash
+$ ping 192.168.10.104
+PING 192.168.10.104 (192.168.10.104): 56 data bytes
+64 bytes from 192.168.10.104: icmp_seq=0 ttl=64 time=3.820 ms
+64 bytes from 192.168.10.104: icmp_seq=1 ttl=64 time=1.489 ms
+64 bytes from 192.168.10.104: icmp_seq=2 ttl=64 time=1.787 ms
+64 bytes from 192.168.10.104: icmp_seq=3 ttl=64 time=1.484 ms
+^C
+--- 192.168.10.104 ping statistics ---
+4 packets transmitted, 4 packets received, 0.0% packet loss
+round-trip min/avg/max/stddev = 1.484/2.145/3.820/0.975 ms
+```
