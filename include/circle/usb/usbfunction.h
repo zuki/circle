@@ -91,8 +91,10 @@ public:
     /// @param uchClass クラス
     /// @param uchSubClass サブクラス
     /// @param uchProtocol プロトコル
+    /// @param nMinEndpoints 最小エンドポイント数
     /// @return あればTURE、なければFALSE
-    boolean SelectInterfaceByClass (u8 uchClass, u8 uchSubClass, u8 uchProtocol);
+    boolean SelectInterfaceByClass (u8 uchClass, u8 uchSubClass, u8 uchProtocol,
+        unsigned nMinEndpoints = 0);
 
     /// @brief インタフェース番号を取得
     /// @return インタフェース番号

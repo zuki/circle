@@ -23,36 +23,36 @@
 #include <assert.h>
 
 CUSBEndpoint::CUSBEndpoint (CUSBDevice *pDevice)
-:   m_pDevice (pDevice),
-    m_ucNumber (0),
-    m_Type (EndpointTypeControl),
-    m_bDirectionIn (FALSE),
-    m_nMaxPacketSize (USB_DEFAULT_MAX_PACKET_SIZE)
+:	m_pDevice (pDevice),
+	m_ucNumber (0),
+	m_Type (EndpointTypeControl),
+	m_bDirectionIn (FALSE),
+	m_nMaxPacketSize (USB_DEFAULT_MAX_PACKET_SIZE)
 #if RASPPI <= 3
-    , m_nInterval (1),
-    m_NextPID (USBPIDSetup)
+	, m_nInterval (1),
+	m_NextPID (USBPIDSetup)
 #endif
 {
-    assert (m_pDevice != 0);
+	assert (m_pDevice != 0);
 
 #if RASPPI >= 4
-    m_pXHCIEndpoint = new CXHCIEndpoint ((CXHCIUSBDevice *) m_pDevice,
-                         (CXHCIDevice *) m_pDevice->GetHost ());
+	m_pXHCIEndpoint = new CXHCIEndpoint ((CXHCIUSBDevice *) m_pDevice,
+					     (CXHCIDevice *) m_pDevice->GetHost ());
 #endif
 }
 
 CUSBEndpoint::CUSBEndpoint (CUSBDevice *pDevice, const TUSBEndpointDescriptor *pDesc)
-:   m_pDevice (pDevice)
+:	m_pDevice (pDevice)
 #if RASPPI <= 3
-    , m_nInterval (1),
-    m_NextPID (USBPIDData0)
+	, m_nInterval (1),
+	m_NextPID (USBPIDData0)
 #endif
 {
-    assert (m_pDevice != 0);
+	assert (m_pDevice != 0);
 
-    assert (pDesc != 0);
-    assert (pDesc->bLength >= sizeof *pDesc);    // クラス固有トレイラがある場合があり
-    assert (pDesc->bDescriptorType == DESCRIPTOR_ENDPOINT);
+	assert (pDesc != 0);
+	assert (pDesc->bLength >= sizeof *pDesc);	// クラス固有トレイラがある場合があり
+	assert (pDesc->bDescriptorType == DESCRIPTOR_ENDPOINT);
 
 	switch (pDesc->bmAttributes & 0x03)
 	{
@@ -64,21 +64,12 @@ CUSBEndpoint::CUSBEndpoint (CUSBDevice *pDevice, const TUSBEndpointDescriptor *p
 		m_Type = EndpointTypeBulk;
 		break;
 
-    case 3:
-        m_Type = EndpointTypeInterrupt;
-        break;
-
-    default:
-        assert (0);    // エンドポイントコンフィグレーションは属性クラスのドライバでチェックする必要あり
-        return;
-    }
-
-    m_ucNumber       = pDesc->bEndpointAddress & 0x0F;
-    m_bDirectionIn   = pDesc->bEndpointAddress & 0x80 ? TRUE : FALSE;
-    m_nMaxPacketSize = pDesc->wMaxPacketSize & 0x7FF;
+	case 3:
+		m_Type = EndpointTypeInterrupt;
+		break;
 
 	default:
-		assert (0);	// endpoint configuration should be checked by function driver
+		assert (0);	// エンドポイントコンフィグレーションはファンクションドライバでチェックするべき
 		return;
 	}
 	
@@ -96,115 +87,114 @@ CUSBEndpoint::CUSBEndpoint (CUSBDevice *pDevice, const TUSBEndpointDescriptor *p
 			ucInterval = 1;
 		}
 
-        // see USB 2.0 spec chapter 9.6.6
-        // Full Speed / Low Speedの場合
-        if (m_pDevice->GetSpeed () < USBSpeedHigh)
-        {
-            m_nInterval = ucInterval;
-        }
-        // High Speedの場合
-        else
-        {
-            if (ucInterval > 16)
-            {
-                ucInterval = 16;
-            }
+		// see USB 2.0 spec chapter 9.6.6
+		// Full Speed / Low Speedの場合
+		if (m_pDevice->GetSpeed () < USBSpeedHigh)
+		{
+			m_nInterval = ucInterval;
+		}
+		// High Speedの場合
+		else
+		{
+			if (ucInterval > 16)
+			{
+				ucInterval = 16;
+			}
 
-            unsigned nValue = 1 << (ucInterval - 1);
+			unsigned nValue = 1 << (ucInterval - 1);
 
-            m_nInterval = nValue / 8;
+			m_nInterval = nValue / 8;
 
-            if (m_nInterval < 1)
-            {
-                m_nInterval = 1;
-            }
-        }
+			if (m_nInterval < 1)
+			{
+				m_nInterval = 1;
+			}
+		}
 
 #ifndef USE_USB_SOF_INTR
-        // interval 20ms is minimum to reduce interrupt rate
-        if (m_nInterval < 20)
-        {
-            m_nInterval = 20;
-        }
+		// interval 20ms is minimum to reduce interrupt rate
+		if (m_nInterval < 20)
+		{
+			m_nInterval = 20;
+		}
 #endif
-    }
+	}
 #endif
 
-    // バルクEPでLPの場合の回避策、通常、仕様では禁止されている
-    if (   m_pDevice->GetSpeed () == USBSpeedLow
-        && m_Type == EndpointTypeBulk)
-    {
-        CLogger::Get ()->Write ("uep", LogWarning, "Device is not fully USB compliant");
-        // 割り込みEPにする
-        m_Type = EndpointTypeInterrupt;
-        // 最大パケットサイズは8以下
-        if (m_nMaxPacketSize > 8)
-        {
-            m_nMaxPacketSize = 8;
-        }
+	// バルクEPでLPの場合の回避策、通常、仕様では禁止されている
+	if (   m_pDevice->GetSpeed () == USBSpeedLow
+	    && m_Type == EndpointTypeBulk)
+	{
+		CLogger::Get ()->Write ("uep", LogWarning, "Device is not fully USB compliant");
+		// 割り込みEPにする
+		m_Type = EndpointTypeInterrupt;
+		// 最大パケットサイズは8以下
+		if (m_nMaxPacketSize > 8)
+		{
+			m_nMaxPacketSize = 8;
+		}
 
 #if RASPPI <= 3
 #ifdef USE_USB_SOF_INTR
-        // インターバルは1
-        m_nInterval = 1;
+		m_nInterval = 1;
 #else
-        m_nInterval = 20;
+		m_nInterval = 20;
 #endif
 #endif
-    }
+	}
 
 #if RASPPI >= 4
-    m_pXHCIEndpoint = new CXHCIEndpoint ((CXHCIUSBDevice *) m_pDevice, pDesc,
-                         (CXHCIDevice *) m_pDevice->GetHost ());
+	m_pXHCIEndpoint = new CXHCIEndpoint ((CXHCIUSBDevice *) m_pDevice, pDesc,
+					     (CXHCIDevice *) m_pDevice->GetHost ());
 #endif
 }
 
 CUSBEndpoint::~CUSBEndpoint (void)
 {
 #if RASPPI >= 4
-    delete m_pXHCIEndpoint;
-    m_pXHCIEndpoint = 0;
+	delete m_pXHCIEndpoint;
+	m_pXHCIEndpoint = 0;
 #endif
 
-    m_pDevice = 0;
+	m_pDevice = 0;
 }
 
 CUSBDevice *CUSBEndpoint::GetDevice (void) const
 {
-    assert (m_pDevice != 0);
-    return m_pDevice;
+	assert (m_pDevice != 0);
+	return m_pDevice;
 }
 
 u8 CUSBEndpoint::GetNumber (void) const
 {
-    return m_ucNumber;
+	return m_ucNumber;
 }
 
 TEndpointType CUSBEndpoint::GetType (void) const
 {
-    return m_Type;
+	return m_Type;
 }
 
 boolean CUSBEndpoint::IsDirectionIn (void) const
 {
-    return m_bDirectionIn;
+	return m_bDirectionIn;
 }
 
 boolean CUSBEndpoint::SetMaxPacketSize (u32 nMaxPacketSize)
 {
-    m_nMaxPacketSize = nMaxPacketSize;
+	m_nMaxPacketSize = nMaxPacketSize;
 
 #if RASPPI >= 4
-    assert (m_pXHCIEndpoint != 0);
-    return m_pXHCIEndpoint->SetMaxPacketSize (nMaxPacketSize);
+	assert (m_pXHCIEndpoint != 0);
+	return m_pXHCIEndpoint->SetMaxPacketSize (nMaxPacketSize);
 #else
-    return TRUE;
+	return TRUE;
 #endif
 }
 
 u32 CUSBEndpoint::GetMaxPacketSize (void) const
 {
-    return m_nMaxPacketSize;
+	return m_nMaxPacketSize;
 }
 
 #if RASPPI <= 3
@@ -214,19 +204,19 @@ unsigned CUSBEndpoint::GetInterval (void) const
 	assert (   m_Type == EndpointTypeInterrupt
 		|| m_Type == EndpointTypeIsochronous);
 
-    return m_nInterval;
+	return m_nInterval;
 }
 
 TUSBPID CUSBEndpoint::GetNextPID (boolean bStatusStage)
 {
-    if (bStatusStage)
-    {
-        assert (m_Type == EndpointTypeControl);
+	if (bStatusStage)
+	{
+		assert (m_Type == EndpointTypeControl);
 
-        return USBPIDData1;
-    }
-
-    return m_NextPID;
+		return USBPIDData1;
+	}
+	
+	return m_NextPID;
 }
 
 void CUSBEndpoint::SkipPID (unsigned nPackets, boolean bStatusStage)
@@ -245,39 +235,31 @@ void CUSBEndpoint::SkipPID (unsigned nPackets, boolean bStatusStage)
 			m_NextPID = USBPIDData1;
 			break;
 
-    if (!bStatusStage)
-    {
-        switch (m_NextPID)
-        {
-        case USBPIDSetup:
-            m_NextPID = USBPIDData1;
-            break;
+		case USBPIDData0:
+			if (nPackets & 1)
+			{
+				m_NextPID = USBPIDData1;
+			}
+			break;
+			
+		case USBPIDData1:
+			if (nPackets & 1)
+			{
+				m_NextPID = USBPIDData0;
+			}
+			break;
 
-        case USBPIDData0:
-            if (nPackets & 1)
-            {
-                m_NextPID = USBPIDData1;
-            }
-            break;
+		default:
+			assert (0);
+			break;
+		}
+	}
+	else
+	{
+		assert (m_Type == EndpointTypeControl);
 
-        case USBPIDData1:
-            if (nPackets & 1)
-            {
-                m_NextPID = USBPIDData0;
-            }
-            break;
-
-        default:
-            assert (0);
-            break;
-        }
-    }
-    else
-    {
-        assert (m_Type == EndpointTypeControl);
-
-        m_NextPID = USBPIDSetup;
-    }
+		m_NextPID = USBPIDSetup;
+	}
 }
 
 #endif
@@ -285,10 +267,10 @@ void CUSBEndpoint::SkipPID (unsigned nPackets, boolean bStatusStage)
 void CUSBEndpoint::ResetPID (void)
 {
 #if RASPPI <= 3
-    assert (   m_Type == EndpointTypeControl
-        || m_Type == EndpointTypeBulk);
+	assert (   m_Type == EndpointTypeControl
+		|| m_Type == EndpointTypeBulk);
 
-    m_NextPID = m_Type == EndpointTypeControl ? USBPIDSetup : USBPIDData0;
+	m_NextPID = m_Type == EndpointTypeControl ? USBPIDSetup : USBPIDData0;
 #endif
 }
 
@@ -296,8 +278,8 @@ void CUSBEndpoint::ResetPID (void)
 
 CXHCIEndpoint *CUSBEndpoint::GetXHCIEndpoint (void)
 {
-    assert (m_pXHCIEndpoint != 0);
-    return m_pXHCIEndpoint;
+	assert (m_pXHCIEndpoint != 0);
+	return m_pXHCIEndpoint;
 }
 
 #endif

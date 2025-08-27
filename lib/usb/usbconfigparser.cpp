@@ -75,12 +75,18 @@ CUSBConfigurationParser::CUSBConfigurationParser (const void *pBuffer, unsigned 
 			return;
 		}
 
-        TUSBDescriptor *pDescEnd = SKIP_BYTES (pCurrentPosition, ucDescLen);
-        if (pDescEnd > m_pEndPosition)
-        {
-            m_pErrorPosition = pCurrentPosition;
-            return;
-        }
+        u8 ucExpectedLen = 0;
+		u8 ucAlternateLen = 0;
+		switch (ucDescType)
+		{
+        case DESCRIPTOR_CONFIGURATION:
+			if (ucLastDescType != 0)
+			{
+				m_pErrorPosition = pCurrentPosition;
+				return;
+			}
+			ucExpectedLen = sizeof (TUSBConfigurationDescriptor);
+			break;
 
 		case DESCRIPTOR_INTERFACE:
 			if (ucLastDescType == 0)
@@ -108,20 +114,6 @@ CUSBConfigurationParser::CUSBConfigurationParser (const void *pBuffer, unsigned 
 				ucAlternateLen = sizeof (TUSBAudioEndpointDescriptor);
 			}
 			break;
-
-        case DESCRIPTOR_ENDPOINT:
-            if (   ucLastDescType == 0
-                || ucLastDescType == DESCRIPTOR_CONFIGURATION)
-            {
-                m_pErrorPosition = pCurrentPosition;
-                return;
-            }
-            ucExpectedLen = sizeof (TUSBEndpointDescriptor);
-            if (bInAudioInterface)
-            {
-                ucAlternateLen = sizeof (TUSBAudioEndpointDescriptor);
-            }
-            break;
 
         default:
             break;

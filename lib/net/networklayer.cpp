@@ -98,24 +98,6 @@ void CNetworkLayer::Process (void)
         }
 
         CIPAddress IPAddressDestination (pHeader->DestinationAddress);
-        if (!pOwnIPAddress->IsNull ())
-        {
-            if (   *pOwnIPAddress != IPAddressDestination
-                && !IPAddressDestination.IsBroadcast ()
-                && *m_pNetConfig->GetBroadcastAddress () != IPAddressDestination)
-            {
-                continue;
-            }
-        }
-        else
-        {
-            if (!IPAddressDestination.IsBroadcast ())
-            {
-                continue;
-            }
-        }
-
-		CIPAddress IPAddressDestination (pHeader->DestinationAddress);
 		if (!pOwnIPAddress->IsNull ())
 		{
 			if (   *pOwnIPAddress != IPAddressDestination
@@ -132,6 +114,13 @@ void CNetworkLayer::Process (void)
 			{
 				continue;
 			}
+		}
+
+        if (   (pHeader->nFlagsFragmentOffset & IP_FLAGS_MF)
+		    ||    IP_FRAGMENT_OFFSET (le2be16 (pHeader->nFlagsFragmentOffset))
+		       != IP_FRAGMENT_OFFSET_FIRST)
+		{
+			continue;
 		}
 
         unsigned nTotalLength = le2be16 (pHeader->nTotalLength);
@@ -159,53 +148,16 @@ void CNetworkLayer::Process (void)
         }
     }
 
-<<<<<<< HEAD
     assert (m_pICMPHandler != 0);
     m_pICMPHandler->Process ();
-=======
-		if (pHeader->nProtocol == IPPROTO_ICMP)
-		{
-			if (m_pICMPRxQueue2 != 0)
-			{
-				TNetworkPrivateData *pParam2 = new TNetworkPrivateData;
-				assert (pParam2 != 0);
-				memcpy (pParam2, pParam, sizeof *pParam);
 
-				m_pICMPRxQueue2->Enqueue (Buffer+nHeaderLength, nResultLength,
-							  pParam2);
-			}
-
-			m_ICMPRxQueue.Enqueue (Buffer+nHeaderLength, nResultLength, pParam);
-		}
-		else if (pHeader->nProtocol == IPPROTO_IGMP)
-		{
-			m_IGMPRxQueue.Enqueue (Buffer+nHeaderLength, nResultLength, pParam);
-		}
-		else
-		{
-			m_RxQueue.Enqueue (Buffer+nHeaderLength, nResultLength, pParam);
-		}
-	}
-
-	assert (m_pICMPHandler != 0);
-	m_pICMPHandler->Process ();
-
-	assert (m_pIGMPHandler != 0);
+    assert (m_pIGMPHandler != 0);
 	m_pIGMPHandler->Process ();
->>>>>>> master
 }
 
 boolean CNetworkLayer::Send (const CIPAddress &rReceiver, const void *pPacket, unsigned nLength,
 			     int nProtocol, boolean bRouterAlert)
 {
-<<<<<<< HEAD
-    unsigned nPacketLength = sizeof (TIPHeader) + nLength;  // may wrap
-    if (   nPacketLength <= sizeof (TIPHeader)
-        || nPacketLength > FRAME_BUFFER_SIZE)
-    {
-        return FALSE;
-    }
-=======
 	static const u8 RouterAlertOption[] =
 	{
 		0b1'00'10100,	// Copied, Control, Router Alert
@@ -220,24 +172,10 @@ boolean CNetworkLayer::Send (const CIPAddress &rReceiver, const void *pPacket, u
 	{
 		return FALSE;
 	}
->>>>>>> master
 
     u8 PacketBuffer[nPacketLength];
     TIPHeader *pHeader = (TIPHeader *) PacketBuffer;
 
-<<<<<<< HEAD
-    pHeader->nVersionIHL          = IP_VERSION << 4 | IP_HEADER_LENGTH_DWORD_MIN;
-    pHeader->nTypeOfService       = IP_TOS_ROUTINE;
-    pHeader->nTotalLength         = le2be16 ((u16) nPacketLength);
-    pHeader->nIdentification      = BE (IP_IDENTIFICATION_DEFAULT);
-    pHeader->nFlagsFragmentOffset = IP_FLAGS_DF | BE (IP_FRAGMENT_OFFSET_FIRST);
-    pHeader->nTTL                 = IP_TTL_DEFAULT;
-    pHeader->nProtocol            = (u8) nProtocol;
-
-    assert (m_pNetConfig != 0);
-    const CIPAddress *pOwnIPAddress = m_pNetConfig->GetIPAddress ();
-    assert (pOwnIPAddress != 0);
-=======
 	pHeader->nVersionIHL          = IP_VERSION << 4 | nHeaderLength / 4;
 	pHeader->nTypeOfService       = IP_TOS_ROUTINE;
 	pHeader->nTotalLength         = le2be16 ((u16) nPacketLength);
@@ -254,27 +192,17 @@ boolean CNetworkLayer::Send (const CIPAddress &rReceiver, const void *pPacket, u
 	assert (m_pNetConfig != 0);
 	const CIPAddress *pOwnIPAddress = m_pNetConfig->GetIPAddress ();
 	assert (pOwnIPAddress != 0);
->>>>>>> master
 
     pOwnIPAddress->CopyTo (pHeader->SourceAddress);
 
     rReceiver.CopyTo (pHeader->DestinationAddress);
 
-<<<<<<< HEAD
-    pHeader->nHeaderChecksum = 0;
-    pHeader->nHeaderChecksum = CChecksumCalculator::SimpleCalculate (pHeader, sizeof (TIPHeader));
-
-    assert (pPacket != 0);
-    assert (nLength > 0);
-    memcpy (PacketBuffer+sizeof (TIPHeader), pPacket, nLength);
-=======
 	pHeader->nHeaderChecksum = 0;
 	pHeader->nHeaderChecksum = CChecksumCalculator::SimpleCalculate (pHeader, nHeaderLength);
 
 	assert (pPacket != 0);
 	assert (nLength > 0);
 	memcpy (PacketBuffer+nHeaderLength, pPacket, nLength);
->>>>>>> master
 
     if (   pOwnIPAddress->IsNull ()
         && !rReceiver.IsBroadcast ())
@@ -284,16 +212,6 @@ boolean CNetworkLayer::Send (const CIPAddress &rReceiver, const void *pPacket, u
         return FALSE;
     }
 
-<<<<<<< HEAD
-    CIPAddress GatewayIP;
-    const CIPAddress *pNextHop = &rReceiver;
-    if (!pOwnIPAddress->OnSameNetwork (rReceiver, m_pNetConfig->GetNetMask ()))
-    {
-        const u8 *pGateway = m_RouteCache.GetRoute (rReceiver.Get ());
-        if (pGateway != 0)
-        {
-            GatewayIP.Set (pGateway);
-=======
 	CIPAddress GatewayIP;
 	const CIPAddress *pNextHop = &rReceiver;
 	if (   !rReceiver.IsMulticast ()
@@ -303,7 +221,6 @@ boolean CNetworkLayer::Send (const CIPAddress &rReceiver, const void *pPacket, u
 		if (pGateway != 0)
 		{
 			GatewayIP.Set (pGateway);
->>>>>>> master
 
             pNextHop = &GatewayIP;
         }

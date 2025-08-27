@@ -90,7 +90,7 @@ public:
     /// \param nForeignPort    送信先のポート番号（TCPソケットでは無視される）
     /// \return 送信したメッセージ長（エラー時は< 0）
     int SendTo (const void *pBuffer, unsigned nLength, int nFlags,
-            CIPAddress &rForeignIP, u16 nForeignPort);
+            const CIPAddress &rForeignIP, u16 nForeignPort);
 
     /// \brief リモートホストからメッセージを受信し、リモートホストのホスト/ポートを返す
     /// \param pBuffer メッセージバッファへのポインタ

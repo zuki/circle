@@ -121,7 +121,7 @@ public:
     /// @param rForeignIP 宛先IPアドレス
     /// @param nForeignPort 宛先ポート
     /// @return エラーの場合は < 0
-    int SendTo (const void *pData, unsigned nLength, int nFlags, CIPAddress    &rForeignIP, u16 nForeignPort);
+    int SendTo (const void *pData, unsigned nLength, int nFlags, const CIPAddress    &rForeignIP, u16 nForeignPort);
     /// @brief 受信キューからデータを受信する. \n
     /// データがあり、rForeignIP, nForeignPortが指定された場合は宛先を
     /// 設定する

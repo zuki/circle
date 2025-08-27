@@ -48,7 +48,7 @@ public:
     /// \param rForeignIP 接続するホストのIPアドレス
     /// \param nForeignPort   接続するポート番号
     /// \return ステータス (0 成功, < 0 エラー)
-    virtual int Connect (CIPAddress &rForeignIP, u16 nForeignPort) = 0;
+    virtual int Connect (const CIPAddress &rForeignIP, u16 nForeignPort) = 0;
 
     /// \brief 外部のホスト/ポートに接続する（TCP）、外部のホスト/ポートアドレスを設定する（UDP）
     /// \param pHost 接続するホストのホスト名またはIPアドレス文字列

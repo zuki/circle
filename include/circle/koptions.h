@@ -68,6 +68,9 @@ public:
     unsigned GetGPIOFanPin (void) const;            // returns 0, if not defined
     //! Getter: タッチスクリーン
     const unsigned *GetTouchScreen (void) const;    // returns 4 values (nullptr if unset)
+
+    unsigned GetBacklight (void) const;		// returns 0, if not defined
+    
 	// for application-defined options:
 	const char *GetAppOptionString (const char *pOption, const char *pDefault = nullptr) const;
 	unsigned GetAppOptionDecimal (const char *pOption, unsigned nDefault = -1) const;
@@ -85,7 +88,7 @@ private:
     /// @brief 10進数文字列を数値に変換する
     /// @param pString 文字列
     /// @return 10進数値、エラーの場合は -1
-    static unsigned GetDecimal (char *pString);
+    static unsigned GetDecimal (const char *pString);
 
     // fetches nCount comma-separated decimals from pString to pResult
 
@@ -143,6 +146,9 @@ private:
 	};
     /// @brief アプリケーションオプションリスト
     TAppOption *m_pAppOptionList;
+
+    unsigned m_nBacklight;
+
     /// @brief このオブジェクト
     static CKernelOptions *s_pThis;
 };

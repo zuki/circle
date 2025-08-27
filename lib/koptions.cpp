@@ -40,7 +40,7 @@ CKernelOptions::CKernelOptions (void)
 	m_nGPIOFanPin (0),
 	m_bTouchScreenValid (FALSE),
 	m_pAppOptionList (nullptr),
-        m_nBacklight (0)
+    m_nBacklight (0)
 {
     strcpy (m_LogDevice, "tty1");
     strcpy (m_KeyMap, DEFAULT_KEYMAP);
@@ -63,6 +63,11 @@ CKernelOptions::CKernelOptions (void)
 
     m_pOptions = (char *) m_TagCommandLine.String;
 
+	char *pOption;
+	while ((pOption = GetToken ()) != 0)
+	{
+		char *pValue = GetOptionValue (pOption);
+		
 		if (strcmp (pOption, "width") == 0)
 		{
 			unsigned nValue;

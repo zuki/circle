@@ -64,19 +64,6 @@ public:
     /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
     void RemoveDevice (const char *pPrefix, unsigned nIndex, boolean bBlockDevice);
     
-	/// \brief Enumerate all devices, or all devices of a specified prefix
-	/// \param callback A callback to be invoked for each matching device
-	/// \param arg A user define pointer that will back passed to the callback
-	/// \return false if the enumeration was cancelled by the callback returning false
-	boolean EnumerateDevices (
-		boolean (*callback)(CDevice* pDevice, const char* name, boolean bBlockDevice, void* arg), 
-		void* arg
-	);
-
-	/// \brief Generate device listing
-	/// \param pTarget Device to be used for output
-	void ListDevices (CDevice *pTarget);
-
     /// デバイスをデバイス名で取得する
     /// \param pName        デバイス名文字列
     /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
@@ -89,6 +76,15 @@ public:
     /// \param bBlockDevice ブロックデバイスの場合はTRUE、それ以外はキャラクタデバイス
     /// \return デバイスオブジェクトへのポインタ、見つからない場合は0
     CDevice *GetDevice (const char *pPrefix, unsigned nIndex, boolean bBlockDevice);
+
+    /// \brief Enumerate all devices, or all devices of a specified prefix
+	/// \param callback A callback to be invoked for each matching device
+	/// \param arg A user define pointer that will back passed to the callback
+	/// \return false if the enumeration was cancelled by the callback returning false
+	boolean EnumerateDevices (
+		boolean (*callback)(CDevice* pDevice, const char* name, boolean bBlockDevice, void* arg), 
+		void* arg
+	);
 
     /// \brief デバイスリストを生成する
     /// \param pTarget 出力に使用するデバイス

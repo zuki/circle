@@ -50,7 +50,7 @@ public:
     /// @brief ポートを無効にして、接続されていたデバイスを削除
     /// @param nPortIndex 削除するでバスが接続されていたポート番号
     /// @return 処理の成否
-    boolean RemoveDevice (unsigned nPortIndex);    // nPortIndex is 0-based
+    boolean RemoveDeviceAt (unsigned nPortIndex);    // nPortIndex is 0-based
     /// @brief ポートを無効にする
     /// @param nPortIndex 無効にするポート番号
     /// @return 処理の成否

@@ -53,17 +53,30 @@ CDWHCITransferStageData::CDWHCITransferStageData (unsigned	 nChannel,
 	m_nStartTicksHZ (0),
 	m_pFrameScheduler (0)
 {
-    assert (m_pURB != 0);                   // リクエストオブジェクトはセットされていること
+	assert (m_pURB != 0);
 
-    m_pEndpoint = pURB->GetEndpoint ();
-    assert (m_pEndpoint != 0);              // エンドポイントはセットされていること
-    m_pDevice = m_pEndpoint->GetDevice ();
-    assert (m_pDevice != 0);                // エンドポイントデバイスはセットされていること
+	m_pEndpoint = pURB->GetEndpoint ();
+	assert (m_pEndpoint != 0);
+	m_pDevice = m_pEndpoint->GetDevice ();
+	assert (m_pDevice != 0);
 
-    m_Speed = m_pDevice->GetSpeed ();
-    m_nMaxPacketSize = m_pEndpoint->GetMaxPacketSize ();
+	m_Speed = m_pDevice->GetSpeed ();
+	m_nMaxPacketSize = m_pEndpoint->GetMaxPacketSize ();
+	
+	m_bSplitTransaction = m_pDevice->IsSplit ();
 
-    m_bSplitTransaction = m_pDevice->IsSplit ();
+	if (!bStatusStage)
+	{
+		if (m_pEndpoint->GetNextPID (bStatusStage) == USBPIDSetup)
+		{
+			m_pBufferPointer = pURB->GetSetupData ();
+			m_nTransferSize = sizeof (TSetupData);
+		}
+		else
+		{
+			m_pBufferPointer = pURB->GetBuffer ();
+			m_nTransferSize = pURB->GetBufLen ();
+		}
 
 		m_nPackets = (m_nTransferSize + m_nMaxPacketSize - 1) / m_nMaxPacketSize;
 		
@@ -115,18 +128,14 @@ CDWHCITransferStageData::CDWHCITransferStageData (unsigned	 nChannel,
 	{
 		m_pBufferPointer = &m_TempBuffer;
 
-        m_nPackets = (m_nTransferSize + m_nMaxPacketSize - 1) / m_nMaxPacketSize;
+		m_nTransferSize = 0;
+		m_nBytesPerTransaction = 0;
+		m_nPackets = 1;
+		m_nPacketsPerTransaction = 1;
+	}
 
-        if (m_bSplitTransaction)
-        {
-            if (m_nTransferSize > m_nMaxPacketSize)
-            {
-                m_nBytesPerTransaction = m_nMaxPacketSize;
-            }
-            else
-            {
-                m_nBytesPerTransaction = m_nTransferSize;
-            }
+	assert (m_pBufferPointer != 0);
+	assert (((uintptr) m_pBufferPointer & 3) == 0);
 
 	if (m_bSplitTransaction)
 	{
@@ -143,104 +152,84 @@ CDWHCITransferStageData::CDWHCITransferStageData (unsigned	 nChannel,
 			m_pFrameScheduler = new CDWHCIFrameSchedulerNonPeriodic;
 		}
 
-        m_nTransferSize = 0;
-        m_nBytesPerTransaction = 0;
-        m_nPackets = 1;
-        m_nPacketsPerTransaction = 1;
-    }
+		assert (m_pFrameScheduler != 0);
+	}
+	else
+	{
+		if (   m_pDevice->GetHubAddress () == 0
+		    && m_Speed != USBSpeedHigh)
+		{
+			m_pFrameScheduler = new CDWHCIFrameSchedulerNoSplit (IsPeriodic ());
+			assert (m_pFrameScheduler != 0);
+		}
+	}
 
-    assert (m_pBufferPointer != 0);                     // バッファポインタはセットされていること
-    assert (((uintptr) m_pBufferPointer & 3) == 0);     // バッファポインタは4バイトアラインであること
+	if (nTimeoutMs != USB_TIMEOUT_NONE)
+	{
+		assert (m_pEndpoint->GetType () == EndpointTypeInterrupt);
 
-    if (m_bSplitTransaction)
-    {
-        if (IsPeriodic ())
-        {
-            m_pFrameScheduler = new CDWHCIFrameSchedulerPeriodic;
-        }
-        else
-        {
-            m_pFrameScheduler = new CDWHCIFrameSchedulerNonPeriodic;
-        }
-
-        assert (m_pFrameScheduler != 0);                // フレームスケジューラはセットされていること
-    }
-    else
-    {
-        if (   m_pDevice->GetHubAddress () == 0         // デバイスはハブでなく、かつ、HSでない
-            && m_Speed != USBSpeedHigh)
-        {
-            m_pFrameScheduler = new CDWHCIFrameSchedulerNoSplit (IsPeriodic ());
-            assert (m_pFrameScheduler != 0);            // フレームスケジューラはセットされていること
-        }
-    }
-
-    if (nTimeoutMs != USB_TIMEOUT_NONE)                 // タイムアウトはなし（無限に待つ）でない
-    {
-        assert (m_pEndpoint->GetType () == EndpointTypeInterrupt);  // インタラプトエンドポイント
-
-        m_nTimeoutHZ = MSEC2HZ (nTimeoutMs);
-        assert (m_nTimeoutHZ > 0);                                  // タイムアウトは正値
-        m_nStartTicksHZ = CTimer::Get ()->GetTicks ();
-    }
+		m_nTimeoutHZ = MSEC2HZ (nTimeoutMs);
+		assert (m_nTimeoutHZ > 0);
+		m_nStartTicksHZ = CTimer::Get ()->GetTicks ();
+	}
 }
 
 CDWHCITransferStageData::~CDWHCITransferStageData (void)
 {
-    delete m_pFrameScheduler;
-    m_pFrameScheduler = 0;
+	delete m_pFrameScheduler;
+	m_pFrameScheduler = 0;
 
-    m_pBufferPointer = 0;
+	m_pBufferPointer = 0;
 
-    m_pEndpoint = 0;
-    m_pDevice = 0;
-    m_pURB = 0;
+	m_pEndpoint = 0;
+	m_pDevice = 0;
+	m_pURB = 0;
 }
 
 void CDWHCITransferStageData::SetChannelNumber (unsigned nChannel)
 {
-    m_nChannel = nChannel;
+	m_nChannel = nChannel;
 }
 
 void CDWHCITransferStageData::TransactionComplete (u32 nStatus, u32 nPacketsLeft, u32 nBytesLeft)
 {
 #if 0
-    if (m_bSplitTransaction)
-    {
-        CLogger::Get ()->Write ("udata", LogDebug,
-                    "Transaction complete (status 0x%X, packets 0x%X, bytes 0x%X)",
-                    nStatus, nPacketsLeft, nBytesLeft);
-    }
+	if (m_bSplitTransaction)
+	{
+		CLogger::Get ()->Write ("udata", LogDebug,
+					"Transaction complete (status 0x%X, packets 0x%X, bytes 0x%X)",
+					nStatus, nPacketsLeft, nBytesLeft);
+	}
 #endif
 
-    m_nTransactionStatus = nStatus;
+	m_nTransactionStatus = nStatus;
 
-    if (  nStatus
-        & (  DWHCI_HOST_CHAN_INT_ERROR_MASK
-           | DWHCI_HOST_CHAN_INT_NAK
-           | DWHCI_HOST_CHAN_INT_NYET))
-    {
-        if (   (nStatus & DWHCI_HOST_CHAN_INT_NAK)
-            && m_pURB->IsCompleteOnNAK ())
-        {
-            assert (m_bIn);         // IN転送であること
+	if (  nStatus
+	    & (  DWHCI_HOST_CHAN_INT_ERROR_MASK
+	       | DWHCI_HOST_CHAN_INT_NAK
+	       | DWHCI_HOST_CHAN_INT_NYET))
+	{
+		if (   (nStatus & DWHCI_HOST_CHAN_INT_NAK)
+		    && m_pURB->IsCompleteOnNAK ())
+		{
+			assert (m_bIn);
 
-            m_nPackets = 0;         // 利用可能なデータなし、転送を完了
+			m_nPackets = 0;		// no data is available, complete transfer
 
-            return;
-        }
+			return;
+		}
 
-        // xactエラーが生じたバルク転送は再試行する。それ以外はreturn
-        if (   !(nStatus & DWHCI_HOST_CHAN_INT_XACT_ERROR)
-            || m_pEndpoint->GetType () != EndpointTypeBulk
-            || ++m_nErrorCount > MAX_BULK_TRIES)
-        {
-            return;
-        }
-    }
+		// bulk transfers with xact error will be retried, return otherwise
+		if (   !(nStatus & DWHCI_HOST_CHAN_INT_XACT_ERROR)
+		    || m_pEndpoint->GetType () != EndpointTypeBulk
+		    || ++m_nErrorCount > MAX_BULK_TRIES)
+		{
+			return;
+		}
+	}
 
-    u32 nPacketsTransfered = m_nPacketsPerTransaction - nPacketsLeft;
-    u32 nBytesTransfered = m_nBytesPerTransaction - nBytesLeft;
+	u32 nPacketsTransfered = m_nPacketsPerTransaction - nPacketsLeft;
+	u32 nBytesTransfered = m_nBytesPerTransaction - nBytesLeft;
 
 	if (   nBytesTransfered == 0
 	    && m_nBytesPerTransaction > 0)
@@ -265,21 +254,17 @@ void CDWHCITransferStageData::TransactionComplete (u32 nStatus, u32 nPacketsLeft
 		m_pEndpoint->SkipPID (nPacketsTransfered, m_bStatusStage);
 	}
 
-    m_nTotalBytesTransfered += nBytesTransfered;
-    m_pBufferPointer = (u8 *) m_pBufferPointer + nBytesTransfered;
+	// this shouldn't but does happen with some devices
+	if (nPacketsTransfered > m_nPackets)
+	{
+		m_nTransactionStatus |= DWHCI_HOST_CHAN_INT_FRAME_OVERRUN;
+		m_nErrorCount = MAX_BULK_TRIES+1;
+		m_nPackets = 0;
 
-    if (   !m_bSplitTransaction
-        || m_bSplitComplete)
-    {
-        m_pEndpoint->SkipPID (nPacketsTransfered, m_bStatusStage);
-    }
+		return;
+	}
 
-    // これはないはずだが、何らかのデバイスで生じるようだ
-    if (nPacketsTransfered > m_nPackets)
-    {
-        m_nTransactionStatus |= DWHCI_HOST_CHAN_INT_FRAME_OVERRUN;
-        m_nErrorCount = MAX_BULK_TRIES+1;
-        m_nPackets = 0;
+	m_nPackets -= nPacketsTransfered;
 
 	if (!m_bSplitTransaction)
 	{
@@ -303,61 +288,53 @@ void CDWHCITransferStageData::TransactionComplete (u32 nStatus, u32 nPacketsLeft
 		}
 	}
 
-    m_nPackets -= nPacketsTransfered;
-
-    if (!m_bSplitTransaction)
-    {
-        m_nPacketsPerTransaction = m_nPackets;
-    }
-
-    // (m_nTotalBytesTransfered > m_nTransferSize) の場合、これはfalseになる
-    if (m_nTransferSize - m_nTotalBytesTransfered < m_nBytesPerTransaction)
-    {
-        assert (m_nTotalBytesTransfered <= m_nTransferSize);
-        m_nBytesPerTransaction = m_nTransferSize - m_nTotalBytesTransfered;
-    }
+	// if (m_nTotalBytesTransfered > m_nTransferSize) this will be false:
+	if (m_nTransferSize - m_nTotalBytesTransfered < m_nBytesPerTransaction)
+	{
+		assert (m_nTotalBytesTransfered <= m_nTransferSize);
+		m_nBytesPerTransaction = m_nTransferSize - m_nTotalBytesTransfered;
+	}
 }
 
 void CDWHCITransferStageData::SetSplitComplete (boolean bComplete)
 {
-    assert (m_bSplitTransaction);
-
-    m_bSplitComplete = bComplete;
+	assert (m_bSplitTransaction);
+	
+	m_bSplitComplete = bComplete;
 }
 
 void CDWHCITransferStageData::SetState (unsigned nState)
 {
-    m_nState = nState;
+	m_nState = nState;
 }
 
 unsigned CDWHCITransferStageData::GetState (void) const
 {
-    return m_nState;
+	return m_nState;
 }
 
 void CDWHCITransferStageData::SetSubState (unsigned nSubState)
 {
-    m_nSubState = nSubState;
+	m_nSubState = nSubState;
 }
 
 unsigned CDWHCITransferStageData::GetSubState (void) const
 {
-    return m_nSubState;
+	return m_nSubState;
 }
 
 unsigned CDWHCITransferStageData::GetChannelNumber (void) const
 {
-    return m_nChannel;
+	return m_nChannel;
 }
 
 boolean CDWHCITransferStageData::IsPeriodic (void) const
 {
-    assert (m_pEndpoint != 0);
-    TEndpointType Type = m_pEndpoint->GetType ();
-
-    // インタラプト転送またはアイソクロナス転送の場合にTRUE
-    return    Type == EndpointTypeInterrupt
-           || Type == EndpointTypeIsochronous;
+	assert (m_pEndpoint != 0);
+	TEndpointType Type = m_pEndpoint->GetType ();
+	
+	return    Type == EndpointTypeInterrupt
+	       || Type == EndpointTypeIsochronous;
 }
 
 boolean CDWHCITransferStageData::IsIsochronous (void) const
@@ -370,25 +347,29 @@ boolean CDWHCITransferStageData::IsIsochronous (void) const
 
 u8 CDWHCITransferStageData::GetDeviceAddress (void) const
 {
-    assert (m_pDevice != 0);
-    return m_pDevice->GetAddress ();
+	assert (m_pDevice != 0);
+	return m_pDevice->GetAddress ();
 }
 
 u8 CDWHCITransferStageData::GetEndpointType (void) const
 {
-    assert (m_pEndpoint != 0);
+	assert (m_pEndpoint != 0);
+	
+	unsigned nEndpointType = 0;
 
-    unsigned nEndpointType = 0;
+	switch (m_pEndpoint->GetType ())
+	{
+	case EndpointTypeControl:
+		nEndpointType = DWHCI_HOST_CHAN_CHARACTER_EP_TYPE_CONTROL;
+		break;
 
-    switch (m_pEndpoint->GetType ())
-    {
-    case EndpointTypeControl:
-        nEndpointType = DWHCI_HOST_CHAN_CHARACTER_EP_TYPE_CONTROL;
-        break;
+	case EndpointTypeBulk:
+		nEndpointType = DWHCI_HOST_CHAN_CHARACTER_EP_TYPE_BULK;
+		break;
 
-    case EndpointTypeBulk:
-        nEndpointType = DWHCI_HOST_CHAN_CHARACTER_EP_TYPE_BULK;
-        break;
+	case EndpointTypeInterrupt:
+		nEndpointType = DWHCI_HOST_CHAN_CHARACTER_EP_TYPE_INTERRUPT;
+		break;
 
 	case EndpointTypeIsochronous:
 		nEndpointType = DWHCI_HOST_CHAN_CHARACTER_EP_TYPE_ISO;
@@ -404,101 +385,101 @@ u8 CDWHCITransferStageData::GetEndpointType (void) const
 
 u8 CDWHCITransferStageData::GetEndpointNumber (void) const
 {
-    assert (m_pEndpoint != 0);
-    return m_pEndpoint->GetNumber ();
+	assert (m_pEndpoint != 0);
+	return m_pEndpoint->GetNumber ();
 }
 
 u32 CDWHCITransferStageData::GetMaxPacketSize (void) const
 {
-    return m_nMaxPacketSize;
+	return m_nMaxPacketSize;
 }
 
 TUSBSpeed CDWHCITransferStageData::GetSpeed (void) const
 {
-    return m_Speed;
+	return m_Speed;
 }
 
 u8 CDWHCITransferStageData::GetPID (void) const
 {
-    assert (m_pEndpoint != 0);
+	assert (m_pEndpoint != 0);
+	
+	u8 ucPID = 0;
+	
+	switch (m_pEndpoint->GetNextPID (m_bStatusStage))
+	{
+	case USBPIDSetup:
+		ucPID = DWHCI_HOST_CHAN_XFER_SIZ_PID_SETUP;
+		break;
 
-    u8 ucPID = 0;
+	case USBPIDData0:
+		ucPID = DWHCI_HOST_CHAN_XFER_SIZ_PID_DATA0;
+		break;
+		
+	case USBPIDData1:
+		ucPID = DWHCI_HOST_CHAN_XFER_SIZ_PID_DATA1;
+		break;
 
-    switch (m_pEndpoint->GetNextPID (m_bStatusStage))
-    {
-    case USBPIDSetup:
-        ucPID = DWHCI_HOST_CHAN_XFER_SIZ_PID_SETUP;
-        break;
-
-    case USBPIDData0:
-        ucPID = DWHCI_HOST_CHAN_XFER_SIZ_PID_DATA0;
-        break;
-
-    case USBPIDData1:
-        ucPID = DWHCI_HOST_CHAN_XFER_SIZ_PID_DATA1;
-        break;
-
-    default:
-        assert (0);
-        break;
-    }
-
-    return ucPID;
+	default:
+		assert (0);
+		break;
+	}
+	
+	return ucPID;
 }
 
 boolean CDWHCITransferStageData::IsDirectionIn (void) const
 {
-    return m_bIn;
+	return m_bIn;
 }
 
 boolean CDWHCITransferStageData::IsStatusStage (void) const
 {
-    return m_bStatusStage;
+	return m_bStatusStage;
 }
 
 u32 CDWHCITransferStageData::GetDMAAddress (void) const
 {
-    assert (m_pBufferPointer != 0);
+	assert (m_pBufferPointer != 0);
 
-    return (u32) (uintptr) m_pBufferPointer;
+	return (u32) (uintptr) m_pBufferPointer;
 }
 
 u32 CDWHCITransferStageData::GetBytesToTransfer (void) const
 {
-    return m_nBytesPerTransaction;
+	return m_nBytesPerTransaction;
 }
 
 u32 CDWHCITransferStageData::GetPacketsToTransfer (void) const
 {
-    return m_nPacketsPerTransaction;
+	return m_nPacketsPerTransaction;
 }
 
 boolean CDWHCITransferStageData::IsSplit (void) const
 {
-    return m_bSplitTransaction;
+	return m_bSplitTransaction;
 }
 
 boolean CDWHCITransferStageData::IsSplitComplete (void) const
 {
-    assert (m_bSplitTransaction);
-
-    return m_bSplitComplete;
+	assert (m_bSplitTransaction);
+	
+	return m_bSplitComplete;
 }
 
 u8 CDWHCITransferStageData::GetHubAddress (void) const
 {
-    assert (m_bSplitTransaction);
+	assert (m_bSplitTransaction);
 
-    assert (m_pDevice != 0);
-    return m_pDevice->GetHubAddress ();
+	assert (m_pDevice != 0);
+	return m_pDevice->GetHubAddress ();
 }
 
 u8 CDWHCITransferStageData::GetHubPortAddress (void) const
 {
-    assert (m_bSplitTransaction);
+	assert (m_bSplitTransaction);
 
-    assert (m_pDevice != 0);
-    return m_pDevice->GetHubPortNumber ();
+	assert (m_pDevice != 0);
+	return m_pDevice->GetHubPortNumber ();
 }
 
 u8 CDWHCITransferStageData::GetSplitPosition (void) const
@@ -550,100 +531,90 @@ u32 CDWHCITransferStageData::GetStatusMask (void) const
 
 u32 CDWHCITransferStageData::GetTransactionStatus (void) const
 {
-    assert (m_nTransactionStatus != 0);
-    return m_nTransactionStatus;
+	assert (m_nTransactionStatus != 0);
+	return m_nTransactionStatus;
 }
 
 TUSBError CDWHCITransferStageData::GetUSBError (void) const
 {
-    if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_STALL)
-    {
-        return USBErrorStall;
-    }
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_STALL)
+	{
+		return USBErrorStall;
+	}
 
-    if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_XACT_ERROR)
-    {
-        return USBErrorTransaction;
-    }
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_XACT_ERROR)
+	{
+		return USBErrorTransaction;
+	}
 
-    if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_BABBLE_ERROR)
-    {
-        return USBErrorBabble;
-    }
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_BABBLE_ERROR)
+	{
+		return USBErrorBabble;
+	}
 
-    if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_FRAME_OVERRUN)
-    {
-        return USBErrorFrameOverrun;
-    }
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_FRAME_OVERRUN)
+	{
+		return USBErrorFrameOverrun;
+	}
 
-    if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_DATA_TOGGLE_ERROR)
-    {
-        return USBErrorDataToggle;
-    }
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_DATA_TOGGLE_ERROR)
+	{
+		return USBErrorDataToggle;
+	}
 
-    if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_AHB_ERROR)
-    {
-        return USBErrorHostBus;
-    }
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_AHB_ERROR)
+	{
+		return USBErrorHostBus;
+	}
 
-    return USBErrorUnknown;
+	return USBErrorUnknown;
 }
 
 boolean CDWHCITransferStageData::IsStageComplete (void) const
 {
-    return m_nPackets == 0;
+	return m_nPackets == 0;
 }
 
 u32 CDWHCITransferStageData::GetResultLen (void) const
 {
-    if (m_nTotalBytesTransfered > m_nTransferSize)
-    {
-        return m_nTransferSize;
-    }
-
-    return m_nTotalBytesTransfered;
+	if (m_nTotalBytesTransfered > m_nTransferSize)
+	{
+		return m_nTransferSize;
+	}
+	
+	return m_nTotalBytesTransfered;
 }
 
 boolean CDWHCITransferStageData::IsTimeout (void) const
 {
-    if (m_nTimeoutHZ == USB_TIMEOUT_NONE)
-    {
-        return FALSE;
-    }
+	if (m_nTimeoutHZ == USB_TIMEOUT_NONE)
+	{
+		return FALSE;
+	}
 
-    return CTimer::Get ()->GetTicks ()-m_nStartTicksHZ >= m_nTimeoutHZ ? TRUE : FALSE;
+	return CTimer::Get ()->GetTicks ()-m_nStartTicksHZ >= m_nTimeoutHZ ? TRUE : FALSE;
 }
 
 boolean CDWHCITransferStageData::IsRetryOK (void) const
 {
-    return m_nErrorCount <= MAX_BULK_TRIES;
+	return m_nErrorCount <= MAX_BULK_TRIES;
 }
 
 CUSBRequest *CDWHCITransferStageData::GetURB (void) const
 {
-    assert (m_pURB != 0);
-    return m_pURB;
+	assert (m_pURB != 0);
+	return m_pURB;
 }
 
 CUSBDevice *CDWHCITransferStageData::GetDevice (void) const
 {
-    assert (m_pDevice != 0);
-    return m_pDevice;
+	assert (m_pDevice != 0);
+	return m_pDevice;
 }
 
 CDWHCIFrameScheduler *CDWHCITransferStageData::GetFrameScheduler (void) const
 {
-    return m_pFrameScheduler;
+	return m_pFrameScheduler;
 }
 
 IMPLEMENT_CLASS_ALLOCATOR (CDWHCITransferStageData)
-
-void CDWHCITransferStageData::DebugStdata(void)
-{
-    CLogger::Get ()->Write("stdata", LogNotice, "channel: %d, in: %d, stage: %d",
-        m_nChannel, m_bIn, m_bStatusStage);
-    CLogger::Get ()->Write("stdata", LogNotice, "    state: %d, substate: %d, trstatus: %d",
-        m_nState, m_nSubState, m_nTransactionStatus);
-    CLogger::Get ()->Write("stdata", LogNotice, "    buffp: 0x%p, bpt: %d, ppt: %d, packets: %d\n",
-        m_pBufferPointer, m_nBytesPerTransaction, m_nPacketsPerTransaction, m_nPackets);
-}

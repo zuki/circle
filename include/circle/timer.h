@@ -76,12 +76,13 @@ public:
     /// \return 操作は成功か? bLocal == FALSEで値が非常に小さい場合に失敗する可能性がある
     boolean SetTime (unsigned nTime, boolean bLocal = TRUE);
 	
-    /// \return Current clock ticks of an 1 MHz counter, may wrap
+    //// \brief クロックティックを取得する
+    /// \return 1 MHzカウンタによる現在のクロックティック。ラップする可能性がある
 	static unsigned GetClockTicks (void);
 
     /// \brief クロックティックを取得する
-    /// \return 1 MHzカウンタによる現在のクロックティック。ラップする可能性がある
-    static unsigned GetClockTicks (void);
+    /// \return 1 MHzカウンタによる現在のクロックティック（連続）
+    static u64 GetClockTicks64 (void);
 #define CLOCKHZ    1000000
 
     /// \brief システム起動後のティック数を取得する

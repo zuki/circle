@@ -103,8 +103,10 @@ public:
     /// @param pPacket 送信データ
     /// @param nLength データ長
     /// @param nProtocol プロトコル
+    /// @param bRouterAlert アラートするか?
     /// @return 送信の成否
-    boolean Send (const CIPAddress &rReceiver, const void *pPacket, unsigned nLength, int nProtocol);
+    boolean Send (const CIPAddress &rReceiver, const void *pPacket, unsigned nLength, 
+        int nProtocol, boolean bRouterAlert = FALSE);
 
     /// @brief パケットを受信する\n
     /// pBufferはFRAME_BUFFER_SIZEのサイズがなければならない

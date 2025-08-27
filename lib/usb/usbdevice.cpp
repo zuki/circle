@@ -343,6 +343,11 @@ boolean CUSBDevice::Initialize (void)
 
         return FALSE;
     }
+
+    // must match enum TUSBSpeed in <circle/usb/usb.h>
+	static const char *Speeds[] = {"LS", "FS", "HS", "SS"};
+	assert (m_Speed < sizeof Speeds / sizeof Speeds[0]);
+
     // デバイス名を表示
     CString *pNames = GetNames ();
     assert (pNames != 0);
@@ -368,19 +373,21 @@ boolean CUSBDevice::Initialize (void)
             Product.Append (" ");
         }
 
-	// must match enum TUSBSpeed in <circle/usb/usb.h>
-	static const char *Speeds[] = {"LS", "FS", "HS", "SS"};
-	assert (m_Speed < sizeof Speeds / sizeof Speeds[0]);
-
-	CString *pNames = GetNames ();
-	assert (pNames != 0);
-	LogWrite (LogNotice, "Device %s found (%s)", (const char *) *pNames, Speeds[m_Speed]);
-	delete pNames;
+        Product.Append (USBString.Get ());
+	}
 
     if (Product.GetLength () > 0)
     {
         LogWrite (LogNotice, "Product: %s", (const char *) Product);
     }
+
+    if (!m_pHost->SetConfiguration (m_pEndpoint0, m_pConfigDesc->bConfigurationValue))
+	{
+		LogWrite (LogError, "Cannot set configuration (%u)",
+			  (unsigned) m_pConfigDesc->bConfigurationValue);
+
+		return FALSE;
+	}
 
     unsigned nFunction = 0;
     u8 ucInterfaceNumber = 0;
@@ -408,73 +415,42 @@ boolean CUSBDevice::Initialize (void)
 
         CUSBFunction *pChild = 0;
 
-	if (!m_pHost->SetConfiguration (m_pEndpoint0, m_pConfigDesc->bConfigurationValue))
-	{
-		LogWrite (LogError, "Cannot set configuration (%u)",
-			  (unsigned) m_pConfigDesc->bConfigurationValue);
+        if (nFunction == 0)
+		{
+			pChild = CUSBDeviceFactory::GetDevice (m_pFunction[nFunction], GetName (DeviceNameVendor));
+			if (pChild == 0)
+			{
+				pChild = CUSBDeviceFactory::GetDevice (m_pFunction[nFunction], GetName (DeviceNameDevice));
+			}
+		}
 
-		return FALSE;
-	}
+		if (pChild == 0)
+		{
+			CString *pName = m_pFunction[nFunction]->GetInterfaceName ();
+			assert (pName != 0);
+			if (pName->Compare ("unknown") != 0)
+			{
+				LogWrite (LogNotice, "Interface %s found", (const char *) *pName);
 
-	unsigned nFunction = 0;
-	u8 ucInterfaceNumber = 0;
-
-        if (pChild == 0)
-        {
-            // インタフェース名でデバイスクラスを取得
-            CString *pName = m_pFunction[nFunction]->GetInterfaceName ();
-            assert (pName != 0);
-            if (pName->Compare ("unknown") != 0)
-            {
-                LogWrite (LogNotice, "Interface %s found", (const char *) *pName);
-
-                pChild = CUSBDeviceFactory::GetDevice (m_pFunction[nFunction], pName);
-            }
-            else
-            {
-                delete pName;
-            }
-        }
+				pChild = CUSBDeviceFactory::GetDevice (m_pFunction[nFunction], pName);
+			}
+			else
+			{
+				delete pName;
+			}
+		}
 
         delete m_pFunction[nFunction];
-        m_pFunction[nFunction] = 0;
-        // このインタフェースのクラスは未サポート
-        if (pChild == 0)
-        {
-            LogWrite (LogWarning, "Function is not supported");
+		m_pFunction[nFunction] = 0;
 
-            continue;
-        }
+		if (pChild == 0)
+		{
+			LogWrite (LogWarning, "Function is not supported");
 
-        // デバイスクラス配列に追加
-        m_pFunction[nFunction] = pChild;
-        // デバイスクラスを初期化
-        if (!m_pFunction[nFunction]->Initialize ())
-        {
-            LogWrite (LogError, "Cannot initialize function");
+			continue;
+		}
 
-            delete m_pFunction[nFunction];
-            m_pFunction[nFunction] = 0;
-
-            continue;
-        }
-
-        if (++nFunction == USBDEV_MAX_FUNCTIONS)
-        {
-            LogWrite (LogWarning, "Too many functions per device");
-
-            break;
-        }
-
-        ucInterfaceNumber++;
-    }
-
-    if (nFunction == 0)
-    {
-        LogWrite (LogWarning, "Device has no supported function");
-
-        return FALSE;
-    }
+		m_pFunction[nFunction] = pChild;
 
 		if (!m_pFunction[nFunction]->Initialize ())
 		{
@@ -493,22 +469,22 @@ boolean CUSBDevice::Initialize (void)
 			break;
 		}
 
-		ucInterfaceNumber++;
+        ucInterfaceNumber++;
 	}
 
-	if (nFunction == 0)
-	{
-		LogWrite (LogWarning, "Device has no supported function");
+    if (nFunction == 0)
+    {
+        LogWrite (LogWarning, "Device has no supported function");
 
-		if (!m_pHost->SetConfiguration (m_pEndpoint0, 0))
+        if (!m_pHost->SetConfiguration (m_pEndpoint0, 0))
 		{
 			LogWrite (LogWarning, "Cannot reset configuration");
 		}
 
-		return FALSE;
-	}
+        return FALSE;
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 boolean CUSBDevice::Configure (void)
@@ -520,12 +496,8 @@ boolean CUSBDevice::Configure (void)
     {
         return FALSE;
     }
-    // USBホストにコンフィグレーションを設定
-    if (!m_pHost->SetConfiguration (m_pEndpoint0, m_pConfigDesc->bConfigurationValue))
-    {
-        LogWrite (LogError, "Cannot set configuration (%u)", (unsigned) m_pConfigDesc->bConfigurationValue);
 
-	boolean bResult = FALSE;
+    boolean bResult = FALSE;
 	
 	for (unsigned nFunction = 0; nFunction < USBDEV_MAX_FUNCTIONS; nFunction++)
 	{

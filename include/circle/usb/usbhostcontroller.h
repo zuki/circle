@@ -139,7 +139,7 @@ private:
     friend class CUSBStandardHub;
 
 private:
-    boolean s_bPlugAndPlay;                 //< プラグアンドプレイは有効か
+    boolean m_bPlugAndPlay;                 //< プラグアンドプレイは有効か
     boolean m_bFirstUpdateCall;             //< 最初の更新呼び出しか
 
     CPtrList  m_HubList;                    //< ハブリスト

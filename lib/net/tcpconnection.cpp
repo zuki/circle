@@ -1635,33 +1635,11 @@ void CTCPConnection::DumpStatus (void)
 
 TTCPState CTCPConnection::NewState (TTCPState State, unsigned nLine)
 {
-<<<<<<< HEAD
-    const static char *StateName[] =    // must match TTCPState
-    {
-        "CLOSED",
-        "LISTEN",
-        "SYN-SENT",
-        "SYN-RECEIVED",
-        "ESTABLISHED",
-        "FIN-WAIT-1",
-        "FIN-WAIT-2",
-        "CLOSE-WAIT",
-        "CLOSING",
-        "LAST-ACK",
-        "TIME-WAIT"
-    };
-
-    assert (m_State < sizeof StateName / sizeof StateName[0]);
-    assert (State < sizeof StateName / sizeof StateName[0]);
-
-    CLogger::Get ()->Write (FromTCP, LogDebug, "State %s -> %s at line %u", StateName[m_State], StateName[State], nLine);
-=======
 	assert (m_State < sizeof s_pStateName / sizeof s_pStateName[0]);
 	assert (State < sizeof s_pStateName / sizeof s_pStateName[0]);
 
 	CLogger::Get ()->Write (FromTCP, LogDebug, "State %s -> %s at line %u",
 				s_pStateName[m_State], s_pStateName[State], nLine);
->>>>>>> master
 
     return m_State = State;
 }
