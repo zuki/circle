@@ -83,6 +83,8 @@ $RECYCLE.BIN/
 *.map
 Config.mk
 Config2.mk
+Config.mk.m3
+Config.mk.mini
 
 # Directories
 # ----------------------------------------------
