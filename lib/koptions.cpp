@@ -49,6 +49,7 @@ CKernelOptions::CKernelOptions (void)
 
     s_pThis = this;
 
+	// mailboxを使ってcmdline.txtの内容を取得する
     CBcmPropertyTags Tags;
     if (!Tags.GetTag (PROPTAG_GET_COMMAND_LINE, &m_TagCommandLine, sizeof m_TagCommandLine))
     {

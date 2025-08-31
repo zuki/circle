@@ -36,7 +36,7 @@ enum{
 	Wifichan = 0,		/* default channel */
 	Firmwarecmp	= 1,
 
-	ARMcm3		= 0x82A,
+	ARMcm3		= 0x82A,	/* CYW43455 内蔵CPU */
 	ARM7tdmi	= 0x825,
 	ARMcr4		= 0x83E,
 

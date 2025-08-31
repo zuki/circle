@@ -183,9 +183,10 @@ CSDHOSTDevice::CSDHOSTDevice (CInterruptSystem *pInterruptSystem, CTimer *pTimer
 {
 	for (unsigned i = 0; i <= 5; i++)
 	{
+		// pin[34-39]: SDIOとして使用
 		m_GPIO34_39[i].AssignPin (34+i);
 		m_GPIO34_39[i].SetMode (GPIOModeAlternateFunction3, FALSE);
-
+		// pin[48-53]: SDHOSTとして使用
 		m_GPIO48_53[i].AssignPin (48+i);
 		m_GPIO48_53[i].SetMode (GPIOModeAlternateFunction0, FALSE);
 		m_GPIO48_53[i].SetPullMode (i == 0 ? GPIOPullModeOff : GPIOPullModeUp);
