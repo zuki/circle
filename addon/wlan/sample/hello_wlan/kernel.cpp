@@ -146,7 +146,7 @@ TShutdownMode CKernel::Run (void)
 			(const char *) IPString);
 
 	m_Timer.SetTimeZone (9*60);
-	new CNTPDaemon ("pool.ntp.org", &m_Net);
+	new CNTPDaemon ("ntp.nict.jp", &m_Net);
 
 	while (1)
 	{
