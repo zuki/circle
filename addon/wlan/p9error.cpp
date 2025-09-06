@@ -3,6 +3,7 @@
 #include "p9util.h"
 #include <assert.h>
 
+// エラーをupにセットしてエラースタックの一番上にあるjmp_bufにlong_jmpする
 void error (const char *str)
 {
 	print ("%s\n", str);
@@ -17,6 +18,7 @@ void error (const char *str)
 	longjmp (s->stack[s->stackptr-1], 1);
 }
 
+// エラースタックの一番上にあるjmp_bufを返す
 jmp_buf *pusherror (void)
 {
 	error_stack_t *s = get_error_stack ();
@@ -25,6 +27,7 @@ jmp_buf *pusherror (void)
 	return &s->stack[--s->stackptr];
 }
 
+// エラースタックからエラーを取り出して返す
 void nexterror (void)
 {
 	error_stack_t *s = get_error_stack ();
@@ -35,6 +38,7 @@ void nexterror (void)
 	longjmp (s->stack[s->stackptr-1], 1);
 }
 
+// エラースタックからエラーを1つ取り出して捨てる
 void poperror (void)
 {
 	error_stack_t *s = get_error_stack ();
@@ -44,6 +48,7 @@ void poperror (void)
 	s->stackptr++;
 }
 
+// 何もしない
 void okay (int status)
 {
 }

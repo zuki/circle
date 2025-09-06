@@ -16,7 +16,7 @@ typedef struct Block
 {
 	struct Block *next;
 	uchar *buf;
-	uchar *lim;
+	uchar *lim;		// bufの最大終端アドレス
 	uchar *wp;
 	uchar *rp;
 	uchar data[0];

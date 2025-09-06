@@ -3,6 +3,7 @@
 #include <circle/string.h>
 #include <assert.h>
 
+/* コマンドエラーをprintする */
 void cmderror (Cmdbuf *cb, const char *err)
 {
 	if (cb->argc > 0)
@@ -24,16 +25,19 @@ void cmderror (Cmdbuf *cb, const char *err)
 	error (err);
 }
 
+/* コマンドをパースしてCmdbufにセットして返す */
 Cmdbuf *parsecmd (const void *str, long n)
 {
 	Cmdbuf *pCmdbuf = (Cmdbuf *) malloc (sizeof (Cmdbuf));
 	assert (pCmdbuf != 0);
 
+	/* コマンド文字列をバッファにコピー */
 	strncpy (pCmdbuf->buf, (const char *) str, sizeof pCmdbuf->buf-1);
 	pCmdbuf->buf[sizeof pCmdbuf->buf-1] = '\0';
 
 	pCmdbuf->argc = 0;
 
+	/* " \t\n"区切りでコマンドと引数を取り出しf[]にセットする */
 	char *pSavePtr;
 	for (unsigned i = 0; i < nelem (pCmdbuf->f); i++)
 	{
@@ -56,6 +60,8 @@ Cmdbuf *parsecmd (const void *str, long n)
 	return pCmdbuf;
 }
 
+/* ct[nelem]からコマンドバッファcbのコマンドと同じものを探し、見つかったらそのctを */
+/* 見つからなかった場合はエラー表示をして0を返す */
 Cmdtab *lookupcmd (Cmdbuf *cb, Cmdtab *ct, size_t nelem)
 {
 	if (cb->argc == 0)

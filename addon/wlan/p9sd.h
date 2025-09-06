@@ -3,6 +3,7 @@
 
 #include "p9util.h"
 
+// SDIO操作関数構造体
 typedef struct sdio_t
 {
 	const char *devname;

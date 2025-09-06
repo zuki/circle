@@ -7,19 +7,21 @@
 extern "C" {
 #endif
 
+/* コマンド構造体 : 例 {CMauth,	"auth", 2} */
 typedef struct
 {
-	unsigned index;
-	const char *cmd;
-	unsigned maxargs;
+	unsigned index;		/* コマンドインデックス */
+	const char *cmd;	/* コマンド名 */
+	unsigned maxargs;	/* 引数の最大数 */
 }
 Cmdtab;
 
+/* コマンドバッファ構造体 */
 typedef struct
 {
-	char buf[200];
-	unsigned argc;
-	char *f[10];
+	char buf[200];		/* バッファ */
+	unsigned argc;		/* 引数の数 */
+	char *f[10];		/* コマンドと引数の配列 */
 }
 Cmdbuf;
 

@@ -9,12 +9,13 @@
 #include <assert.h>
 
 static struct machine_t machine;
-struct machine_t *m = &machine;
+struct machine_t *m = &machine;		// HZを保持
 
 #if RASPPI <= 4
-static CDMAChannel *s_pDMA;
+static CDMAChannel *s_pDMA;			// DMAチャンネル
 #endif
 
+// pinの機能をmodeにセットする
 void gpiosel (unsigned pin, gpio_mode_t mode)
 {
 #if RASPPI <= 4
@@ -57,6 +58,7 @@ void gpiosel (unsigned pin, gpio_mode_t mode)
 #endif
 }
 
+// pinのpull up/down抵抗をセットする
 static void gpiopull (unsigned pin, unsigned mode)
 {
 	PeripheralEntry ();
@@ -108,11 +110,13 @@ static void gpiopull (unsigned pin, unsigned mode)
 	PeripheralExit ();
 }
 
+// pinをpull up/down抵抗をオフにする
 void gpiopulloff (unsigned pin)
 {
 	gpiopull (pin, 0);
 }
 
+// pinをpull up抵抗をオンにする
 void gpiopullup (unsigned pin)
 {
 #if RASPPI != 4
@@ -138,6 +142,7 @@ void gpioset (unsigned pin, unsigned val)
 	}
 }
 
+// SoCのステッピング (Raspi5以降のみ?) を取得する
 unsigned get_soc_stepping (void)
 {
 	return CMachineInfo::Get ()->GetSoCStepping ();
@@ -145,25 +150,29 @@ unsigned get_soc_stepping (void)
 
 #endif
 
+// クロックID clkのクロックレートを取得する
 unsigned getclkrate (unsigned clk)
 {
 #if RASPPI <= 4
-	return CMachineInfo::Get ()->GetClockRate (clk);
+	return CMachineInfo::Get ()->GetClockRate (clk);	// MailBox経由で取得
 #else
 	return 54000000;
 #endif
 }
 
+// msecs ミリ秒 遅延させる
 void delay (unsigned msecs)
 {
 	CTimer::Get ()->MsDelay (msecs);
 }
 
+// usecs マイクロ秒 遅延させる
 void microdelay (unsigned usecs)
 {
 	CTimer::Get ()->usDelay (usecs);
 }
 
+// データバリアを実行する
 void coherence (void)
 {
 	DataSyncBarrier ();
@@ -171,11 +180,13 @@ void coherence (void)
 
 static irqhandler_t *s_pIRQHandler;
 
+// IRQハンドラのスタブ
 static void IRQStub (void *context)
 {
 	(*s_pIRQHandler) (0, context);
 }
 
+// 割り込み番号 irq のIRQを有効にする
 void intrenable (unsigned irq, irqhandler_t *handler, void *context, unsigned, const char *name)
 {
 	s_pIRQHandler = handler;
@@ -184,8 +195,10 @@ void intrenable (unsigned irq, irqhandler_t *handler, void *context, unsigned, c
 
 #if RASPPI <= 4
 
+// デバイスとのDMA転送を開始する
 void dmastart (unsigned chan, unsigned dev, unsigned dir, void *from, void *to, size_t len)
 {
+	// デバイスからマスタにデータを転送
 	if (dir == DmaD2M)
 	{
 		s_pDMA->SetupIORead (to, (u32) (uintptr) from, len, (TDREQ) dev);
@@ -198,6 +211,7 @@ void dmastart (unsigned chan, unsigned dev, unsigned dir, void *from, void *to, 
 	s_pDMA->Start ();
 }
 
+// DMA転送の完了を待機する
 int dmawait (unsigned chan)
 {
 	if (!s_pDMA->Wait ())
@@ -210,22 +224,28 @@ int dmawait (unsigned chan)
 
 #endif
 
+// データキャッシュを破棄する
 void cachedinvse (void *buf, size_t len)
 {
 	CleanAndInvalidateDataCacheRange ((uintptr) buf, len);
 }
 
+// 周期ハンドラ
 static void PeriodicHandler (void)
 {
+	// ticksを増分するだけ
 	m->ticks++;
 }
 
+// p8アーキテクチャを初期化する
 void p9arch_init(void)
 {
 #if RASPPI <= 4
+	// DMA転送用のチャネルをセット
 	s_pDMA = new CDMAChannel (DMA_CHANNEL_NORMAL);
 	assert (s_pDMA != 0);
 #endif
 
+	// 周期ハンドラを登録する
 	CTimer::Get ()->RegisterPeriodicHandler (PeriodicHandler);
 }

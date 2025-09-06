@@ -1,7 +1,7 @@
 /*
  * bcm2835 external mass media controller (mmc / sd host interface)
  *
- * Copyright � 2012 Richard Miller <r.miller@acm.org>
+ * Copyright � 2012 Richard Miller <r.miller@acm.org>
  */
 
 /*
@@ -26,33 +26,34 @@
 #endif
 
 #if RASPPI <= 4
+// EMMCの基底アドレス (raspi3b+: 0x3F30_0000)
 #define EMMCREGS	(VIRTIO+0x300000)
 #else
 #define EMMCREGS	(VIRTIO+0x1100000)
 #endif
 
 enum {
-	Extfreq		= 100*Mhz,	/* guess external clock frequency if */
-					/* not available from vcore */
-	Initfreq	= 400000,	/* initialisation frequency for MMC */
-	SDfreq		= 25*Mhz,	/* standard SD frequency */
-	SDfreqhs	= 50*Mhz,	/* high speed frequency */
-	DTO		= 14,		/* data timeout exponent (guesswork) */
+	Extfreq		= 100*Mhz,	/* 推定外部クロック周波数(vcoreから取得できない場合） */
+	Initfreq	= 400000,	/* MMCの初期化時周波数 */
+	SDfreq		= 25*Mhz,	/* 標準SD周波数 */
+	SDfreqhs	= 50*Mhz,	/* 高速(HS)周波数 */
+	DTO		= 14,		/* データタイムアウト指数 (guesswork) */
 
-	GoIdle		= 0,		/* mmc/sdio go idle state */
-	MMCSelect	= 7,		/* mmc/sd card select command */
-	Setbuswidth	= 6,		/* mmc/sd set bus width command */
-	Switchfunc	= 6,		/* mmc/sd switch function command */
-	Voltageswitch = 11,		/* md/sdio switch to 1.8V */
-	IORWdirect = 52,		/* sdio read/write direct command */
-	IORWextended = 53,		/* sdio read/write extended command */
-	Appcmd = 55,			/* mmc/sd application command prefix */
+	// コマンドインデックス
+	GoIdle		= 0,		/* mmc/sdio GO_IDLE_STATE (CMD0) */
+	MMCSelect	= 7,		/* mmc/sdio SELECT/DESELECT_CARD (CMD7) */
+	Setbuswidth	= 6,		/* mmc/sd set bus width command (ACMD6) */
+	Switchfunc	= 6,		/* mmc/sd SWITCH_FUNC (CMD6) */
+	Voltageswitch = 11,		/* md/sdio VOLTAGE_SWITCH (CMD11) 1.8Vに切り替え */
+	IORWdirect = 52,		/* sdio IO_RW_DIRECT (CMD52) */
+	IORWextended = 53,		/* sdio IO_RW_EXTENDED (CMD53) */
+	Appcmd = 55,			/* mmc/sd APP_CMD (CMD55) 次のコマンドはACMD */
 };
 
 enum {
-	/* Controller registers */
-	Arg2			= 0x00>>2,
-	Blksizecnt		= 0x04>>2,
+	/* EMMCレジスタ: アドレス >> 2 = インデックス */
+	Arg2			= 0x00>>2,		// 0 : ARG2
+	Blksizecnt		= 0x04>>2,		// 1 : BLKSIZECNT
 	Arg1			= 0x08>>2,
 	Cmdtm			= 0x0c>>2,
 	Resp0			= 0x10>>2,
@@ -63,63 +64,63 @@ enum {
 	Status			= 0x24>>2,
 	Control0		= 0x28>>2,
 	Control1		= 0x2c>>2,
-	Interrupt		= 0x30>>2,
-	Irptmask		= 0x34>>2,
-	Irpten			= 0x38>>2,
-	Control2		= 0x3c>>2,
-	Forceirpt		= 0x50>>2,
-	Boottimeout		= 0x70>>2,
-	Dbgsel			= 0x74>>2,
-	Exrdfifocfg		= 0x80>>2,
-	Exrdfifoen		= 0x84>>2,
-	Tunestep		= 0x88>>2,
-	Tunestepsstd		= 0x8c>>2,
-	Tunestepsddr		= 0x90>>2,
-	Spiintspt		= 0xf0>>2,
-	Slotisrver		= 0xfc>>2,
+	Interrupt		= 0x30>>2,		// 12 : INTERRUPT
+	Irptmask		= 0x34>>2,		// 13 : IRPT_MASK
+	Irpten			= 0x38>>2,		// 14 : IRPT_EN
+	Control2		= 0x3c>>2,		// 15 : CONTROL2
+	Forceirpt		= 0x50>>2,		// 20 : FORCE_IRPT
+	Boottimeout		= 0x70>>2,		// 28 : BOOT_TIMEOUT
+	Dbgsel			= 0x74>>2,		// 29 : DBG_SEL
+	Exrdfifocfg		= 0x80>>2,		// 32 : EXRDFIFO_CFG
+	Exrdfifoen		= 0x84>>2,		// 31 : EXRDFIFO_EN
+	Tunestep		= 0x88>>2,		// 32 : TUNE_STEP
+	Tunestepsstd		= 0x8c>>2,	// 33 : TUNE_STEPS_STD
+	Tunestepsddr		= 0x90>>2,	// 34 : TUNE_STEPS_DDR
+	Spiintspt		= 0xf0>>2,		// 60 : SPI_INT_SPT SPI
+	Slotisrver		= 0xfc>>2,		// 63 : SLOTISR_VER Slot
 
-	/* Control0 */
-	Hispeed			= 1<<2,
-	Dwidth4			= 1<<1,
-	Dwidth1			= 0<<1,
+	/* Control0: 0x28 */
+	Hispeed			= 1<<2,		/* 高速モードを選択 */
+	Dwidth4			= 1<<1,		/* 4データラインを使用 */
+	Dwidth1			= 0<<1,		/* 1データラインを使用 */
 
-	/* Control1 */
+	/* Control1: 0x2C */
 	Srstdata		= 1<<26,	/* reset data circuit */
 	Srstcmd			= 1<<25,	/* reset command circuit */
 	Srsthc			= 1<<24,	/* reset complete host controller */
-	Datatoshift		= 16,		/* data timeout unit exponent */
-	Datatomask		= 0xF0000,
-	Clkfreq8shift		= 8,		/* SD clock base divider LSBs */
-	Clkfreq8mask		= 0xFF00,
-	Clkfreqms2shift		= 6,		/* SD clock base divider MSBs */
-	Clkfreqms2mask		= 0xC0,
-	Clkgendiv		= 0<<5,		/* SD clock divided */
-	Clkgenprog		= 1<<5,		/* SD clock programmable */
-	Clken			= 1<<2,		/* SD clock enable */
-	Clkstable		= 1<<1,
-	Clkintlen		= 1<<0,		/* enable internal EMMC clocks */
+	Datatoshift		= 16,		/* data timeout unit exponet: bit shift */
+	Datatomask		= 0xF0000,	/*   DATA_TIUNIT[19:16]: bit mask */
+	Clkfreq8shift		= 8,		/* SD clock base divider LSBs: bit shift */
+	Clkfreq8mask		= 0xFF00,	/*   CLK_FREQ8[19:16]: bit mask */
+	Clkfreqms2shift		= 6,		/* SD clock base divider MSBs: bit shift*/
+	Clkfreqms2mask		= 0xC0,		/*   CLK_FREQ_MS2[7:6]: bit mask */
+	Clkgendiv		= 0<<5,		/* CLK_GENSEL: SD clock divided */
+	Clkgenprog		= 1<<5,		/*             SD clock programmable */
+	Clken			= 1<<2,		/* CLK_EN: SD clock enable */
+	Clkstable		= 1<<1,		/* CLK_STABLE: sd clock is stable */
+	Clkintlen		= 1<<0,		/* CLK_INTLEN: enable internal EMMC clocks */
 
-	/* Cmdtm */
-	Indexshift		= 24,
-	Suspend			= 1<<22,
-	Resume			= 2<<22,
-	Abort			= 3<<22,
-	Isdata			= 1<<21,
-	Ixchken			= 1<<20,
-	Crcchken		= 1<<19,
-	Respmask		= 3<<16,
-	Respnone		= 0<<16,
-	Resp136			= 1<<16,
-	Resp48			= 2<<16,
-	Resp48busy		= 3<<16,
-	Multiblock		= 1<<5,
-	Host2card		= 0<<4,
-	Card2host		= 1<<4,
-	Autocmd12		= 1<<2,
-	Autocmd23		= 2<<2,
-	Blkcnten		= 1<<1,
+	/* CMDTM: 0xC */
+	Indexshift		= 24,			/* CMD_INDEXビットのシフト値*/
+	Suspend			= 1<<22,		/* CMD_TYPE[23:22]: suspend */
+	Resume			= 2<<22,		/*                  resume  */
+	Abort			= 3<<22,		/*                  abort   */
+	Isdata			= 1<<21,		/* CMD_ISDATA: データ転送あり */
+	Ixchken			= 1<<20,		/* CMD_IXCHK_EN: 応答のcmd_idxをチェック */
+	Crcchken		= 1<<19,		/* CMD_CRCCHK_EN: 応答のCRCをチェック */
+	Respmask		= 3<<16,		/* CMD_RSPNS_TYPE[16:17] マスク      */
+	Respnone		= 0<<16,		/*                 応答なし          */
+	Resp136			= 1<<16,		/*                 136bit 応答       */
+	Resp48			= 2<<16,		/*                 48bit 応答        */
+	Resp48busy		= 3<<16,		/*                 48bit 応答 + busy */
+	Multiblock		= 1<<5,			/* TM_MULTI_BLOCK: マルチブロック転送 */
+	Host2card		= 0<<4,			/* TM_DAT_DIR: ホストからカードへ転送 */
+	Card2host		= 1<<4,			/* TM_DAT_DIR: カードからホストへ転送 */
+	Autocmd12		= 1<<2,			/* TM_AUTO_CMD_EN: データ転送後にCMD12を送信 */
+	Autocmd23		= 2<<2,			/*                 データ転送後にCMD23を送信*/
+	Blkcnten		= 1<<1,			/* TM_BLKCNT_EN: マルチブロック転送のブロックカウンタを有効化 */
 
-	/* Interrupt */
+	/* Interrupt: flags: 0x30, mask: 0x34, enable: 0x38 : 3レジスタ共通 */
 	Acmderr		= 1<<24,
 	Denderr		= 1<<22,
 	Dcrcerr		= 1<<21,
@@ -136,16 +137,17 @@ enum {
 	Datadone	= 1<<1,
 	Cmddone		= 1<<0,
 
-	/* Status */
+	/* Status: 0x24 */
 	Bufread		= 1<<11,	/* not in Broadcom datasheet */
 	Bufwrite	= 1<<10,	/* not in Broadcom datasheet */
-	Readtrans	= 1<<9,
-	Writetrans	= 1<<8,
-	Datactive	= 1<<2,
-	Datinhibit	= 1<<1,
-	Cmdinhibit	= 1<<0,
+	Readtrans	= 1<<9,		/* EMMCから新規データ読み込みOK */
+	Writetrans	= 1<<8,		/* EMMCへの新規データ書き込みOK */
+	Datactive	= 1<<2,		/* 少なくとも1本データラインがactive */
+	Datinhibit	= 1<<1,		/* データラインは使用中 */
+	Cmdinhibit	= 1<<0,		/* コマンドラインは使用中 */
 };
 
+// コマンドの付帯情報: 応答の種類、CRCのチェックなど（idxはコマンド番号）
 static int cmdinfo[64] = {
 [0]  Ixchken,
 [2]  Resp136,
@@ -171,6 +173,7 @@ static int cmdinfo[64] = {
 
 typedef struct Ctlr Ctlr;
 
+// コントロール構造体
 struct Ctlr {
 	Rendez	r;
 	Rendez	cardr;
@@ -195,6 +198,7 @@ static Ctlr emmc;
 
 static void mmcinterrupt(Ureg*, void*);
 
+// 指定のレジスタregに値valを書き込む
 static void
 WR(int reg, u32int val)
 {
@@ -202,10 +206,11 @@ WR(int reg, u32int val)
 
 	if(0)print("WR %2.2x %x\n", reg<<2, val);
 	microdelay(emmc.fastclock? 2 : 20);
-	coherence();
+	coherence();	// データバリア
 	r[reg] = val;
 }
 
+// SDクロックの分周比をCONTROL1レジスタのCLK_FREQ8とCLK_FREQ_MS2にセットする
 static uint
 clkdiv(uint d)
 {
@@ -217,6 +222,7 @@ clkdiv(uint d)
 	return v;
 }
 
+// SDクロックをセットする
 static void
 emmcclk(uint freq)
 {
@@ -228,8 +234,10 @@ emmcclk(uint freq)
 	div = emmc.extclk / (freq<<1);
 	if(emmc.extclk / (div<<1) > freq)
 		div++;
+	// CONTROL1レジスタに書き込み
 	WR(Control1, clkdiv(div) |
 		DTO<<Datatoshift | Clkgendiv | Clken | Clkintlen);
+	// SDクロックが安定するのを待つ
 	for(i = 0; i < 1000; i++){
 		delay(1);
 		if(r[Control1] & Clkstable)
@@ -254,6 +262,7 @@ dataready(void *p)
 
 #endif
 
+// sleepから起床時に呼び出されるハンドラ
 static int
 datadone(void*dummy)
 {
@@ -264,6 +273,7 @@ datadone(void*dummy)
 	return i & (Datadone|Err);
 }
 
+// カード割り込みがあった
 static int
 cardintready(void*dummy)
 {
@@ -274,15 +284,18 @@ cardintready(void*dummy)
 	return i & Cardintr;
 }
 
+// EMMCの初期化
 static int
 emmcinit(void)
 {
 	volatile u32int *r;
 	ulong clk;
 
+	// DMAバッファを確保
 	emmc.dmabuf = malloc(DMABUFSZ);
 	assert(emmc.dmabuf);
 
+	// EMMCのクロックレートをmbox経由 (tag: 0x00030002) で取得
 	clk = getclkrate(ClkEmmc);
 	if(clk == 0){
 		clk = Extfreq;
@@ -292,12 +305,15 @@ emmcinit(void)
 	r = (u32int*)EMMCREGS;
 	if(0)print("emmc control %8.8x %8.8x %8.8x\n",
 		r[Control0], r[Control1], r[Control2]);
+	// ホスト回路を完全にリセット
 	WR(Control1, Srsthc);
 	delay(10);
 	while(r[Control1] & Srsthc)
 		;
+	// データ処理回路をリセット
 	WR(Control1, Srstdata);
 	delay(10);
+	// CONTROL1レジスタを0クリア
 	WR(Control1, 0);
 #if RASPPI >= 5
 	/* See: https://forums.raspberrypi.com/viewtopic.php?t=362326#p2174597 */
@@ -310,6 +326,7 @@ emmcinit(void)
 	return 0;
 }
 
+// ホストコントローラのバージョン問い合わせ
 static int
 emmcinquiry(char *inquiry, int inqlen)
 {
@@ -317,22 +334,25 @@ emmcinquiry(char *inquiry, int inqlen)
 	uint ver;
 
 	r = (u32int*)EMMCREGS;
+	// ver[31:24]: ベンダーバージョン, [23:16]: ホストコントローラ仕様バージョン
 	ver = r[Slotisrver] >> 16;
 	return snprint(inquiry, inqlen,
 		"Arasan eMMC SD Host Controller %2.2x Version %2.2x",
 		ver&0xFF, ver>>8);
 }
 
+// EMMCを有効にする
 static void
 emmcenable(void)
 {
-	emmcclk(Initfreq);
-	WR(Irpten, 0);
-	WR(Irptmask, ~0);
-	WR(Interrupt, ~0);
-	intrenable(IRQmmc, mmcinterrupt, nil, 0, "mmc");
+	emmcclk(Initfreq);		// emmcクロック設定
+	WR(Irpten, 0);			// 割り込みをすべて無効に
+	WR(Irptmask, ~0);		// 割り込みをすべてマスク
+	WR(Interrupt, ~0);		// 割子mをすべてクリア?
+	intrenable(IRQmmc, mmcinterrupt, nil, 0, "mmc");	// IRQ=62を有効化
 }
 
+// カード割り込みがかかるのを待つ(割り込みフラグの内容を返す)
 int
 sdiocardintr(int wait)
 {
@@ -340,17 +360,18 @@ sdiocardintr(int wait)
 	int i;
 
 	r = (u32int*)EMMCREGS;
-	WR(Interrupt, Cardintr);
+	WR(Interrupt, Cardintr);	// カード割り込みフラグをクリア
 	while(((i = r[Interrupt]) & Cardintr) == 0){
 		if(!wait)
 			return 0;
-		WR(Irpten, r[Irpten] | Cardintr);
-		sleep(&emmc.cardr, cardintready, 0);
+		WR(Irpten, r[Irpten] | Cardintr);		// カード割り込みを有効にする
+		sleep(&emmc.cardr, cardintready, 0);	// カード割り込みを待ってsleep
 	}
-	WR(Interrupt, Cardintr);
+	WR(Interrupt, Cardintr);	// カード割り込みフラグをクリア
 	return i;
 }
 
+// コマンドcmdを引数argで送信し、応答をrespにセットする
 static int
 emmccmd(u32int cmd, u32int arg, u32int *resp)
 {
@@ -361,36 +382,44 @@ emmccmd(u32int cmd, u32int arg, u32int *resp)
 
 	r = (u32int*)EMMCREGS;
 	assert(cmd < nelem(cmdinfo) && cmdinfo[cmd] != 0);
+	// CMDTM(0xc)の値をセット
 	c = (cmd << Indexshift) | cmdinfo[cmd];
 	/*
 	 * CMD6 may be Setbuswidth or Switchfunc depending on Appcmd prefix
+	 *  CMD6: SWITCH_FUNC, ACMD6: SET_BUS_WIDTH
 	 */
 	if(cmd == Switchfunc && !emmc.appcmd)
 		c |= Isdata|Card2host;
+	// CMD53
 	if(cmd == IORWextended){
+		// write
 		if(arg & (1<<31))
 			c |= Host2card;
+		// read
 		else
 			c |= Card2host;
+		// マルチブロック転送
 		if((r[Blksizecnt]&0xFFFF0000) != 0x10000)
 			c |= Multiblock | Blkcnten;
 	}
 	/*
-	 * GoIdle indicates new card insertion: reset bus width & speed
+	 * GoIdle は新しいカードの挿入をしめすのでバス幅と速度をリセットする
 	 */
 	if(cmd == GoIdle){
 		WR(Control0, r[Control0] & ~(Dwidth4|Hispeed));
 		emmcclk(Initfreq);
 	}
+	// コマンドラインが使用中: コマンド処理回路をリセット
 	if(r[Status] & Cmdinhibit){
 		print("emmccmd: need to reset Cmdinhibit intr %x stat %x\n",
 			r[Interrupt], r[Status]);
-		WR(Control1, r[Control1] | Srstcmd);
-		while(r[Control1] & Srstcmd)
+		WR(Control1, r[Control1] | Srstcmd);	// コマンド処理回路をリセット
+		while(r[Control1] & Srstcmd)		// コマンド処理回路のリセットを待つ
 			;
-		while(r[Status] & Cmdinhibit)
+		while(r[Status] & Cmdinhibit)		// コマンドラインがあくのを待つ
 			;
 	}
+	// データラインが使用中: データ処理回路をリセット
 	if((r[Status] & Datinhibit) &&
 	   ((c & Isdata) || (c & Respmask) == Resp48busy)){
 		print("emmccmd: need to reset Datinhibit intr %x stat %x\n",
@@ -401,29 +430,41 @@ emmccmd(u32int cmd, u32int arg, u32int *resp)
 		while(r[Status] & Datinhibit)
 			;
 	}
+	// 引数をレジスタにセット
 	WR(Arg1, arg);
+	// カード割り込み以外の割り込みあり
 	if((i = (r[Interrupt] & ~Cardintr)) != 0){
+		// カード挿入割り込み以外の割り込み -> クリア
 		if(i != Cardinsert)
 			print("emmc: before command, intr was %x\n", i);
 		WR(Interrupt, i);
 	}
+	// コマンドレジスタに書き込んでコマンド実行
 	WR(Cmdtm, c);
 	now = m->ticks;
+	// 処理が完了（エラー発生を含む）するのを待つ（タイムアウト1秒）
 	while(((i=r[Interrupt])&(Cmddone|Err)) == 0)
 		if(m->ticks-now > HZ)
 			break;
+	// エラー発生
 	if((i&(Cmddone|Err)) != Cmddone){
+		// タイムアウトエラー以外のエラーが発生
 		if((i&~(Err|Cardintr)) != Ctoerr)
 			print("emmc: cmd %x arg %x error intr %x stat %x\n", c, arg, i, r[Status]);
+		// 割り込みフラグをクリア
 		WR(Interrupt, i);
+		// コマンドラインをあける
 		if(r[Status]&Cmdinhibit){
 			WR(Control1, r[Control1]|Srstcmd);
 			while(r[Control1]&Srstcmd)
 				;
 		}
+		// エラーを投げる
 		error(Eio);
 	}
+	// 割り込みフラグでもはや扶養なフラグをクリア
 	WR(Interrupt, i & ~(Datadone|Readrdy|Writerdy));
+	// 応答をセット
 	switch(c & Respmask){
 	case Resp136:
 		resp[0] = r[Resp0]<<8;
@@ -439,8 +480,11 @@ emmccmd(u32int cmd, u32int arg, u32int *resp)
 		resp[0] = 0;
 		break;
 	}
+	// ビジーシグナルありの場合、データ転送の完了をsleepして待機
 	if((c & Respmask) == Resp48busy){
+		// エラービットとデータ転送完了フラグをクリア
 		WR(Irpten, r[Irpten]|Datadone|Err);
+		// データ転送が完了するまでsleep
 		tsleep(&emmc.r, datadone, 0, 3000);
 		i = r[Interrupt];
 		if((i & Datadone) == 0)
@@ -451,27 +495,29 @@ emmccmd(u32int cmd, u32int arg, u32int *resp)
 		WR(Interrupt, i);
 	}
 	/*
-	 * Once card is selected, use faster clock
+	 * CMD7の場合、より早いクロックを使用する
 	 */
 	if(cmd == MMCSelect){
 		delay(1);
-		emmcclk(SDfreq);
+		emmcclk(SDfreq);	// 標準SD周波数
 		delay(1);
 		emmc.fastclock = 1;
 	}
 	if(cmd == Setbuswidth){
+		// ACMD6: SET_BUS_WIDTH の場合
 		if(emmc.appcmd){
 			/*
 			 * If card bus width changes, change host bus width
 			 */
 			switch(arg){
-			case 0:
+			case 0:	// 1bit データラインを使用
 				WR(Control0, r[Control0] & ~Dwidth4);
 				break;
-			case 2:
+			case 2:	// 4bit データラインを使用
 				WR(Control0, r[Control0] | Dwidth4);
 				break;
 			}
+		// CMD6: SWITCH_FUNC の場合
 		}else{
 			/*
 			 * If card switched into high speed mode, increase clock speed
@@ -482,13 +528,14 @@ emmccmd(u32int cmd, u32int arg, u32int *resp)
 				delay(1);
 			}
 		}
+	// CMD52で書き込み、FN0, レジスタ0x7: Bus Interface Control
 	}else if(cmd == IORWdirect && (arg & ~0xFF) == (1<<31|0<<28|7<<9)){
 		switch(arg & 0x3){
 		case 0:
-			WR(Control0, r[Control0] & ~Dwidth4);
+			WR(Control0, r[Control0] & ~Dwidth4);	// バス幅 1bit
 			break;
 		case 2:
-			WR(Control0, r[Control0] | Dwidth4);
+			WR(Control0, r[Control0] | Dwidth4);	// バス幅 4bit
 			//WR(Control0, r[Control0] | Hispeed);
 			break;
 		}
@@ -497,6 +544,7 @@ emmccmd(u32int cmd, u32int arg, u32int *resp)
 	return 0;
 }
 
+// io時のブロックサイズとブロック数をセット
 static void
 emmciosetup(int write, void *buf, int bsize, int bcount)
 {
@@ -505,9 +553,11 @@ emmciosetup(int write, void *buf, int bsize, int bcount)
 #if RASPPI >= 5
 	emmc.blksize = bsize;
 #endif
+	// BLKSIZECNTアドレスに書き込み
 	WR(Blksizecnt, bcount<<16 | bsize);
 }
 
+// データ転送
 static void
 emmcio(int write, uchar *buf, int len)
 {
@@ -529,12 +579,16 @@ emmcio(int write, uchar *buf, int len)
 		nexterror();
 	}
 #if RASPPI <= 4
+	// DMA経由で読み書きする
+	// bufがキャッシュサイズにアラインしており、lenがキャッシュサイズ以上の
+	// 場合は、dmaバッファとしてbufをそのまま、それ以外はemmc.dmabufを使う
 	if(((unsigned long)buf & (CACHELINESZ-1)) ||
 	    (len & (CACHELINESZ-1))){
 		assert(len <= DMABUFSZ);
 		dmabuf = emmc.dmabuf;
 	}
 	if(write){
+		// dmabufを使う場合はbufからdmabufにデータをセット
 		if(dmabuf)
 			memcpy(dmabuf, buf, len);
 		dmastart(DmaChanEmmc, DmaDevEmmc, DmaM2D,
@@ -542,6 +596,7 @@ emmcio(int write, uchar *buf, int len)
 	}else
 		dmastart(DmaChanEmmc, DmaDevEmmc, DmaD2M,
 			(void *) &r[Data], dmabuf ? dmabuf : buf, len);
+	// DMA転送を待機し、エラーがあった場合はEioエラーを投げる
 	if(dmawait(DmaChanEmmc) < 0)
 		error(Eio);
 	if(!write){
@@ -580,27 +635,34 @@ emmcio(int write, uchar *buf, int len)
 		len -= bytes;
 	}
 #endif
+	// EMMC IRPT_EN: 割り込みを有効化
 	WR(Irpten, r[Irpten]|Datadone|Err);
+	// 割り込みがかかるまでsleep
 	tsleep(&emmc.r, datadone, 0, 3000);
+	// Cardからの割り込み以外の割り込みを取得
 	i = r[Interrupt]&~Cardintr;
+	// 転送が終了していない(timeout)
 	if((i & Datadone) == 0){
 		print("emmcio: %d timeout intr %x stat %x\n",
 			write, i, r[Status]);
 		WR(Interrupt, i);
 		error(Eio);
 	}
+	// 転送中にエラー発生
 	if(i & Err){
 		print("emmcio: %d error intr %x stat %x\n",
 			write, r[Interrupt], r[Status]);
 		WR(Interrupt, i);
 		error(Eio);
 	}
+	// OK: 割り込みフラグをクリア
 	if(i)
 		WR(Interrupt, i);
 	poperror();
 	okay(0);
 }
 
+// IRQ63の割り込みハンドラ
 static void
 mmcinterrupt(Ureg*regs, void*param)
 {
@@ -610,13 +672,17 @@ mmcinterrupt(Ureg*regs, void*param)
 	r = (u32int*)EMMCREGS;
 	i = r[Interrupt];
 	if(0)print("mmcinterrupt: intr %x\n", i);
+	// 処理終了
 	if(i&(Datadone|Err))
 		wakeup(&emmc.r);
+	// カードから割り込み
 	if(i&Cardintr)
 		wakeup(&emmc.cardr);
+	// 割り込みクリア
 	r[Irpten] &= ~i;
 }
 
+// SDio操作関数変数の定義
 SDio sdio = {
 	"emmc",
 	emmcinit,

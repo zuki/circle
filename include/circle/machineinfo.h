@@ -65,6 +65,10 @@ enum TSoCType
 	SoCTypeUnknown
 };
 
+/* "Steppings are basically chip revisions where they don't change functionality, 
+ * and usually just fix bugs, or tweak the layout." 
+ * from https://www.jeffgeerling.com/blog/2024/new-2gb-pi-5-has-33-smaller-die-30-idle-power-savings
+ */
 enum TSoCStepping : u8
 {
 	SoCSteppingC1		= 0x21,

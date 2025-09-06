@@ -9,6 +9,7 @@
 extern "C" {
 #endif
 
+// マルチCPUの競争を防ぐためのロック
 typedef struct lock_t
 {
 #ifdef ARM_ALLOW_MULTI_CORE
@@ -22,6 +23,7 @@ Lock;
 void lock (Lock *l);
 void unlock (Lock *l);
 
+// ロックを得るまで実行権を明け渡して待機するロック
 typedef struct qlock_t
 {
 	volatile int locked;

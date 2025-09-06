@@ -5,6 +5,8 @@
 
 static CString *s_pPath = 0;
 
+// ファームウェアディレクトリのファイル名 nameのファームウェアファイルを
+// チャンネルとして開く
 Chan *namec (const char *name, unsigned func, unsigned flags, unsigned opt)
 {
 	Chan *c = new Chan;
@@ -14,9 +16,11 @@ Chan *namec (const char *name, unsigned func, unsigned flags, unsigned opt)
 	c->open = 0;
 
 	assert (s_pPath != 0);
+	// Path: ファームウェアファイルの完全名
 	CString Path;
 	Path.Format ("%s%s", (const char *) *s_pPath, name);
 
+	// ファームウェアファイルをオープンする
 	FRESULT Result = f_open (&c->file, Path, FA_READ | FA_OPEN_EXISTING);
 	if (Result != FR_OK)
 	{
@@ -34,6 +38,7 @@ Chan *namec (const char *name, unsigned func, unsigned flags, unsigned opt)
 	return c;
 }
 
+// チャンネルを閉じる
 void cclose (Chan *c)
 {
 	assert (c->open);
@@ -45,6 +50,8 @@ void cclose (Chan *c)
 	delete c;
 }
 
+// チャンネルcをオフセットoffsetから長さlenだけbufに読み込み、
+// 読み込んだバイト数を返す
 static int readchan (Chan *c, void *buf, size_t len, ulong offset)
 {
 	assert (c->open);
@@ -72,11 +79,13 @@ static int readchan (Chan *c, void *buf, size_t len, ulong offset)
 	return (int) nBytesRead;
 }
 
+// struct device_t変数: チャンネルの操作関数
 static struct device_t devchan
 {
 	readchan
 };
 
+// struct device_tの配列
 struct device_t *devtab[1] =
 {
 	&devchan
@@ -85,6 +94,7 @@ struct device_t *devtab[1] =
 void p9chan_init (const char *path)
 {
 	assert (s_pPath == 0);
+	// ファームウェアが存在するパスをセット
 	s_pPath = new CString (path);
 	assert (s_pPath != 0);
 }

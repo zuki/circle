@@ -79,12 +79,16 @@ boolean CBcm4343Device::Initialize (void)
 	m_MACAddress.CopyTo (s_EtherDevice.ea);
 #endif
 
+	// 1. p9アーキテクチャの初期化（DMAチャンネルのセットと周期ハンドラの登録）
 	p9arch_init ();
+	// 2. ファームウェアが存在するパスを静的変数s_pPathにセット
 	p9chan_init (m_FirmwarePath);
+	// 3. 現在のタスクにerror_stackをuserDataとしてセット
 	p9proc_init ();
-
+	// 4. pnpハンドラのセット
 	ether4330link ();
-	assert (s_pEtherPnpHandler != 0);
+	assert (s_pEtherPnpHandler != 0);	// addethercard()で設定
+	// 5. phpハンドラ (etherbcmpnp())を実行（ドライバの作成）
 	(*s_pEtherPnpHandler) (&s_EtherDevice);
 
 	s_EtherDevice.oq = new Queue;
@@ -114,19 +118,23 @@ const CMACAddress *CBcm4343Device::GetMACAddress (void) const
 	return &m_MACAddress;
 }
 
+// バッファの内容を送信する
 boolean CBcm4343Device::SendFrame (const void *pBuffer, unsigned nLength)
 {
 	//hexdump (pBuffer, nLength, "wlantx");
 
+	// nLengthのサイズのブロックを割り当てる
 	Block *pBlock = allocb (nLength);
 	assert (pBlock != 0);
 
 	assert (pBlock->wp != 0);
 	assert (pBuffer != 0);
+	// ブロックのwpからpBuuferの内容をコピーする
 	memcpy (pBlock->wp, pBuffer, nLength);
 	pBlock->wp += nLength;
 
 	assert (s_EtherDevice.oq != 0);
+	// ブロックをキューに登録する
 	qpass (s_EtherDevice.oq, pBlock);
 
 	if (waserror ())
@@ -135,6 +143,7 @@ boolean CBcm4343Device::SendFrame (const void *pBuffer, unsigned nLength)
 	}
 
 	assert (s_EtherDevice.transmit != 0);
+	// 転送を行う
 	(*s_EtherDevice.transmit) (&s_EtherDevice);
 
 	poperror ();
@@ -142,9 +151,11 @@ boolean CBcm4343Device::SendFrame (const void *pBuffer, unsigned nLength)
 	return TRUE;
 }
 
+// バッファにデータを読み込む
 boolean CBcm4343Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
 {
 	assert (pBuffer != 0);
+	// 受信キューの先頭エントリをpBufferに読み込む
 	unsigned nLength = m_RxQueue.Dequeue (pBuffer);
 	if (nLength == 0)
 	{
@@ -161,11 +172,12 @@ boolean CBcm4343Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
 
 boolean CBcm4343Device::IsLinkUp (void)
 {
+	// LinkUpされていればtrue
 	if (m_bOpenNet)
 	{
 		return m_bLinkUp;
 	}
-
+	// m_pIsConnected()を実行して接続済であるか確認する
 	if (m_pIsConnected != 0)
 	{
 		return (*m_pIsConnected) ();
@@ -197,6 +209,7 @@ boolean CBcm4343Device::SetMulticastFilter (const u8 Groups[][MAC_ADDRESS_SIZE])
 	}
 
 	assert (s_EtherDevice.setmulticast != 0);
+	// Groupsに含まれるアドレスをマルチキャストリストに登録する
 	(*s_EtherDevice.setmulticast) (&s_EtherDevice, Buffer, ulSize);
 
 	poperror ();
@@ -204,12 +217,14 @@ boolean CBcm4343Device::SetMulticastFilter (const u8 Groups[][MAC_ADDRESS_SIZE])
 	return TRUE;
 }
 
+// イベントハンドラを登録する
 void CBcm4343Device::RegisterEventHandler (TBcm4343EventHandler *pHandler, void *pContext)
 {
 	assert (s_EtherDevice.setevhndlr != 0);
 	(*s_EtherDevice.setevhndlr) (&s_EtherDevice, pHandler, pContext);
 }
 
+// 接続確認用ハンドラを登録する
 void CBcm4343Device::RegisterConnectedProvider (TBcm4343ConnectedProvider *pHandler)
 {
 	m_pIsConnected = pHandler;
@@ -233,6 +248,7 @@ boolean CBcm4343Device::Control (const char *pFormat, ...)
 	}
 
 	assert (s_EtherDevice.ctl != 0);
+	// etherbcmctl()を実行
 	(*s_EtherDevice.ctl) (&s_EtherDevice, (const char *) Command, 0);
 
 	poperror ();
@@ -240,6 +256,7 @@ boolean CBcm4343Device::Control (const char *pFormat, ...)
 	return TRUE;
 }
 
+// スキャン結果を受信する
 boolean CBcm4343Device::ReceiveScanResult (void *pBuffer, unsigned *pResultLength)
 {
 	assert (pBuffer != 0);
@@ -257,6 +274,7 @@ boolean CBcm4343Device::ReceiveScanResult (void *pBuffer, unsigned *pResultLengt
 	return TRUE;
 }
 
+// ネットワークSSIDを取得する
 const CMACAddress *CBcm4343Device::GetBSSID (void)
 {
 	u8 BSSID[MAC_ADDRESS_SIZE];
@@ -268,6 +286,7 @@ const CMACAddress *CBcm4343Device::GetBSSID (void)
 	return &m_BSSID;
 }
 
+// ネットワーク pSSID に接続する
 boolean CBcm4343Device::JoinOpenNet (const char *pSSID)
 {
 	m_bOpenNet = m_bLinkUp = FALSE;
@@ -282,7 +301,7 @@ boolean CBcm4343Device::JoinOpenNet (const char *pSSID)
 	return bOK;
 }
 
-// by @sebastienNEC
+// by @sebastienNEC: ネットワークAPを作成する
 boolean CBcm4343Device::CreateOpenNet (const char *pSSID, int nChannel, bool bHidden)
 {
 	m_bOpenNet = m_bLinkUp = FALSE;
@@ -295,6 +314,7 @@ boolean CBcm4343Device::CreateOpenNet (const char *pSSID, int nChannel, bool bHi
 	return bOK;
 }
 
+// ネットワークAPを廃棄する
 boolean CBcm4343Device::DestroyOpenNet (void)
 {
 	m_bOpenNet = m_bLinkUp = FALSE;
@@ -302,6 +322,7 @@ boolean CBcm4343Device::DestroyOpenNet (void)
 	return Control ("down");
 }
 
+// ifstatを出力する
 void CBcm4343Device::DumpStatus (void)
 {
 	char Buffer[200];
@@ -313,18 +334,23 @@ void CBcm4343Device::DumpStatus (void)
 	print (Buffer);
 }
 
+// データフレームをpBufferに受信する
 void CBcm4343Device::FrameReceived (const void *pBuffer, unsigned nLength)
 {
 	assert (s_pThis != 0);
+	// 受信キューにpBufferを登録する
 	s_pThis->m_RxQueue.Enqueue (pBuffer, nLength);
 }
 
+// スキャン結果をpBufferに受信する
 void CBcm4343Device::ScanResultReceived (const void *pBuffer, unsigned nLength)
 {
 	assert (s_pThis != 0);
+	// スキャン結果キューにpBufferを登録する
 	s_pThis->m_ScanResultQueue.Enqueue (pBuffer, nLength);
 }
 
+// OpenNetイベントハンドラ
 void CBcm4343Device::OpenNetEventHandler (ether_event_type_t Type,
 					  const ether_event_params_t *pParams,
 					  void *pContext)
@@ -346,6 +372,7 @@ void CBcm4343Device::OpenNetEventHandler (ether_event_type_t Type,
 	}
 }
 
+// データを受信する
 void etheriq (Ether *pEther, Block *pBlock, unsigned nFlag)
 {
 	assert (pBlock != 0);
@@ -354,12 +381,14 @@ void etheriq (Ether *pEther, Block *pBlock, unsigned nFlag)
 	freeb (pBlock);
 }
 
+// スキャン結果を受信する
 void etherscanresult (Ether *pEther, const void *pBuffer, long nLength)
 {
 	assert (pBuffer != 0);
 	CBcm4343Device::ScanResultReceived (pBuffer, (unsigned) nLength);
 }
 
+// pnpハンドラを登録してカードを追加する
 void addethercard (const char *pName, ether_pnp_t *pEtherPnpHandler)
 {
 	assert (pEtherPnpHandler != 0);

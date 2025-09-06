@@ -8,12 +8,13 @@
 extern "C" {
 #endif
 
+// チャンネル構造体
 typedef struct
 {
-	unsigned type;
-	int open;
-	FIL file;
-	ulong offset;
+	unsigned type;		// ファイル種別
+	int open;			// 1: open済み
+	FIL file;			// 
+	ulong offset;		// ファイルオフセット
 }
 Chan;
 
@@ -24,6 +25,7 @@ Chan *namec (const char *name, unsigned func, unsigned flags, unsigned opt);
 void cclose (Chan *chan);
 
 #define devtab	__p9devtab
+// チャンネルの操作関数構造体
 extern struct device_t
 {
 	int (*read) (Chan *chan, void *buf, size_t len, ulong off);

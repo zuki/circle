@@ -2,6 +2,7 @@
 #include <circle/util.h>
 #include <assert.h>
 
+// サイズがsizeのブロックを割り当てて返す
 Block *allocb (size_t size)
 {
 	static const size_t maxhdrsize = 64;
@@ -21,12 +22,14 @@ Block *allocb (size_t size)
 	return b;
 }
 
+// ブロックbを開放する
 void freeb (Block *b)
 {
 	uchar *p = (uchar *) b;
 	delete [] p;
 }
 
+// ブロックのrpをsizeだけ小さくする
 Block *padblock (Block *b, int size)
 {
 	assert (size > 0);
@@ -38,11 +41,13 @@ Block *padblock (Block *b, int size)
 	return b;
 }
 
+// キューに入っている要素の数を返す
 unsigned qlen (Queue *q)
 {
 	return q->nelem;
 }
 
+// キューqの先頭を取り出して返す
 Block *qget (Queue *q)
 {
 	Block *b = 0;
@@ -66,6 +71,7 @@ Block *qget (Queue *q)
 	return b;
 }
 
+// キューqにブロックbを追加する
 void qpass (Queue *q, Block *b)
 {
 	assert (b != 0);
@@ -88,16 +94,19 @@ void qpass (Queue *q, Block *b)
 	q->nelem++;
 }
 
+// ushortの*pをリトルエンディアンに変換して返す
 ushort nhgets (const void *p)
 {
 	return be2le16 (*(ushort *) p);
 }
 
+// uintの*pをリトルエンディアンに変換して返す
 uint nhgetl (const void *p)
 {
 	return be2le32 (*(uint *) p);
 }
 
+// macaddr "AA:BB:CC:DD:EE:FF"の各バイトをucharに変換してaddr[6]にセットする
 int parseether (uchar *addr, const char *str)
 {
 	for (unsigned i = 1; i <= 6; i++)

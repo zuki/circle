@@ -95,17 +95,17 @@ private:
 					 void *pContext);
 
 private:
-	CString m_FirmwarePath;
+	CString m_FirmwarePath;			// ファームウェアのパス
 
-	CMACAddress m_MACAddress;
-	CMACAddress m_BSSID;
+	CMACAddress m_MACAddress;		// MACアドレス
+	CMACAddress m_BSSID;			// APのSSID
 
-	CNetQueue m_RxQueue;
-	CNetQueue m_ScanResultQueue;
+	CNetQueue m_RxQueue;			// 受信キュー
+	CNetQueue m_ScanResultQueue;	// 結果スキャンキュー
 
-	boolean m_bOpenNet;
-	boolean m_bLinkUp;
-	TBcm4343ConnectedProvider *m_pIsConnected;
+	boolean m_bOpenNet;				// ネットワークはオープン済みか?
+	boolean m_bLinkUp;				// ネットワークはLinkUp済みか?
+	TBcm4343ConnectedProvider *m_pIsConnected;	// 接続済みか確認する関数へのポインタ
 
 	static CBcm4343Device *s_pThis;
 };

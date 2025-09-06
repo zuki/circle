@@ -675,3 +675,9 @@ PING 192.168.10.104 (192.168.10.104): 56 data bytes
 4 packets transmitted, 4 packets received, 0.0% packet loss
 round-trip min/avg/max/stddev = 1.484/2.145/3.820/0.975 ms
 ```
+
+## すべてのデバッグモードをオン
+
+[ログファイル: iodebug=0](hello_wlan_debug.md)
+
+[完全ログファイル: iodebug=1](hello_wlan_full_log.md)

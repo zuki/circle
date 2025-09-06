@@ -10,6 +10,7 @@
 
 #ifdef ARM_ALLOW_MULTI_CORE
 
+// ロックを取得する
 void lock (Lock *l)
 {
 	EnterCritical (IRQ_LEVEL);
@@ -33,6 +34,7 @@ void lock (Lock *l)
 		: : "r" ((uintptr) &l->_lock) : "r1", "r2", "r3"
 	);
 #else
+	// AARCH == 64 : Acquiring a lock with Load-Acquire Exclusive, Store-Release Exclusive
 	// See: ARMv8-A Architecture Reference Manual, Section K10.3.1
 	asm volatile
 	(
@@ -49,6 +51,7 @@ void lock (Lock *l)
 #endif
 }
 
+// ロックを開放する
 void unlock (Lock *l)
 {
 #if AARCH == 32
@@ -80,6 +83,7 @@ void unlock (Lock *l)
 	LeaveCritical ();
 }
 
+// ifdef ARM_ALLOW_MULTI_CORE
 #else
 
 void lock (Lock *l)
@@ -94,6 +98,7 @@ void unlock (Lock *l)
 
 #endif
 
+// qlockを取得する（取得できない間は実行権を明け渡す）
 void qlock (QLock *qlock)
 {
 	do
@@ -105,6 +110,7 @@ void qlock (QLock *qlock)
 	qlock->locked = 1;
 }
 
+// qlockを開放する（開放したあと実行権を明け渡す）
 void qunlock (QLock *qlock)
 {
 	assert (qlock->locked);
@@ -113,6 +119,8 @@ void qunlock (QLock *qlock)
 	CScheduler::Get ()->Yield ();
 }
 
+
+// qlockが取得できれば取得して1を返す。取得できなければ実行権を明け渡して0を返す
 int canqlock (QLock *qlock)
 {
 	if (qlock->locked)
@@ -127,6 +135,7 @@ int canqlock (QLock *qlock)
 	return 1;
 }
 
+// スリープする（スリープハンドラを実行する）
 void sleep (Rendez *rendez, sleephandler_t *handler, void *param)
 {
 	do
@@ -136,6 +145,7 @@ void sleep (Rendez *rendez, sleephandler_t *handler, void *param)
 	while ((*handler) (param) == 0);
 }
 
+// タイムアウト付きのスリープ
 void tsleep (Rendez *rendez, sleephandler_t *handler, void *param, unsigned msecs)
 {
 	unsigned start = m->ticks;
@@ -151,15 +161,18 @@ void tsleep (Rendez *rendez, sleephandler_t *handler, void *param, unsigned msec
 	while ((*handler) (param) == 0);
 }
 
+// 起床する
 void wakeup (Rendez *rendez)
 {
 }
 
+// 0を返す
 int return0 (void *param)
 {
 	return 0;
 }
 
+// カーネルプロセスクラス
 class CKProc : public CTask
 {
 public:
@@ -173,18 +186,20 @@ public:
 	void Run (void)
 	{
 		m_errstack.stackptr = ERROR_STACK_SIZE;
+		// p9ドライバスロットを使う
 		SetUserData (&m_errstack, TASK_USER_DATA_ERROR_STACK);
-
+		// カーネルプロセスに登録した関数を実行する
 		(*m_procfn) (m_param);
 	}
 
 private:
-	void (*m_procfn) (void *param);
-	void *m_param;
+	void (*m_procfn) (void *param);		// 実行する関数へのポインタ
+	void *m_param;						// 関数に渡すパラメタへのポインタ
 
 	struct error_stack_t m_errstack;
 };
 
+// カーネルプロセスを作成する
 void kproc (const char *name, void (*func) (void *), void *parm)
 {
 	new CKProc (func, parm, name);
