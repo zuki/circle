@@ -99,13 +99,15 @@ boolean CBcm4343Device::Initialize (void)
 		return FALSE;
 	}
 
+	/* ethernetデバイスをアタッチ */
 	assert (s_EtherDevice.attach != 0);
 	(*s_EtherDevice.attach) (&s_EtherDevice);
 
 #if RASPPI < 5
+	/* MACアドレスをセット */
 	m_MACAddress.Set (s_EtherDevice.ea);
 #endif
-
+	/* netデバイスとして登録 */
 	AddNetDevice ();
 
 	poperror ();
@@ -230,6 +232,7 @@ void CBcm4343Device::RegisterConnectedProvider (TBcm4343ConnectedProvider *pHand
 	m_pIsConnected = pHandler;
 }
 
+/* 制御コマンドを実行する */
 boolean CBcm4343Device::Control (const char *pFormat, ...)
 {
 	assert (pFormat != 0);
