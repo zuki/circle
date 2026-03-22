@@ -1,0 +1,9 @@
+[book]
+authors = ["SUZUKI Keiji"]
+multilingual = false
+src = "src"
+title = "Cirle情報"
+
+[output.html]
+default-theme = "rust"
+additional-css = ["theme/xcode.css"]
