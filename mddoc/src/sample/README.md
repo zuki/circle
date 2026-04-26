@@ -13,5 +13,6 @@
 - [サンプル 26: cpustress](26-cpustress.md)
 - [サンプル 27: usbgamepad](27-usbgamepad.md)
 - [サンプル 33: syslog](33-syslog.md)
+- [サンプル 34: sounddevices](34-sounddevices.md)
 - [サンプル 39: umsdplugging](39-umsdplugging.md)
 - [サンプル 40: IRQ lantency](40-irqlatency.md)

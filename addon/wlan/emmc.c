@@ -462,7 +462,7 @@ emmccmd(u32int cmd, u32int arg, u32int *resp)
 		// エラーを投げる
 		error(Eio);
 	}
-	// 割り込みフラグでもはや扶養なフラグをクリア
+	// 割り込みフラグでもはや不要なフラグをクリア
 	WR(Interrupt, i & ~(Datadone|Readrdy|Writerdy));
 	// 応答をセット
 	switch(c & Respmask){

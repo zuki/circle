@@ -79,7 +79,7 @@ boolean CBcm4343Device::Initialize (void)
 	m_MACAddress.CopyTo (s_EtherDevice.ea);
 #endif
 
-	// 1. p9アーキテクチャの初期化（DMAチャンネルのセットと周期ハンドラの登録）
+	// 1. p9アーキテクチャの初期化（DMAチャンネルのセットと周期timerハンドラの登録）
 	p9arch_init ();
 	// 2. ファームウェアが存在するパスを静的変数s_pPathにセット
 	p9chan_init (m_FirmwarePath);

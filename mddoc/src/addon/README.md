@@ -9,3 +9,7 @@
 - [wlan sta log](hello_wlan_full_log.md)
 - [WiFi関係の各種定数定義](addon_04_02_wlan_def.md)
 - [ether4330.cの関数](addon_04_ether4340.md)
+- [vc4](vc4/README.md)
+    - [README](vc4/00_readme.md)
+    - [interface](vc4/01_interface.md)
+    - [sound](vc4/02_sound.md)

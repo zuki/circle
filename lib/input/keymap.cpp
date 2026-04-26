@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2024  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -23,11 +23,14 @@
 #include <circle/sysconfig.h>
 #include <circle/util.h>
 #include <assert.h>
+#include <circle/logger.h>
+
+static const char FromKeyMap[] = "keymap";
 
 #define KEYPAD_FIRST	0x53
 #define KEYPAD_LAST	0x63
 
-// At present, 0x04-0x1D are the basic letter keys on all the 
+// At present, 0x04-0x1D are the basic letter keys on all the
 //   keymaps defined
 #define LETTER_FIRST    0x04
 #define LETTER_LAST     0x1D
@@ -110,6 +113,8 @@ const u16 CKeyMap::s_DefaultMap[][PHY_MAX_CODE+1][K_CTRLTAB+1] =
 		#include "keymap_fr.h"
 	}, {
 		#include "keymap_it.h"
+    }, {
+		#include "keymap_jp.h"
 	}, {
 		#include "keymap_uk.h"
 	}, {
@@ -124,6 +129,7 @@ const char *CKeyMap::s_MapDirectory[] =		// same (alphabetical) order as in s_De
 	"ES",
 	"FR",
 	"IT",
+    "JP",
 	"UK",
 	"US",
 	0
@@ -136,6 +142,7 @@ CKeyMap::CKeyMap (void)
 {
 	const char *pLocale = CKernelOptions::Get ()->GetKeyMap ();
 	assert (pLocale != 0);
+    CLogger::Get ()->Write (FromKeyMap, LogDebug, "pLocale: %s", pLocale);
 
 	const void *pDefaultMap = LookupDefaultMap (pLocale);
 	if (pDefaultMap == 0)
@@ -200,7 +207,7 @@ u16 CKeyMap::Translate (u8 nPhyCode, u8 nModifiers)
 	    && (nModifiers & (KEY_LCTRL_MASK | KEY_RCTRL_MASK))
 	    && (nModifiers & KEY_ALT_MASK))
 	{
-		return ActionShutdown; 
+		return ActionShutdown;
 	}
 
 	if (   (KeyF1 <= nLogCodeNorm && nLogCodeNorm <= KeyF12)
@@ -213,7 +220,7 @@ u16 CKeyMap::Translate (u8 nPhyCode, u8 nModifiers)
 	{
 		return KeyNone;
 	}
-	
+
 	unsigned nTable = K_NORMTAB;
 
 	if (KEYPAD_FIRST <= nPhyCode && nPhyCode <= KEYPAD_LAST)
@@ -255,7 +262,7 @@ u16 CKeyMap::Translate (u8 nPhyCode, u8 nModifiers)
 	case KeyCapsLock:
 		m_bCapsLock = !m_bCapsLock;
 		return ActionSwitchCapsLock;
-	
+
 	case KeyNumLock:
 		m_bNumLock = !m_bNumLock;
 		return ActionSwitchNumLock;
@@ -282,7 +289,7 @@ const char *CKeyMap::GetString (u16 nKeyCode, u8 nModifiers, char Buffer[2]) con
 	}
 
 	char chChar = (char) nKeyCode;
-		
+
 	if (nModifiers & (KEY_LCTRL_MASK | KEY_RCTRL_MASK))
 	{
 		chChar -= 'a';
@@ -293,7 +300,7 @@ const char *CKeyMap::GetString (u16 nKeyCode, u8 nModifiers, char Buffer[2]) con
 
 			return Buffer;
 		}
-		
+
 		return 0;
 	}
 

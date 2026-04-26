@@ -3,7 +3,7 @@
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
 // Copyright (C) 2014-2016  R. Stange <rsta2@o2online.de>
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -40,7 +40,7 @@ enum TSpecialKey
 	KeyReturn,
 	KeyInsert,
 	KeyHome,
-        KeyCtrlHome,
+    KeyCtrlHome,
 	KeyPageUp,
 	KeyCtrlPageUp,
 	KeyDelete,
@@ -139,7 +139,7 @@ private:
 	boolean m_bCapsLock;
 	boolean m_bNumLock;
 	boolean m_bScrollLock;
-	
+
 	static const char *s_KeyStrings[KeyMaxCode-KeySpace];
 	static const u16 s_DefaultMap[][PHY_MAX_CODE+1][K_CTRLTAB+1];
 	static const char *s_MapDirectory[];

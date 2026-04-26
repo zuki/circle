@@ -32,6 +32,7 @@
 #include <circle/sched/scheduler.h>
 #include <circle/i2cmaster.h>
 #include <circle/usb/usbhcidevice.h>
+#include <circle/usb/usbkeyboard.h>
 #include <circle/sound/soundbasedevice.h>
 #include <circle/types.h>
 #include "oscillator.h"
@@ -76,6 +77,7 @@ private:
 	CScheduler		m_Scheduler;
 	CI2CMaster		m_I2CMaster;
 	CUSBHCIDevice		m_USBHCI;
+    CUSBKeyboardDevice * volatile m_pKeyboard;
 
 #ifdef USE_VCHIQ_SOUND
 	CVCHIQDevice		m_VCHIQ;
